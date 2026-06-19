@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ebony & Ivory</title>
 <meta name="description" content="El arte de preservar la música">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2220%22 width=%2280%22 height=%2260%22 rx=%228%22 fill=%22%23121212%22/><rect x=%2225%22 y=%2220%22 width=%2212%22 height=%2235%22 fill=%22%23FAF8F5%22/><rect x=%2244%22 y=%2220%22 width=%2212%22 height=%2235%22 fill=%22%23FAF8F5%22/><rect x=%2263%22 y=%2220%22 width=%2212%22 height=%2235%22 fill=%22%23FAF8F5%22/></svg>">
+<link rel="icon" href="assets/isotipo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
@@ -14,13 +14,7 @@
 
 <header class="topbar" id="mainHeader">
   <div class="brand" id="brandHome" title="Ir al Catálogo">
-    <svg class="brand-mark" viewBox="0 0 100 100" width="28" height="28">
-      <rect x="10" y="20" width="80" height="60" rx="8" fill="var(--ink)"/>
-      <rect x="25" y="20" width="12" height="35" fill="var(--paper)"/>
-      <rect x="44" y="20" width="12" height="35" fill="var(--paper)"/>
-      <rect x="63" y="20" width="12" height="35" fill="var(--paper)"/>
-    </svg>
-    <span class="brand-word">Ebony & Ivory</span>
+    <img src="assets/imagotipo.png" alt="Ebony & Ivory" class="brand-img">
   </div>
   
   <div class="topbar-right">
@@ -46,7 +40,9 @@
 <main id="viewHome" class="view">
   <div class="floating-notes" id="floatingNotes"></div>
   <div class="home-hero">
-    <div class="hero-logo"><span class="hero-word">Ebony & Ivory</span></div>
+    <div class="hero-logo">
+      <img src="assets/logotipo.png" alt="Ebony & Ivory" class="hero-logo-img">
+    </div>
     <h1 data-i18n="heroTitle">El arte de preservar la música</h1>
     <p class="hero-sub" data-i18n="heroSub">Un lienzo digital estandarizado para transcribir, clasificar y eternizar tus partituras con una elegancia inigualable.</p>
     <button class="btn btn-primary btn-huge" onclick="window.location.hash='#catalogo'" data-i18n="goToCatalog">Abrir mi Catálogo</button>

@@ -64,7 +64,6 @@
     }
   };
 
-  // Nomenclatura Tonalidades
   const keysDB = [
     { val: "C", us: "C / Am", eu: "Do / La m" }, { val: "G", us: "G / Em", eu: "Sol / Mi m" },
     { val: "D", us: "D / Bm", eu: "Re / Si m" }, { val: "A", us: "A / F#m", eu: "La / Fa# m" },
@@ -88,8 +87,7 @@
       const key = el.getAttribute('data-i18n-placeholder'); if (translations[lang][key]) el.setAttribute('placeholder', translations[lang][key]);
     });
     
-    renderCustomSelects(); // Actualiza los dropdowns de Tonalidad (EU/US)
-    
+    renderCustomSelects(); 
     if (document.getElementById("viewLibrary") && !document.getElementById("viewLibrary").hidden) renderLibrary();
     if (document.getElementById("viewEditor") && !document.getElementById("viewEditor").hidden) renderScore();
   };
@@ -106,52 +104,36 @@
             const left = currentLang === 'es' ? k.eu : k.us;
             const right = currentLang === 'es' ? k.us : k.eu;
             html += `<div data-val="${k.val}"><span>${left}</span><span class="translucent">${right}</span></div>`;
-        });
-        return html;
+        }); return html;
     };
-
-    // Editor Select
     document.getElementById('customKeySigOptions').innerHTML = buildOptions(false);
     updateCustomSelectUI('customKeySig', document.getElementById('keySig').value, false);
-
-    // Filter Select
     document.getElementById('customFilterKeyOptions').innerHTML = buildOptions(true);
     updateCustomSelectUI('customFilterKeySig', document.getElementById('filterKeySig').value, true);
   }
 
   function setupCustomSelect(wrapperId, inputId, isFilter) {
-      const wrapper = document.getElementById(wrapperId);
-      const selected = wrapper.querySelector('.select-selected');
-      const options = wrapper.querySelector('.select-items');
-      const hiddenInput = document.getElementById(inputId);
-
-      selected.addEventListener('click', function(e) {
-          e.stopPropagation(); wrapper.classList.toggle('active');
-      });
-
+      const wrapper = document.getElementById(wrapperId); const selected = wrapper.querySelector('.select-selected');
+      const options = wrapper.querySelector('.select-items'); const hiddenInput = document.getElementById(inputId);
+      selected.addEventListener('click', function(e) { e.stopPropagation(); wrapper.classList.toggle('active'); });
       options.addEventListener('click', function(e) {
           const item = e.target.closest('div');
           if (item && item.hasAttribute('data-val')) {
-              const val = item.getAttribute('data-val');
-              hiddenInput.value = val;
-              updateCustomSelectUI(wrapperId, val, isFilter);
+              const val = item.getAttribute('data-val'); hiddenInput.value = val; updateCustomSelectUI(wrapperId, val, isFilter);
               wrapper.classList.remove('active');
-              
-              if (isFilter) { libraryState.filterKey = val; renderLibrary(); } 
-              else if (currentScore) { currentScore.keySig = val; renderScore(); }
+              if (isFilter) { libraryState.filterKey = val; renderLibrary(); } else if (currentScore) { currentScore.keySig = val; renderScore(); }
           }
       });
   }
 
   function updateCustomSelectUI(wrapperId, val, isFilter) {
-      const wrapper = document.getElementById(wrapperId);
-      const selected = wrapper.querySelector('.select-selected');
+      const wrapper = document.getElementById(wrapperId); const selected = wrapper.querySelector('.select-selected');
       const option = wrapper.querySelector(`.select-items div[data-val="${val}"]`);
       if (option) { selected.innerHTML = option.innerHTML; document.getElementById(wrapperId === 'customKeySig' ? 'keySig' : 'filterKeySig').value = val; }
   }
 
-  setupCustomSelect('customKeySig', 'keySig', false);
-  setupCustomSelect('customFilterKeySig', 'filterKeySig', true);
+  setupCustomSelect('customKeySig', 'keySig', false); setupCustomSelect('customFilterKeySig', 'filterKeySig', true);
+  document.addEventListener('click', function() { document.querySelectorAll('.custom-select').forEach(el => el.classList.remove('active')); });
 
   /* -----------------------------------------------------------------------
      Animación de Fondo (Inicio)
@@ -168,15 +150,22 @@
   createFloatingNotes();
 
   /* -----------------------------------------------------------------------
-     Constantes e Identificadores
+     Constantes e Identificadores (PDF y VexFlow - MATEMÁTICAS EXACTAS)
      ----------------------------------------------------------------------- */
   const STORAGE_KEY = "ebony_ivory:scores";
   const DURATION_QUARTERS = { w: 4, h: 2, q: 1, "8": 0.5, "16": 0.25, "32": 0.125 };
   
   const MEASURES_PER_LINE = 4;
   const LINES_PER_PAGE = 5;
-  const FIRST_OF_LINE_WIDTH = 250; const REST_OF_LINE_WIDTH = 210;
-  const STAVE_GAP = 92; const LINE_GAP = 180; const TOP_MARGIN = 20; const LEFT_MARGIN = 10;
+  
+  // Ecuación para que el SVG no se recorte: Ancho total = 1000
+  const TOTAL_WIDTH = 1000;
+  const LEFT_MARGIN = 40; 
+  const RIGHT_MARGIN = 40;
+  const FIRST_OF_LINE_WIDTH = 280; 
+  const REST_OF_LINE_WIDTH = (TOTAL_WIDTH - LEFT_MARGIN - RIGHT_MARGIN - FIRST_OF_LINE_WIDTH) / (MEASURES_PER_LINE - 1); 
+  
+  const STAVE_GAP = 92; const LINE_GAP = 180; const TOP_MARGIN = 20;
 
   let currentScore = null;     
   let editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
@@ -184,7 +173,7 @@
   let libraryState = { query: "", sortBy: "numAsc", filterTime: "all", filterKey: "all", filterHands: "all" };
 
   /* -----------------------------------------------------------------------
-     Utilidades
+     Modelo de Datos y Reordenación Automática
      ----------------------------------------------------------------------- */
   function uid() { return "s_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
   function nextPlateNumber() { const all = loadAll(); const scores = Object.values(all); if (scores.length === 0) return 1; return Math.max(...scores.map(s => s.plate || 0)) + 1; }
@@ -193,15 +182,24 @@
   function formatDate(ts) { try { return new Date(ts).toLocaleDateString(currentLang === 'es' ? "es-ES" : "en-US", { day: "2-digit", month: "short", year: "numeric" }); } catch (e) { return ""; } }
   function downloadBlob(filename, text, type) { const blob = new Blob([text], { type: type || "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 2000); }
 
-  /* -----------------------------------------------------------------------
-     Modelo de datos
-     ----------------------------------------------------------------------- */
   function newMeasure() { return { treble: [], bass: [], repeatStart: false, repeatEnd: false, directive: "" }; }
   function newScore() { return { id: uid(), plate: nextPlateNumber(), title: "", composer: "", timeSig: "4/4", keySig: "C", tempoText: "", measures: [newMeasure()], createdAt: Date.now(), updatedAt: Date.now() }; }
   function loadAll() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch (e) { return {}; } }
   function saveAll(map) { localStorage.setItem(STORAGE_KEY, JSON.stringify(map)); }
   function persistScore(score) { score.updatedAt = Date.now(); const all = loadAll(); all[score.id] = score; saveAll(all); showSaveIndicator(); }
-  function deleteScoreById(id) { const all = loadAll(); delete all[id]; saveAll(all); }
+  
+  // Eliminación con REORDENACIÓN AUTOMÁTICA
+  function deleteScoreById(id) { 
+    const all = loadAll(); 
+    delete all[id]; 
+    const scores = Object.values(all).sort((a, b) => a.plate - b.plate);
+    const newAll = {};
+    scores.forEach((s, index) => {
+        s.plate = index + 1;
+        newAll[s.id] = s;
+    });
+    saveAll(newAll); 
+  }
 
   function showSaveIndicator() {
       const ind = document.getElementById('saveIndicator'); if(!ind) return;
@@ -211,70 +209,46 @@
   /* -----------------------------------------------------------------------
      Navegación
      ----------------------------------------------------------------------- */
-  const viewHome = document.getElementById("viewHome");
-  const viewLibrary = document.getElementById("viewLibrary");
-  const viewEditor = document.getElementById("viewEditor");
-  const libraryActions = document.getElementById("libraryActions");
-  const editorActions = document.getElementById("editorActions");
+  const viewHome = document.getElementById("viewHome"); const viewLibrary = document.getElementById("viewLibrary"); const viewEditor = document.getElementById("viewEditor");
+  const libraryActions = document.getElementById("libraryActions"); const editorActions = document.getElementById("editorActions");
 
   function handleNavigation() {
-    const hash = window.location.hash;
-    document.body.classList.remove('is-home', 'is-viewer');
-
+    const hash = window.location.hash; document.body.classList.remove('is-home', 'is-viewer');
     if (hash.startsWith("#editor/")) {
         const scoreId = hash.split("/")[1]; const allScores = loadAll();
         if (allScores[scoreId]) { showEditorUI(allScores[scoreId], false); } else { window.location.hash = "#catalogo"; }
     } else if (hash.startsWith("#viewer/")) {
         const scoreId = hash.split("/")[1]; const allScores = loadAll();
         if (allScores[scoreId]) { showEditorUI(allScores[scoreId], true); } else { window.location.hash = "#catalogo"; }
-    } else if (hash === "#catalogo") { showLibraryUI(); } 
-    else { showHomeUI(); }
+    } else if (hash === "#catalogo") { showLibraryUI(); } else { showHomeUI(); }
   }
 
   function showHomeUI() {
-    currentScore = null;
-    viewHome.hidden = false; viewLibrary.hidden = true; viewEditor.hidden = true;
-    libraryActions.hidden = true; editorActions.hidden = true;
-    document.body.classList.add('is-home'); document.title = "Ebony & Ivory"; window.scrollTo(0,0);
+    currentScore = null; viewHome.hidden = false; viewLibrary.hidden = true; viewEditor.hidden = true;
+    libraryActions.hidden = true; editorActions.hidden = true; document.body.classList.add('is-home'); document.title = "Ebony & Ivory"; window.scrollTo(0,0);
   }
 
   function showLibraryUI() {
-    currentScore = null;
-    viewHome.hidden = true; viewLibrary.hidden = false; viewEditor.hidden = true;
-    libraryActions.hidden = false; editorActions.hidden = true;
-    document.title = t('catalogTitle') + " — Ebony & Ivory"; renderLibrary(); window.scrollTo(0,0);
+    currentScore = null; viewHome.hidden = true; viewLibrary.hidden = false; viewEditor.hidden = true;
+    libraryActions.hidden = false; editorActions.hidden = true; document.body.classList.remove('is-home'); document.title = t('catalogTitle') + " — Ebony & Ivory"; renderLibrary(); window.scrollTo(0,0);
   }
 
   function showEditorUI(score, isViewer) {
     currentScore = score; editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
-    viewHome.hidden = true; viewLibrary.hidden = true; viewEditor.hidden = false;
-    libraryActions.hidden = true; editorActions.hidden = false;
-    if (isViewer) document.body.classList.add('is-viewer');
-    document.title = (score.title || t('untitled')) + " — Ebony & Ivory";
-    fillEditorFields(); renderScore(); window.scrollTo(0,0);
+    viewHome.hidden = true; viewLibrary.hidden = true; viewEditor.hidden = false; libraryActions.hidden = true; editorActions.hidden = false;
+    if (isViewer) document.body.classList.add('is-viewer'); document.title = (score.title || t('untitled')) + " — Ebony & Ivory"; fillEditorFields(); renderScore(); window.scrollTo(0,0);
   }
 
   window.addEventListener("hashchange", handleNavigation);
-
-  // Toggle Viewer/Editor inside the view
-  document.getElementById("btnToggleViewer").addEventListener("click", () => {
-      const isViewer = document.body.classList.contains('is-viewer');
-      window.location.hash = (isViewer ? "#editor/" : "#viewer/") + currentScore.id;
-  });
-
-  document.addEventListener('click', function() { document.querySelectorAll('.custom-select').forEach(el => el.classList.remove('active')); });
+  document.getElementById("btnToggleViewer").addEventListener("click", () => { const isViewer = document.body.classList.contains('is-viewer'); window.location.hash = (isViewer ? "#editor/" : "#viewer/") + currentScore.id; });
 
   /* -----------------------------------------------------------------------
      Catálogo
      ----------------------------------------------------------------------- */
-  const libraryGrid = document.getElementById("libraryGrid");
-  const libraryEmpty = document.getElementById("libraryEmpty");
-  const elSearch = document.getElementById("searchScores");
-  const elSort = document.getElementById("sortScores");
-  const elBtnFilters = document.getElementById("btnToggleFilters");
-  const elFiltersPanel = document.getElementById("catalogFilters");
-  const elFilterTime = document.getElementById("filterTimeSig");
-  const elFilterHands = document.getElementById("filterHands");
+  const libraryGrid = document.getElementById("libraryGrid"); const libraryEmpty = document.getElementById("libraryEmpty");
+  const elSearch = document.getElementById("searchScores"); const elSort = document.getElementById("sortScores");
+  const elBtnFilters = document.getElementById("btnToggleFilters"); const elFiltersPanel = document.getElementById("catalogFilters");
+  const elFilterTime = document.getElementById("filterTimeSig"); const elFilterHands = document.getElementById("filterHands");
 
   elSearch.addEventListener("input", (e) => { libraryState.query = e.target.value.toLowerCase(); renderLibrary(); });
   elSort.addEventListener("change", (e) => { libraryState.sortBy = e.target.value; renderLibrary(); });
@@ -336,16 +310,14 @@
      Campos del editor
      ----------------------------------------------------------------------- */
   const elTitle = document.getElementById("scoreTitle"); const elComposer = document.getElementById("scoreComposer");
-  const elTimeSig = document.getElementById("timeSig");
-  const elTempoText = document.getElementById("tempoText"); const elActiveMeasureLabel = document.getElementById("activeMeasureLabel");
+  const elTimeSig = document.getElementById("timeSig"); const elTempoText = document.getElementById("tempoText"); 
+  const elActiveMeasureLabel = document.getElementById("activeMeasureLabel");
   const elRepeatStart = document.getElementById("repeatStart"); const elRepeatEnd = document.getElementById("repeatEnd");
   const elDirective = document.getElementById("directiveSelect");
 
   function fillEditorFields() { 
-    elTitle.value = currentScore.title || ""; elComposer.value = currentScore.composer || ""; 
-    elTimeSig.value = currentScore.timeSig || "4/4"; 
-    updateCustomSelectUI('customKeySig', currentScore.keySig || "C", false);
-    elTempoText.value = currentScore.tempoText || ""; syncMeasureControls(); 
+    elTitle.value = currentScore.title || ""; elComposer.value = currentScore.composer || ""; elTimeSig.value = currentScore.timeSig || "4/4"; 
+    updateCustomSelectUI('customKeySig', currentScore.keySig || "C", false); elTempoText.value = currentScore.tempoText || ""; syncMeasureControls(); 
   }
 
   [elTitle, elComposer].forEach((el) => el.addEventListener("input", () => { currentScore[el === elTitle ? "title" : "composer"] = el.value; renderScore(); }));
@@ -425,13 +397,11 @@
       
       const totalLines = Math.ceil(measures.length / MEASURES_PER_LINE);
       const totalPages = Math.ceil(totalLines / LINES_PER_PAGE) || 1;
-      const totalWidth = LEFT_MARGIN * 2 + FIRST_OF_LINE_WIDTH + (REST_OF_LINE_WIDTH * (MEASURES_PER_LINE - 1));
       
-      const svgIcon = `<svg class="print-logo-isotipo" viewBox="0 0 100 100"><rect x="10" y="20" width="80" height="60" rx="8" fill="currentColor"/><rect x="25" y="20" width="12" height="35" fill="var(--paper)"/><rect x="44" y="20" width="12" height="35" fill="var(--paper)"/><rect x="63" y="20" width="12" height="35" fill="var(--paper)"/></svg>`;
-
       for (let p = 0; p < totalPages; p++) {
           const pageDiv = document.createElement('div'); pageDiv.className = 'paper-page';
           
+          // Encabezado de impresión
           const printHeader = document.createElement('div'); printHeader.className = 'print-header-content';
           printHeader.innerHTML = `<span>${escapeHtml(currentScore.title)} — ${escapeHtml(currentScore.composer)}</span> <span>${plateLabel(currentScore.plate)}</span>`;
           pageDiv.appendChild(printHeader);
@@ -443,8 +413,9 @@
               pageDiv.appendChild(head); startY += 100;
           }
 
+          // Pie de impresión con formato 1 / 1
           const printFooter = document.createElement('div'); printFooter.className = 'print-footer-content';
-          printFooter.innerHTML = `<span>${svgIcon}</span> <span>Pág ${p + 1} de ${totalPages}</span>`;
+          printFooter.innerHTML = `<span><img src="assets/isotipo.png" class="print-logo-isotipo"></span> <span>${p + 1} / ${totalPages}</span>`;
           pageDiv.appendChild(printFooter);
 
           const svgWrap = document.createElement('div'); pageDiv.appendChild(svgWrap); vexPagesContainer.appendChild(pageDiv);
@@ -452,7 +423,7 @@
           const linesOnThisPage = Math.min(LINES_PER_PAGE, totalLines - (p * LINES_PER_PAGE));
           const pageHeight = startY + (linesOnThisPage * LINE_GAP) + 20;
 
-          const renderer = new VF.Renderer(svgWrap, VF.Renderer.Backends.SVG); renderer.resize(totalWidth, pageHeight);
+          const renderer = new VF.Renderer(svgWrap, VF.Renderer.Backends.SVG); renderer.resize(TOTAL_WIDTH, pageHeight);
           const ctx = renderer.getContext(); const hitRects = [];
 
           for (let l = 0; l < linesOnThisPage; l++) {
@@ -512,7 +483,7 @@
 
           const svg = svgWrap.querySelector("svg");
           if (svg) {
-            svg.setAttribute("viewBox", `0 0 ${totalWidth} ${pageHeight}`); svg.removeAttribute("width"); svg.removeAttribute("height");
+            svg.setAttribute("viewBox", `0 0 ${TOTAL_WIDTH} ${pageHeight}`); svg.removeAttribute("width"); svg.removeAttribute("height");
             const ns = "http://www.w3.org/2000/svg";
             hitRects.forEach((hr) => {
               const g = document.createElementNS(ns, "g"); g.setAttribute("class", "measure-hit" + (hr.idx === editorState.activeMeasure ? " active" : ""));
@@ -556,6 +527,8 @@
         const data = JSON.parse(reader.result); if (!data.measures) throw new Error("Format error");
         data.id = uid(); data.plate = nextPlateNumber(); data.updatedAt = Date.now();
         persistScore(data); 
+        
+        // FORZAR ACTUALIZACIÓN TRAS IMPORTAR
         if (window.location.hash === "#catalogo") { renderLibrary(); } else { window.location.hash = "#catalogo"; }
       } catch (err) { alert("Error: " + err.message); } e.target.value = ""; 
     }; reader.readAsText(file);
@@ -570,7 +543,7 @@
      ----------------------------------------------------------------------- */
   const userLang = navigator.language || navigator.userLanguage;
   const defaultLang = (userLang && userLang.toLowerCase().startsWith('es')) ? 'es' : 'en';
-  renderCustomSelects(); // Inicializar opciones primero
+  renderCustomSelects(); 
   setLang(defaultLang);
   
   if(!window.location.hash || window.location.hash === "#" || window.location.hash === "") { window.location.hash = "#inicio"; } 
