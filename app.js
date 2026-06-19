@@ -11,7 +11,7 @@
     es: {
       importBtn: "Importar .json", newScoreBtn: "+ Nueva partitura", backBtn: "← Volver al Catálogo",
       exportJsonBtn: "Descargar .json", exportPdfBtn: "Exportar PDF", savedIndicator: "Guardado ✓",
-      heroTitle: "El arte de preservar la música.",
+      heroTitle: "El arte de preservar la música",
       heroSub: "Un lienzo digital estandarizado para transcribir, clasificar y eternizar tus partituras con una elegancia inigualable.",
       goToCatalog: "Abrir mi Catálogo", catalogTitle: "Catálogo de Partituras",
       searchPlaceholder: "Buscar por título, autor o E&I...", filterBtn: "Filtros ⧨",
@@ -28,7 +28,6 @@
       lblDotted: "Con puntillo", lblDynamics: "Dinámica", btnAddNote: "Añadir al compás", btnUndoNote: "Deshacer última nota",
       lblMeasureDetails: "Compás · Detalles", lblRepStart: "Inicio repetición ‖:", lblRepEnd: "Fin repetición :‖</",
       lblDirective: "Indicación (Fine, D.C.)", lblTempo: "Texto libre / Tempo",
-      paperHint: "Pulsa un compás en la partitura para hacerlo el compás activo.",
       footerText: "Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales.",
       untitled: "Sin título", unknownAuthor: "Autor desconocido", measuresTxt: "compases",
       editBtn: "✎ Editar", copyBtn: "⎘ Copiar", deleteBtn: "🗑️ Borrar",
@@ -38,7 +37,7 @@
     en: {
       importBtn: "Import .json", newScoreBtn: "+ New Score", backBtn: "← Back to Catalog",
       exportJsonBtn: "Download .json", exportPdfBtn: "Export PDF", savedIndicator: "Saved ✓",
-      heroTitle: "The art of preserving music.",
+      heroTitle: "The art of preserving music",
       heroSub: "A standardized digital canvas to transcribe, classify, and immortalize your sheet music with unmatched elegance.",
       goToCatalog: "Open my Catalog", catalogTitle: "Sheet Music Catalog",
       searchPlaceholder: "Search by title, author or E&I...", filterBtn: "Filters ⧨",
@@ -55,7 +54,6 @@
       lblDotted: "Dotted", lblDynamics: "Dynamics", btnAddNote: "Add to measure", btnUndoNote: "Undo last note",
       lblMeasureDetails: "Measure · Details", lblRepStart: "Start repeat ‖:", lblRepEnd: "End repeat :‖</",
       lblDirective: "Directive (Fine, D.C.)", lblTempo: "Free text / Tempo",
-      paperHint: "Click a measure on the sheet to make it active.",
       footerText: "Ebony & Ivory is a personal tool for transcribing and archiving sheet music. Rewritten works still belong to their original authors.",
       untitled: "Untitled", unknownAuthor: "Unknown author", measuresTxt: "measures",
       editBtn: "✎ Edit", copyBtn: "⎘ Copy", deleteBtn: "🗑️ Delete",
@@ -81,7 +79,7 @@
     });
     
     if (document.getElementById("viewLibrary") && !document.getElementById("viewLibrary").hidden) renderLibrary();
-    if (document.getElementById("viewEditor") && !document.getElementById("viewEditor").hidden) renderLetterhead();
+    if (document.getElementById("viewEditor") && !document.getElementById("viewEditor").hidden) renderScore();
   };
 
   function t(key) { return translations[currentLang][key] || key; }
@@ -94,8 +92,7 @@
     const symbols = ['♪', '♫', '♬', '♭', '♮', '♯', '𝄞', '𝄢'];
     for(let i=0; i<15; i++) {
         let note = document.createElement('div');
-        note.className = 'note-anim';
-        note.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+        note.className = 'note-anim'; note.innerText = symbols[Math.floor(Math.random() * symbols.length)];
         note.style.left = Math.random() * 100 + 'vw';
         note.style.animationDuration = (Math.random() * 10 + 10) + 's';
         note.style.animationDelay = (Math.random() * 5) + 's';
@@ -106,23 +103,56 @@
   createFloatingNotes();
 
   /* -----------------------------------------------------------------------
-     Constantes e Identificadores
+     Custom Dropdown Tonalidad (Notación US / EU)
+     ----------------------------------------------------------------------- */
+  const customKeySig = document.getElementById('customKeySig');
+  const customKeySigSelected = document.getElementById('customKeySigSelected');
+  const customKeySigOptions = document.getElementById('customKeySigOptions');
+  const hiddenKeySigInput = document.getElementById('keySig');
+
+  customKeySigSelected.addEventListener('click', function(e) {
+      e.stopPropagation();
+      customKeySig.classList.toggle('active');
+  });
+
+  customKeySigOptions.addEventListener('click', function(e) {
+      const item = e.target.closest('div');
+      if (item && item.hasAttribute('data-val')) {
+          const val = item.getAttribute('data-val');
+          hiddenKeySigInput.value = val;
+          customKeySigSelected.innerHTML = item.innerHTML;
+          customKeySig.classList.remove('active');
+          if (currentScore) { currentScore.keySig = val; renderScore(); }
+      }
+  });
+
+  document.addEventListener('click', function() { customKeySig.classList.remove('active'); });
+
+  function updateCustomSelectUI(val) {
+      const option = customKeySigOptions.querySelector(`div[data-val="${val}"]`);
+      if (option) { customKeySigSelected.innerHTML = option.innerHTML; hiddenKeySigInput.value = val; }
+  }
+
+  /* -----------------------------------------------------------------------
+     Constantes e Identificadores (PDF y VexFlow)
      ----------------------------------------------------------------------- */
   const STORAGE_KEY = "ebony_ivory:scores";
   const DURATION_QUARTERS = { w: 4, h: 2, q: 1, "8": 0.5, "16": 0.25, "32": 0.125 };
-  const MEASURES_PER_LINE = 2;
-  const FIRST_OF_LINE_WIDTH = 300;
-  const REST_OF_LINE_WIDTH = 230;
+  
+  // PARÁMETROS NUEVOS DE DISTRIBUCIÓN
+  const MEASURES_PER_LINE = 4; // Cambiado a 4 según tu petición
+  const LINES_PER_PAGE = 5;    // Líneas por hoja A4
+  
+  const FIRST_OF_LINE_WIDTH = 250; 
+  const REST_OF_LINE_WIDTH = 210;
   const STAVE_GAP = 92;     
-  const LINE_GAP = 215;     
-  const TOP_MARGIN = 40;
-  const LEFT_MARGIN = 20;
+  const LINE_GAP = 180;     
+  const TOP_MARGIN = 20;
+  const LEFT_MARGIN = 10;
 
   let currentScore = null;     
   let editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
   let saveTimeout = null;
-  
-  // Estado inicial del Catálogo (Orden E&I asc por defecto)
   let libraryState = { query: "", sortBy: "numAsc", filterTime: "all", filterKey: "all", filterHands: "all" };
 
   /* -----------------------------------------------------------------------
@@ -212,8 +242,6 @@
      ----------------------------------------------------------------------- */
   const libraryGrid = document.getElementById("libraryGrid");
   const libraryEmpty = document.getElementById("libraryEmpty");
-  
-  // UI Elementos
   const elSearch = document.getElementById("searchScores");
   const elSort = document.getElementById("sortScores");
   const elBtnFilters = document.getElementById("btnToggleFilters");
@@ -224,115 +252,70 @@
 
   elSearch.addEventListener("input", (e) => { libraryState.query = e.target.value.toLowerCase(); renderLibrary(); });
   elSort.addEventListener("change", (e) => { libraryState.sortBy = e.target.value; renderLibrary(); });
-  
   elBtnFilters.addEventListener("click", () => { elFiltersPanel.hidden = !elFiltersPanel.hidden; });
   elFilterTime.addEventListener("change", (e) => { libraryState.filterTime = e.target.value; renderLibrary(); });
   elFilterKey.addEventListener("change", (e) => { libraryState.filterKey = e.target.value; renderLibrary(); });
   elFilterHands.addEventListener("change", (e) => { libraryState.filterHands = e.target.value; renderLibrary(); });
 
   function renderLibrary() {
-    const all = loadAll();
-    let scores = Object.values(all);
-
-    // 1. Filtrado de Texto
-    if (libraryState.query) {
-        scores = scores.filter(s => 
-            (s.title || "").toLowerCase().includes(libraryState.query) ||
-            (s.composer || "").toLowerCase().includes(libraryState.query) ||
-            plateLabel(s.plate).toLowerCase().includes(libraryState.query)
-        );
-    }
-    
-    // 2. Filtrado por Atributos Musicales
+    const all = loadAll(); let scores = Object.values(all);
+    if (libraryState.query) { scores = scores.filter(s => (s.title || "").toLowerCase().includes(libraryState.query) || (s.composer || "").toLowerCase().includes(libraryState.query) || plateLabel(s.plate).toLowerCase().includes(libraryState.query)); }
     scores = scores.filter(s => {
         let match = true;
         if (libraryState.filterTime !== "all" && s.timeSig !== libraryState.filterTime) match = false;
         if (libraryState.filterKey !== "all" && s.keySig !== libraryState.filterKey) match = false;
-        
         if (libraryState.filterHands !== "all") {
-            let hasTreble = s.measures.some(m => m.treble && m.treble.length > 0);
-            let hasBass = s.measures.some(m => m.bass && m.bass.length > 0);
-            
+            let hasTreble = s.measures.some(m => m.treble && m.treble.length > 0); let hasBass = s.measures.some(m => m.bass && m.bass.length > 0);
             if (libraryState.filterHands === "both" && (!hasTreble || !hasBass)) match = false;
             if (libraryState.filterHands === "treble" && hasBass) match = false;
             if (libraryState.filterHands === "bass" && hasTreble) match = false;
-        }
-        return match;
+        } return match;
     });
 
-    // 3. Ordenación
     scores.sort((a, b) => {
-        if (libraryState.sortBy === "numAsc") return a.plate - b.plate;
-        if (libraryState.sortBy === "numDesc") return b.plate - a.plate;
-        if (libraryState.sortBy === "dateDesc") return b.updatedAt - a.updatedAt;
-        if (libraryState.sortBy === "dateAsc") return a.updatedAt - b.updatedAt;
-        if (libraryState.sortBy === "titleAsc") return (a.title || "").localeCompare(b.title || "");
-        if (libraryState.sortBy === "authorAsc") return (a.composer || "").localeCompare(b.composer || "");
-        return 0;
+        if (libraryState.sortBy === "numAsc") return a.plate - b.plate; if (libraryState.sortBy === "numDesc") return b.plate - a.plate;
+        if (libraryState.sortBy === "dateDesc") return b.updatedAt - a.updatedAt; if (libraryState.sortBy === "dateAsc") return a.updatedAt - b.updatedAt;
+        if (libraryState.sortBy === "titleAsc") return (a.title || "").localeCompare(b.title || ""); if (libraryState.sortBy === "authorAsc") return (a.composer || "").localeCompare(b.composer || ""); return 0;
     });
 
     libraryGrid.innerHTML = "";
-    
-    if (scores.length === 0) {
-        libraryEmpty.hidden = false; libraryGrid.hidden = true;
-    } else {
+    if (scores.length === 0) { libraryEmpty.hidden = false; libraryGrid.hidden = true; } else {
         libraryEmpty.hidden = true; libraryGrid.hidden = false;
-        
         scores.forEach((score) => {
-          const card = document.createElement("div");
-          card.className = "score-card";
-          
-          card.innerHTML = `
-            <span class="card-eyebrow">${plateLabel(score.plate)} · ${score.timeSig}</span>
-            <h3>${escapeHtml(score.title || t('untitled'))}</h3>
-            <p class="composer">${escapeHtml(score.composer || t('unknownAuthor'))}</p>
-            <div class="meta"><span>${score.measures.length} ${t('measuresTxt')}</span><span>${formatDate(score.updatedAt)}</span></div>
-            
-            <div class="card-actions-row">
-              <button class="btn-card" data-action="edit">${t('editBtn')}</button>
-              <button class="btn-card" data-action="duplicate">${t('copyBtn')}</button>
-              <button class="btn-card btn-danger-card" data-action="delete">${t('deleteBtn')}</button>
-            </div>
-          `;
-          
+          const card = document.createElement("div"); card.className = "score-card";
+          card.innerHTML = `<span class="card-eyebrow">${plateLabel(score.plate)} · ${score.timeSig}</span><h3>${escapeHtml(score.title || t('untitled'))}</h3><p class="composer">${escapeHtml(score.composer || t('unknownAuthor'))}</p><div class="meta"><span>${score.measures.length} ${t('measuresTxt')}</span><span>${formatDate(score.updatedAt)}</span></div><div class="card-actions-row"><button class="btn-card" data-action="edit">${t('editBtn')}</button><button class="btn-card" data-action="duplicate">${t('copyBtn')}</button><button class="btn-card btn-danger-card" data-action="delete">${t('deleteBtn')}</button></div>`;
           card.addEventListener("click", (e) => {
             const action = e.target.closest("[data-action]");
             if (action) {
               e.stopPropagation();
-              if (action.dataset.action === "delete") {
-                if (confirm(t('delConfirm'))) { deleteScoreById(score.id); renderLibrary(); }
-              } else if (action.dataset.action === "duplicate") {
-                const copy = JSON.parse(JSON.stringify(score));
-                copy.id = uid(); copy.plate = nextPlateNumber();
-                copy.title = (score.title || t('untitled')) + " " + t('copySuffix');
-                copy.createdAt = copy.updatedAt = Date.now();
-                persistScore(copy); renderLibrary();
-              } else if (action.dataset.action === "edit") { window.location.hash = "#editor/" + score.id; }
+              if (action.dataset.action === "delete") { if (confirm(t('delConfirm'))) { deleteScoreById(score.id); renderLibrary(); } } 
+              else if (action.dataset.action === "duplicate") { const copy = JSON.parse(JSON.stringify(score)); copy.id = uid(); copy.plate = nextPlateNumber(); copy.title = (score.title || t('untitled')) + " " + t('copySuffix'); copy.createdAt = copy.updatedAt = Date.now(); persistScore(copy); renderLibrary(); } 
+              else if (action.dataset.action === "edit") { window.location.hash = "#editor/" + score.id; }
               return;
-            }
-            window.location.hash = "#editor/" + score.id;
-          });
-          libraryGrid.appendChild(card);
+            } window.location.hash = "#editor/" + score.id;
+          }); libraryGrid.appendChild(card);
         });
     }
   }
-
-  function escapeHtml(str) { const d = document.createElement("div"); d.textContent = str; return d.innerHTML; }
 
   /* -----------------------------------------------------------------------
      Campos del editor
      ----------------------------------------------------------------------- */
   const elTitle = document.getElementById("scoreTitle"); const elComposer = document.getElementById("scoreComposer");
-  const elTimeSig = document.getElementById("timeSig"); const elKeySig = document.getElementById("keySig");
+  const elTimeSig = document.getElementById("timeSig");
   const elTempoText = document.getElementById("tempoText"); const elActiveMeasureLabel = document.getElementById("activeMeasureLabel");
   const elRepeatStart = document.getElementById("repeatStart"); const elRepeatEnd = document.getElementById("repeatEnd");
   const elDirective = document.getElementById("directiveSelect");
 
-  function fillEditorFields() { elTitle.value = currentScore.title || ""; elComposer.value = currentScore.composer || ""; elTimeSig.value = currentScore.timeSig || "4/4"; elKeySig.value = currentScore.keySig || "C"; elTempoText.value = currentScore.tempoText || ""; syncMeasureControls(); }
+  function fillEditorFields() { 
+    elTitle.value = currentScore.title || ""; elComposer.value = currentScore.composer || ""; 
+    elTimeSig.value = currentScore.timeSig || "4/4"; 
+    updateCustomSelectUI(currentScore.keySig || "C");
+    elTempoText.value = currentScore.tempoText || ""; syncMeasureControls(); 
+  }
 
-  [elTitle, elComposer].forEach((el) => el.addEventListener("input", () => { currentScore[el === elTitle ? "title" : "composer"] = el.value; renderLetterhead(); persistScore(currentScore); }));
+  [elTitle, elComposer].forEach((el) => el.addEventListener("input", () => { currentScore[el === elTitle ? "title" : "composer"] = el.value; renderScore(); }));
   elTimeSig.addEventListener("change", () => { currentScore.timeSig = elTimeSig.value; renderScore(); });
-  elKeySig.addEventListener("change", () => { currentScore.keySig = elKeySig.value; renderScore(); });
   elTempoText.addEventListener("input", () => { currentScore.tempoText = elTempoText.value; renderScore(); });
 
   function clampActiveMeasure() { editorState.activeMeasure = Math.max(0, Math.min(editorState.activeMeasure, currentScore.measures.length - 1)); }
@@ -348,21 +331,14 @@
   document.getElementById("btnDeleteMeasure").addEventListener("click", () => {
     if (currentScore.measures.length <= 1) { alert(t('minMeasureAlert')); return; }
     if (!confirm(t('delMeasureConfirm'))) return;
-    currentScore.measures.splice(editorState.activeMeasure, 1);
-    clampActiveMeasure(); syncMeasureControls(); renderScore();
+    currentScore.measures.splice(editorState.activeMeasure, 1); clampActiveMeasure(); syncMeasureControls(); renderScore();
   });
   elRepeatStart.addEventListener("change", () => { currentScore.measures[editorState.activeMeasure].repeatStart = elRepeatStart.checked; renderScore(); });
   elRepeatEnd.addEventListener("change", () => { currentScore.measures[editorState.activeMeasure].repeatEnd = elRepeatEnd.checked; renderScore(); });
   elDirective.addEventListener("change", () => { currentScore.measures[editorState.activeMeasure].directive = elDirective.value; renderScore(); });
 
-  /* Entrada de Notas */
   const btnStaffTreble = document.getElementById("btnStaffTreble"); const btnStaffBass = document.getElementById("btnStaffBass");
-  [btnStaffTreble, btnStaffBass].forEach((btn) => btn.addEventListener("click", () => {
-      editorState.activeStaff = btn.dataset.staff;
-      btnStaffTreble.classList.toggle("is-active", editorState.activeStaff === "treble");
-      btnStaffBass.classList.toggle("is-active", editorState.activeStaff === "bass");
-  }));
-
+  [btnStaffTreble, btnStaffBass].forEach((btn) => btn.addEventListener("click", () => { editorState.activeStaff = btn.dataset.staff; btnStaffTreble.classList.toggle("is-active", editorState.activeStaff === "treble"); btnStaffBass.classList.toggle("is-active", editorState.activeStaff === "bass"); }));
   const elIsRest = document.getElementById("isRest"); const elPitchFields = document.getElementById("pitchFields");
   const elPitchLetter = document.getElementById("pitchLetter"); const elPitchAccidental = document.getElementById("pitchAccidental");
   const elPitchOctave = document.getElementById("pitchOctave"); const elIsDotted = document.getElementById("isDotted");
@@ -372,46 +348,32 @@
   durationGrid.addEventListener("click", (e) => { const btn = e.target.closest(".dur-btn"); if (!btn) return; editorState.duration = btn.dataset.dur; durationGrid.querySelectorAll(".dur-btn").forEach((b) => b.classList.toggle("is-active", b === btn)); });
 
   document.getElementById("btnAddNote").addEventListener("click", () => {
-    const measure = currentScore.measures[editorState.activeMeasure];
-    measure[editorState.activeStaff].push({
-      rest: elIsRest.checked, letter: elPitchLetter.value, accidental: elPitchAccidental.value,
-      octave: parseInt(elPitchOctave.value, 10), duration: editorState.duration,
-      dotted: elIsDotted.checked, dynamic: elDynamicSelect.value,
-    });
-    elDynamicSelect.value = ""; renderScore();
+    currentScore.measures[editorState.activeMeasure][editorState.activeStaff].push({
+      rest: elIsRest.checked, letter: elPitchLetter.value, accidental: elPitchAccidental.value, octave: parseInt(elPitchOctave.value, 10), duration: editorState.duration, dotted: elIsDotted.checked, dynamic: elDynamicSelect.value,
+    }); elDynamicSelect.value = ""; renderScore();
   });
-
   document.getElementById("btnUndoNote").addEventListener("click", () => {
-    const measure = currentScore.measures[editorState.activeMeasure];
-    if (measure[editorState.activeStaff].length > 0) { measure[editorState.activeStaff].pop(); renderScore(); }
+    if (currentScore.measures[editorState.activeMeasure][editorState.activeStaff].length > 0) { currentScore.measures[editorState.activeMeasure][editorState.activeStaff].pop(); renderScore(); }
   });
 
   /* -----------------------------------------------------------------------
-     VexFlow Render
+     VexFlow Render Paginado (Para impresión perfecta en PDF)
      ----------------------------------------------------------------------- */
-  const vexContainer = document.getElementById("vexContainer");
-  const plateMarkEl = document.getElementById("plateMark");
+  const vexPagesContainer = document.getElementById("vexPagesContainer");
 
   function noteToVexKey(n) { let acc = n.accidental === "#" || n.accidental === "b" ? n.accidental : ""; return n.letter.toLowerCase() + acc + "/" + n.octave; }
 
   function buildVexNotes(staffNotes, clef) {
-    const VF = Vex.Flow;
-    const restKey = clef === "bass" ? "d/3" : "b/4";
-    const out = [];
+    const VF = Vex.Flow; const restKey = clef === "bass" ? "d/3" : "b/4"; const out = [];
     staffNotes.forEach((n) => {
       const durStr = n.duration + (n.dotted ? "d" : "") + (n.rest ? "r" : "");
       const keys = n.rest ? [restKey] : [noteToVexKey(n)];
       const sn = new VF.StaveNote({ clef: clef, keys: keys, duration: durStr });
       if (n.dotted) VF.Dot.buildAndAttach([sn], { all: true });
       if (!n.rest && n.accidental) sn.addModifier(new VF.Accidental(n.accidental), 0);
-      if (n.dynamic) {
-        sn.addModifier(new VF.Annotation(n.dynamic).setFont("Times", 12, "italic bold").setVerticalJustification(
-          clef === "bass" ? VF.Annotation.VerticalJustify.TOP : VF.Annotation.VerticalJustify.BOTTOM
-        ), 0);
-      }
+      if (n.dynamic) { sn.addModifier(new VF.Annotation(n.dynamic).setFont("Times", 12, "italic bold").setVerticalJustification( clef === "bass" ? VF.Annotation.VerticalJustify.TOP : VF.Annotation.VerticalJustify.BOTTOM ), 0); }
       out.push(sn);
-    });
-    return out;
+    }); return out;
   }
 
   function quartersUsed(staffNotes) { return staffNotes.reduce((sum, n) => sum + (DURATION_QUARTERS[n.duration] || 0) * (n.dotted ? 1.5 : 1), 0); }
@@ -420,111 +382,142 @@
   function renderScore() {
     if (!currentScore) return;
     persistScore(currentScore);
-    renderLetterhead();
-    vexContainer.innerHTML = "";
+    vexPagesContainer.innerHTML = "";
 
     if (typeof Vex === "undefined") {
-      vexContainer.innerHTML = '<p style="padding:40px;text-align:center;color:#8C2F39;font-weight:bold;">No se ha podido cargar el motor de partituras (VexFlow).<br>Revisa tu conexión o desactiva tu AdBlocker.</p>';
-      return;
+      vexPagesContainer.innerHTML = '<p style="padding:40px;color:#8C2F39;font-weight:bold;">No se ha podido cargar VexFlow.</p>'; return;
     }
 
     try {
       const VF = Vex.Flow;
       const measures = currentScore.measures;
       const [num, den] = currentScore.timeSig.split("/").map(Number);
-      const lines = Math.ceil(measures.length / MEASURES_PER_LINE);
-      const totalWidth = LEFT_MARGIN * 2 + FIRST_OF_LINE_WIDTH + REST_OF_LINE_WIDTH;
-      const totalHeight = TOP_MARGIN + lines * LINE_GAP + 40;
+      
+      const totalLines = Math.ceil(measures.length / MEASURES_PER_LINE);
+      const totalPages = Math.ceil(totalLines / LINES_PER_PAGE) || 1;
+      const totalWidth = LEFT_MARGIN * 2 + FIRST_OF_LINE_WIDTH + (REST_OF_LINE_WIDTH * (MEASURES_PER_LINE - 1));
+      
+      // Icono SVG para el pie de página
+      const svgIcon = `<svg class="print-logo-isotipo" viewBox="0 0 100 100"><rect x="10" y="20" width="80" height="60" rx="8" fill="currentColor"/><rect x="25" y="20" width="12" height="35" fill="var(--paper)"/><rect x="44" y="20" width="12" height="35" fill="var(--paper)"/><rect x="63" y="20" width="12" height="35" fill="var(--paper)"/></svg>`;
 
-      const renderer = new VF.Renderer(vexContainer, VF.Renderer.Backends.SVG);
-      renderer.resize(totalWidth, totalHeight);
-      const ctx = renderer.getContext();
-      const hitRects = [];
+      for (let p = 0; p < totalPages; p++) {
+          const pageDiv = document.createElement('div');
+          pageDiv.className = 'paper-page';
+          
+          // Encabezado de Impresión (Invisible en web, visible en PDF excepto pág 1)
+          const printHeader = document.createElement('div');
+          printHeader.className = 'print-header-content';
+          printHeader.innerHTML = `<span>${escapeHtml(currentScore.title)} — ${escapeHtml(currentScore.composer)}</span> <span>${plateLabel(currentScore.plate)}</span>`;
+          pageDiv.appendChild(printHeader);
 
-      measures.forEach((measure, idx) => {
-        const posInLine = idx % MEASURES_PER_LINE; const lineIdx = Math.floor(idx / MEASURES_PER_LINE);
-        const isFirstOfLine = posInLine === 0; const width = isFirstOfLine ? FIRST_OF_LINE_WIDTH : REST_OF_LINE_WIDTH;
-        const x = LEFT_MARGIN + (isFirstOfLine ? 0 : FIRST_OF_LINE_WIDTH);
-        const yTreble = TOP_MARGIN + lineIdx * LINE_GAP; const yBass = yTreble + STAVE_GAP;
-
-        const staveTreble = new VF.Stave(x, yTreble, width); const staveBass = new VF.Stave(x, yBass, width);
-
-        if (isFirstOfLine) {
-          staveTreble.addClef("treble"); staveBass.addClef("bass");
-          if (currentScore.keySig && currentScore.keySig !== "C") {
-            staveTreble.addKeySignature(currentScore.keySig); staveBass.addKeySignature(currentScore.keySig);
+          // Si es la página 1, añadimos el Título Grande
+          let startY = TOP_MARGIN;
+          if (p === 0) {
+              const head = document.createElement("div"); head.className = "score-letterhead";
+              head.innerHTML = `<h2>${escapeHtml(currentScore.title || t('untitled'))}</h2><p>${escapeHtml(currentScore.composer || "")}</p>`;
+              pageDiv.appendChild(head);
+              startY += 100; // Desplazar el primer pentagrama hacia abajo
           }
-        }
-        if (idx === 0) { staveTreble.addTimeSignature(currentScore.timeSig); staveBass.addTimeSignature(currentScore.timeSig); }
 
-        staveTreble.setBegBarType(measure.repeatStart ? VF.Barline.type.REPEAT_BEGIN : VF.Barline.type.SINGLE);
-        staveBass.setBegBarType(measure.repeatStart ? VF.Barline.type.REPEAT_BEGIN : VF.Barline.type.SINGLE);
-        let endType = VF.Barline.type.SINGLE;
-        if (measure.repeatEnd) endType = VF.Barline.type.REPEAT_END;
-        if (idx === measures.length - 1 && !measure.repeatEnd) endType = VF.Barline.type.END;
-        staveTreble.setEndBarType(endType); staveBass.setEndBarType(endType);
+          // Pie de Página de Impresión
+          const printFooter = document.createElement('div');
+          printFooter.className = 'print-footer-content';
+          printFooter.innerHTML = `<span>${svgIcon}</span> <span>Pág ${p + 1} de ${totalPages}</span>`;
+          pageDiv.appendChild(printFooter);
 
-        staveTreble.setContext(ctx).draw(); staveBass.setContext(ctx).draw();
+          // Contenedor SVG de VexFlow
+          const svgWrap = document.createElement('div');
+          pageDiv.appendChild(svgWrap);
+          vexPagesContainer.appendChild(pageDiv);
 
-        if (isFirstOfLine) {
-          new VF.StaveConnector(staveTreble, staveBass).setType(VF.StaveConnector.type.BRACE).setContext(ctx).draw();
-          new VF.StaveConnector(staveTreble, staveBass).setType(VF.StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
-        }
-        new VF.StaveConnector(staveTreble, staveBass).setType(VF.StaveConnector.type.SINGLE_RIGHT).setContext(ctx).draw();
+          // Determinar cuántas líneas tocan en esta página
+          const linesOnThisPage = Math.min(LINES_PER_PAGE, totalLines - (p * LINES_PER_PAGE));
+          const pageHeight = startY + (linesOnThisPage * LINE_GAP) + 20;
 
-        const trebleNotes = buildVexNotes(measure.treble, "treble");
-        const bassNotes = buildVexNotes(measure.bass, "bass");
+          const renderer = new VF.Renderer(svgWrap, VF.Renderer.Backends.SVG);
+          renderer.resize(totalWidth, pageHeight);
+          const ctx = renderer.getContext();
+          const hitRects = [];
 
-        if (trebleNotes.length > 0) {
-          const vTreble = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT);
-          vTreble.addTickables(trebleNotes);
-          try { VF.Beam.generateBeams(trebleNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch(e) {}
-          new VF.Formatter().joinVoices([vTreble]).format([vTreble], width - 30);
-          vTreble.draw(ctx, staveTreble);
-        }
-        
-        if (bassNotes.length > 0) {
-          const vBass = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT);
-          vBass.addTickables(bassNotes);
-          try { VF.Beam.generateBeams(bassNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch(e) {}
-          new VF.Formatter().joinVoices([vBass]).format([vBass], width - 30);
-          vBass.draw(ctx, staveBass);
-        }
+          for (let l = 0; l < linesOnThisPage; l++) {
+              const globalLineIdx = (p * LINES_PER_PAGE) + l;
+              
+              for (let m = 0; m < MEASURES_PER_LINE; m++) {
+                  const idx = (globalLineIdx * MEASURES_PER_LINE) + m;
+                  if (idx >= measures.length) break;
+                  
+                  const measure = measures[idx];
+                  const isFirstOfLine = (m === 0);
+                  const width = isFirstOfLine ? FIRST_OF_LINE_WIDTH : REST_OF_LINE_WIDTH;
+                  const x = LEFT_MARGIN + (isFirstOfLine ? 0 : FIRST_OF_LINE_WIDTH + (REST_OF_LINE_WIDTH * (m - 1)));
+                  
+                  const yTreble = startY + (l * LINE_GAP); 
+                  const yBass = yTreble + STAVE_GAP;
 
-        if (idx === 0 && currentScore.tempoText && trebleNotes.length > 0) { trebleNotes[0].addModifier(new VF.Annotation(currentScore.tempoText).setFont("Inter", 12, "bold").setVerticalJustification(VF.Annotation.VerticalJustify.TOP), 0); }
-        if (measure.directive) {
-          const targetArr = trebleNotes.length ? trebleNotes : bassNotes;
-          if (targetArr.length) targetArr[targetArr.length - 1].addModifier(new VF.Annotation(measure.directive).setFont("Cormorant Garamond", 15, "italic").setVerticalJustification(VF.Annotation.VerticalJustify.TOP), 0);
-        }
+                  const staveTreble = new VF.Stave(x, yTreble, width); const staveBass = new VF.Stave(x, yBass, width);
 
-        hitRects.push({ x, y: yTreble - 28, width, height: (yBass + 70) - (yTreble - 28), idx });
-      });
+                  if (isFirstOfLine) {
+                    staveTreble.addClef("treble"); staveBass.addClef("bass");
+                    if (currentScore.keySig && currentScore.keySig !== "C") { staveTreble.addKeySignature(currentScore.keySig); staveBass.addKeySignature(currentScore.keySig); }
+                  }
+                  if (idx === 0) { staveTreble.addTimeSignature(currentScore.timeSig); staveBass.addTimeSignature(currentScore.timeSig); }
 
-      const svg = vexContainer.querySelector("svg");
-      if (svg) {
-        svg.setAttribute("viewBox", `0 0 ${totalWidth} ${totalHeight}`);
-        svg.removeAttribute("width"); svg.removeAttribute("height");
-        const ns = "http://www.w3.org/2000/svg";
-        hitRects.forEach((hr) => {
-          const g = document.createElementNS(ns, "g");
-          g.setAttribute("class", "measure-hit" + (hr.idx === editorState.activeMeasure ? " active" : ""));
-          const rect = document.createElementNS(ns, "rect");
-          rect.setAttribute("x", hr.x - 4); rect.setAttribute("y", hr.y);
-          rect.setAttribute("width", hr.width + 4); rect.setAttribute("height", hr.height);
-          rect.setAttribute("fill", hr.idx === editorState.activeMeasure ? "rgba(179, 142, 80, 0.15)" : "transparent");
-          rect.setAttribute("rx", "4");
-          g.appendChild(rect);
-          g.addEventListener("click", () => { editorState.activeMeasure = hr.idx; syncMeasureControls(); renderScore(); });
-          svg.insertBefore(g, svg.firstChild);
-        });
+                  staveTreble.setBegBarType(measure.repeatStart ? VF.Barline.type.REPEAT_BEGIN : VF.Barline.type.SINGLE);
+                  staveBass.setBegBarType(measure.repeatStart ? VF.Barline.type.REPEAT_BEGIN : VF.Barline.type.SINGLE);
+                  let endType = VF.Barline.type.SINGLE;
+                  if (measure.repeatEnd) endType = VF.Barline.type.REPEAT_END;
+                  if (idx === measures.length - 1 && !measure.repeatEnd) endType = VF.Barline.type.END;
+                  staveTreble.setEndBarType(endType); staveBass.setEndBarType(endType);
+
+                  staveTreble.setContext(ctx).draw(); staveBass.setContext(ctx).draw();
+
+                  if (isFirstOfLine) {
+                    new VF.StaveConnector(staveTreble, staveBass).setType(VF.StaveConnector.type.BRACE).setContext(ctx).draw();
+                    new VF.StaveConnector(staveTreble, staveBass).setType(VF.StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
+                  }
+                  new VF.StaveConnector(staveTreble, staveBass).setType(VF.StaveConnector.type.SINGLE_RIGHT).setContext(ctx).draw();
+
+                  const trebleNotes = buildVexNotes(measure.treble, "treble"); const bassNotes = buildVexNotes(measure.bass, "bass");
+
+                  if (trebleNotes.length > 0) {
+                    const vTreble = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT); vTreble.addTickables(trebleNotes);
+                    try { VF.Beam.generateBeams(trebleNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch(e) {}
+                    new VF.Formatter().joinVoices([vTreble]).format([vTreble], width - 30); vTreble.draw(ctx, staveTreble);
+                  }
+                  if (bassNotes.length > 0) {
+                    const vBass = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT); vBass.addTickables(bassNotes);
+                    try { VF.Beam.generateBeams(bassNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch(e) {}
+                    new VF.Formatter().joinVoices([vBass]).format([vBass], width - 30); vBass.draw(ctx, staveBass);
+                  }
+
+                  if (idx === 0 && currentScore.tempoText && trebleNotes.length > 0) { trebleNotes[0].addModifier(new VF.Annotation(currentScore.tempoText).setFont("Inter", 12, "bold").setVerticalJustification(VF.Annotation.VerticalJustify.TOP), 0); }
+                  if (measure.directive) {
+                    const targetArr = trebleNotes.length ? trebleNotes : bassNotes;
+                    if (targetArr.length) targetArr[targetArr.length - 1].addModifier(new VF.Annotation(measure.directive).setFont("Cormorant Garamond", 15, "italic").setVerticalJustification(VF.Annotation.VerticalJustify.TOP), 0);
+                  }
+                  hitRects.push({ x, y: yTreble - 28, width, height: (yBass + 70) - (yTreble - 28), idx });
+              }
+          }
+
+          // Interactividad y Clics (Ajustando ViewBox)
+          const svg = svgWrap.querySelector("svg");
+          if (svg) {
+            svg.setAttribute("viewBox", `0 0 ${totalWidth} ${pageHeight}`);
+            svg.removeAttribute("width"); svg.removeAttribute("height");
+            const ns = "http://www.w3.org/2000/svg";
+            hitRects.forEach((hr) => {
+              const g = document.createElementNS(ns, "g"); g.setAttribute("class", "measure-hit" + (hr.idx === editorState.activeMeasure ? " active" : ""));
+              const rect = document.createElementNS(ns, "rect");
+              rect.setAttribute("x", hr.x - 4); rect.setAttribute("y", hr.y); rect.setAttribute("width", hr.width + 4); rect.setAttribute("height", hr.height);
+              rect.setAttribute("fill", hr.idx === editorState.activeMeasure ? "rgba(179, 142, 80, 0.15)" : "transparent"); rect.setAttribute("rx", "4");
+              g.appendChild(rect);
+              g.addEventListener("click", () => { editorState.activeMeasure = hr.idx; syncMeasureControls(); renderScore(); });
+              svg.insertBefore(g, svg.firstChild);
+            });
+          }
       }
-
-      plateMarkEl.textContent = plateLabel(currentScore.plate);
       updateBeatCounters();
-    } catch (err) {
-      console.error(err);
-      vexContainer.innerHTML = `<p style="padding:40px;text-align:center;color:#8C2F39;font-weight:bold;">Error matemático crítico.<br>Asegúrate de que la suma de todas las notas coincida exactamente con el tiempo del compás.</p>`;
-    }
+    } catch (err) { console.error(err); vexPagesContainer.innerHTML = `<p style="padding:40px;color:#8C2F39;font-weight:bold;">Error matemático crítico al renderizar.</p>`; }
   }
 
   function updateBeatCounters() {
@@ -533,32 +526,34 @@
   }
   function trim(n) { return Number.isInteger(n) ? n : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, ""); }
 
-  window.renderLetterhead = function() {
-    let head = vexContainer.parentElement.querySelector(".score-letterhead");
-    if (!head) { head = document.createElement("div"); head.className = "score-letterhead"; vexContainer.parentElement.insertBefore(head, vexContainer); }
-    head.innerHTML = `<h2>${escapeHtml(currentScore.title || t('untitled'))}</h2><p>${escapeHtml(currentScore.composer || "")}</p>`;
-  }
-
   /* -----------------------------------------------------------------------
      Exportar / Importar
      ----------------------------------------------------------------------- */
   document.getElementById("btnExportJson").addEventListener("click", () => { downloadBlob(slugify(currentScore.title) + ".json", JSON.stringify(currentScore, null, 2)); });
-  document.getElementById("btnExportPdf").addEventListener("click", () => { window.print(); });
+  
+  // FUNCION DE PDF MEJORADA (Cambia temporalmente el titulo para nombrar el archivo .pdf)
+  document.getElementById("btnExportPdf").addEventListener("click", () => { 
+      const originalTitle = document.title;
+      const safeTitle = (currentScore.title || t('untitled')).trim();
+      const safeAuthor = (currentScore.composer || t('unknownAuthor')).trim();
+      document.title = `${safeTitle} — ${safeAuthor}`;
+      
+      window.print();
+      
+      // Tras imprimir, restaurar título
+      setTimeout(() => { document.title = originalTitle; }, 500);
+  });
 
   document.getElementById("btnImport").addEventListener("click", () => document.getElementById("fileImport").click());
   document.getElementById("fileImport").addEventListener("change", (e) => {
-    const file = e.target.files[0]; if (!file) return;
-    const reader = new FileReader();
+    const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
     reader.onload = () => {
       try {
-        const data = JSON.parse(reader.result);
-        if (!data.measures) throw new Error("Format error");
+        const data = JSON.parse(reader.result); if (!data.measures) throw new Error("Format error");
         data.id = uid(); data.plate = nextPlateNumber(); data.updatedAt = Date.now();
         persistScore(data); window.location.hash = "#catalogo";
-      } catch (err) { alert("Error: " + err.message); }
-      e.target.value = ""; // Vuelve a vaciar el valor para que puedas reimportar si quieres
-    };
-    reader.readAsText(file);
+      } catch (err) { alert("Error: " + err.message); } e.target.value = ""; 
+    }; reader.readAsText(file);
   });
 
   document.getElementById("btnNewScore").addEventListener("click", () => { const score = newScore(); persistScore(score); window.location.hash = "#editor/" + score.id; });
@@ -569,9 +564,6 @@
      Arranque Inicial
      ----------------------------------------------------------------------- */
   setLang('es'); 
-  if(!window.location.hash || window.location.hash === "#" || window.location.hash === "") {
-      window.location.hash = "#inicio";
-  } else {
-      handleNavigation();
-  }
+  if(!window.location.hash || window.location.hash === "#" || window.location.hash === "") { window.location.hash = "#inicio"; } 
+  else { handleNavigation(); }
 })();
