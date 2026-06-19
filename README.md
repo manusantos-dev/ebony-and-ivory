@@ -14,9 +14,10 @@ Ebony & Ivory is a web-based tool designed to transcribe, archive, and standardi
 
 ## ✨ Features
 
-* 📝 **Visual Engraving Desk:** A step-by-step measure editor to build your scores. Easily add notes, rests, specific durations, accidentals, dynamics, and structural directives (Fine, D.C., Coda, repeats).
+* 📝 **Visual Engraving Desk:** A step-by-step measure editor to build your scores. Easily add notes, rests, specific durations (including strict dotted note math support), accidentals, dynamics, and structural directives (Fine, D.C., Coda, repeats).
 * 🎹 **Grand Staff Support:** Native support for piano scores, allowing input for both Treble and Bass clefs simultaneously.
-* 🗂️ **Local Library Catalog:** Your scores are automatically saved to your browser's `localStorage`. Build your personal catalog without needing a database or backend.
+* 🗂️ **Local Library Catalog:** Your scores are automatically saved to your browser's `localStorage` instantly on every keystroke or click via our Auto-save system. Build your personal catalog without needing a database.
+* 🔗 **Internal Routing:** Hash-based URL routing allows you to use your browser's back and forward buttons natively between the library and your active scores.
 * 🖨️ **Print to PDF:** Export your scores to beautifully formatted PDFs via the browser's native print dialogue. The UI automatically hides itself, leaving only the pristine ivory paper and ebony ink.
 * 💾 **JSON Import & Export:** Download your individual scores as `.json` files to back them up, share them, or move them between devices.
 * 🌍 **Bilingual Interface:** Real-time toggling between English and Spanish UI without page reloads.
