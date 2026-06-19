@@ -2,10 +2,16 @@
    EBONY & IVORY — design tokens
    ========================================================= */
 :root {
-  --paper: #FAF8F5; --paper-edge: #EBE5D9;
-  --ink: #121212; --ink-soft: #4A4A4A;
-  --accent: #121212; --brass: #B38E50; --gold-wash: #F1EAD7;
-  --line: #D8D0C1; --line-strong: #C4BBA8; --danger: #8C2F39;
+  --paper: #FAF8F5; 
+  --paper-edge: #EBE5D9;
+  --ink: #121212; 
+  --ink-soft: #4A4A4A;
+  --accent: #121212; 
+  --brass: #B38E50; 
+  --gold-wash: #F1EAD7;
+  --line: #D8D0C1;
+  --line-strong: #C4BBA8;
+  --danger: #8C2F39;
 
   --font-display: 'Cormorant Garamond', Georgia, serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -97,7 +103,8 @@ body.is-home .brand { opacity: 0; pointer-events: none; visibility: hidden; }
 #viewHome { display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; max-width: 100%; padding: 0; }
 .home-hero { text-align: center; max-width: 800px; padding: 60px 40px; background: rgba(250, 248, 245, 0.95); border-radius: 16px; box-shadow: var(--shadow-paper); border: 1px solid var(--line); position: relative; z-index: 2; backdrop-filter: blur(4px); }
 .hero-logo { margin-bottom: 24px; }
-.hero-logo-img { height: 70px; width: auto; object-fit: contain; margin-bottom: 10px; } /* Logotipo Gigante */
+/* Logotipo Gigante Arreglado */
+.hero-logo-img { height: 260px; max-width: 100%; width: auto; object-fit: contain; margin-bottom: 10px; } 
 .home-hero h1 { font-family: var(--font-display); font-size: 32px; font-weight: 600; font-style: italic; margin: 0 0 20px; color: var(--brass); }
 .home-hero .hero-sub { font-size: 18px; color: var(--ink-soft); margin: 0 auto 32px; line-height: 1.6; max-width: 600px; }
 
@@ -160,12 +167,12 @@ body.is-viewer .paper-wrap { margin: 0 auto; padding-top: 20px; }
 .dur-btn{ font-size: 20px; padding: 8px 0; border:1px solid var(--line-strong); border-radius: var(--radius); background:#fff; cursor:pointer; color: var(--ink); transition: background 0.1s; }
 .dur-btn.is-active{ background: var(--accent); border-color: var(--accent); color:#fff; }
 
-.paper-wrap{ flex:1; padding: 0px 20px 100px; display:flex; flex-direction:column; align-items:center; overflow-x: auto;}
+.paper-wrap{ flex:1; padding: 0px 40px 100px; display:flex; flex-direction:column; align-items:center; overflow-x: auto;}
 
 /* Paginación Web - Ancho exacto matemático para 4 compases */
 .paper-page { 
   background: var(--paper); width: 100%; max-width: 1000px; 
-  box-shadow: var(--shadow-paper); padding: 50px 20px; position:relative; margin-bottom: 30px; 
+  box-shadow: var(--shadow-paper); padding: 50px 40px; position:relative; margin-bottom: 30px; 
 }
 .paper-page svg { width: 100%; height: auto; display: block; }
 .measure-hit{ cursor:pointer; }
