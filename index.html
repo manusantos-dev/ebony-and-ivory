@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ebony & Ivory — Sheet Music Library</title>
+<meta name="description" content="Crea, guarda y exporta tus propias partituras en una estética unificada.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎹</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand" id="brandHome">
+    <span class="brand-mark">🎹</span>
+    <span class="brand-word">Ebony & Ivory</span>
+  </div>
+  
+  <div class="topbar-right">
+    <div class="lang-switch">
+      <button class="lang-btn active" onclick="setLang('es')">ES</button>
+      <button class="lang-btn" onclick="setLang('en')">EN</button>
+    </div>
+    <nav class="topbar-actions" id="libraryActions">
+      <button class="btn btn-ghost" id="btnImport" data-i18n="importBtn">Importar .json</button>
+      <input type="file" id="fileImport" accept="application/json" hidden>
+      <button class="btn btn-primary" id="btnNewScore" data-i18n="newScoreBtn">+ Nueva partitura</button>
+    </nav>
+    <nav class="topbar-actions" id="editorActions" hidden>
+      <button class="btn btn-ghost" id="btnBackLibrary" data-i18n="backBtn">← Biblioteca</button>
+      <button class="btn btn-ghost" id="btnExportJson" data-i18n="exportJsonBtn">Exportar .json</button>
+      <button class="btn btn-ghost" id="btnExportPdf" data-i18n="exportPdfBtn">Exportar PDF</button>
+      <button class="btn btn-primary" id="btnSave" data-i18n="saveBtn">Guardar</button>
+    </nav>
+  </div>
+</header>
+
+<main id="viewLibrary" class="view">
+  <section class="library-hero">
+    <p class="eyebrow" data-i18n="heroEyebrow">Tu catálogo personal</p>
+    <h1 data-i18n="heroTitle">Cada partitura, bajo el mismo sello.</h1>
+    <p class="hero-sub" data-i18n="heroSub">Reescribe partituras de dominio público o crea las tuyas. Mismo papel, misma tinta, mismo orden — para siempre.</p>
+  </section>
+  <section class="library-grid" id="libraryGrid">
+    </section>
+  <p class="library-empty" id="libraryEmpty" hidden data-i18n="emptyLibrary">Tu atril está vacío. Pulsa «Nueva partitura» para comenzar.</p>
+</main>
+
+<main id="viewEditor" class="view" hidden>
+  <div class="editor-layout">
+
+    <aside class="engrave-desk">
+      <div class="desk-section">
+        <label class="field-label" data-i18n="lblTitle">Título</label>
+        <input type="text" id="scoreTitle" class="field-input field-input--title">
+        <label class="field-label" data-i18n="lblComposer">Compositor / origen</label>
+        <input type="text" id="scoreComposer" class="field-input">
+      </div>
+
+      <div class="desk-section">
+        <div class="field-row">
+          <div>
+            <label class="field-label" data-i18n="lblTimeSig">Compás</label>
+            <select id="timeSig" class="field-input">
+              <option value="4/4">4/4</option>
+              <option value="3/4">3/4</option>
+              <option value="2/4">2/4</option>
+              <option value="6/8">6/8</option>
+              <option value="9/8">9/8</option>
+              <option value="12/8">12/8</option>
+              <option value="2/2">2/2</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" data-i18n="lblKeySig">Tonalidad</label>
+            <select id="keySig" class="field-input">
+              <option value="C">C / Am</option>
+              <option value="G">G / Em</option>
+              <option value="D">D / Bm</option>
+              <option value="A">A / F#m</option>
+              <option value="E">E / C#m</option>
+              <option value="B">B / G#m</option>
+              <option value="F">F / Dm</option>
+              <option value="Bb">Bb / Gm</option>
+              <option value="Eb">Eb / Cm</option>
+              <option value="Ab">Ab / Fm</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <hr class="desk-divider">
+
+      <div class="desk-section">
+        <p class="desk-title"><span data-i18n="lblActiveMeasure">Compás activo</span> <span id="activeMeasureLabel" class="pill">1</span></p>
+        <div class="field-row">
+          <button class="btn btn-small" id="btnPrevMeasure" data-i18n="btnPrev">‹ anterior</button>
+          <button class="btn btn-small" id="btnNextMeasure" data-i18n="btnNext">siguiente ›</button>
+        </div>
+        <div class="field-row">
+          <button class="btn btn-small btn-add" id="btnAddMeasure" data-i18n="btnAddMeasure">+ añadir compás</button>
+          <button class="btn btn-small btn-danger" id="btnDeleteMeasure" data-i18n="btnDelMeasure">eliminar compás</button>
+        </div>
+      </div>
+
+      <hr class="desk-divider">
+
+      <div class="desk-section">
+        <p class="desk-title" data-i18n="lblInputStaff">Pentagrama de entrada</p>
+        <div class="staff-toggle">
+          <button class="toggle-btn is-active" data-staff="treble" id="btnStaffTreble" data-i18n="lblTreble">Clave de Sol</button>
+          <button class="toggle-btn" data-staff="bass" id="btnStaffBass" data-i18n="lblBass">Clave de Fa</button>
+        </div>
+      </div>
+
+      <div class="desk-section">
+        <p class="desk-title" data-i18n="lblNote">Nota</p>
+        <div class="field-row note-row">
+          <label class="check-inline"><input type="checkbox" id="isRest"> <span data-i18n="lblRest">Silencio</span></label>
+        </div>
+        <div class="field-row" id="pitchFields">
+          <div>
+            <label class="field-label" data-i18n="lblPitch">Nota</label>
+            <select id="pitchLetter" class="field-input">
+              <option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>A</option><option>B</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" data-i18n="lblAccidental">Alteración</label>
+            <select id="pitchAccidental" class="field-input">
+              <option value="">—</option>
+              <option value="#">♯</option>
+              <option value="b">♭</option>
+              <option value="n">♮</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" data-i18n="lblOctave">Octava</label>
+            <select id="pitchOctave" class="field-input">
+              <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option>
+            </select>
+          </div>
+        </div>
+
+        <label class="field-label" data-i18n="lblDuration">Duración</label>
+        <div class="duration-grid" id="durationGrid">
+          <button class="dur-btn" data-dur="w">𝅝</button>
+          <button class="dur-btn" data-dur="h">𝅗𝅥</button>
+          <button class="dur-btn is-active" data-dur="q">♩</button>
+          <button class="dur-btn" data-dur="8">♪</button>
+          <button class="dur-btn" data-dur="16">𝅘𝅥𝅯</button>
+          <button class="dur-btn" data-dur="32">𝅘𝅥𝅰</button>
+        </div>
+        <label class="check-inline"><input type="checkbox" id="isDotted"> <span data-i18n="lblDotted">Con puntillo</span></label>
+
+        <label class="field-label" data-i18n="lblDynamics">Dinámica</label>
+        <select id="dynamicSelect" class="field-input">
+          <option value="">—</option>
+          <option value="pp">pp</option>
+          <option value="p">p</option>
+          <option value="mp">mp</option>
+          <option value="mf">mf</option>
+          <option value="f">f</option>
+          <option value="ff">ff</option>
+          <option value="sfz">sfz</option>
+          <option value="cresc.">cresc.</option>
+          <option value="dim.">dim.</option>
+        </select>
+
+        <button class="btn btn-primary btn-block" id="btnAddNote" data-i18n="btnAddNote">Añadir al compás</button>
+        <button class="btn btn-ghost btn-block" id="btnUndoNote" data-i18n="btnUndoNote">Deshacer última nota</button>
+      </div>
+
+      <hr class="desk-divider">
+
+      <div class="desk-section">
+        <p class="desk-title" data-i18n="lblMeasureDetails">Compás · Detalles</p>
+        <label class="check-inline"><input type="checkbox" id="repeatStart"> <span data-i18n="lblRepStart">Inicio repetición ‖:</span></label>
+        <label class="check-inline"><input type="checkbox" id="repeatEnd"> <span data-i18n="lblRepEnd">Fin repetición :‖</span></label>
+        <label class="field-label" data-i18n="lblDirective">Indicación (Fine, D.C.)</label>
+        <select id="directiveSelect" class="field-input">
+          <option value="">—</option>
+          <option value="Fine">Fine</option>
+          <option value="D.C.">D.C.</option>
+          <option value="D.C. al Fine">D.C. al Fine</option>
+          <option value="D.C. al Coda">D.C. al Coda</option>
+          <option value="D.S. al Fine">D.S. al Fine</option>
+          <option value="D.S. al Coda">D.S. al Coda</option>
+          <option value="𝄌 Coda">𝄌 Coda</option>
+          <option value="𝄋 Segno">𝄋 Segno</option>
+        </select>
+        <label class="field-label" data-i18n="lblTempo">Texto libre / Tempo</label>
+        <input type="text" id="tempoText" class="field-input" placeholder="Andante ♩ = 92">
+      </div>
+    </aside>
+
+    <section class="paper-wrap">
+      <div class="paper" id="paper">
+        <div id="vexContainer"></div>
+        <div class="plate-mark" id="plateMark">E&I 001</div>
+      </div>
+      <p class="paper-hint" data-i18n="paperHint">Pulsa un compás en la partitura para hacerlo el compás activo.</p>
+    </section>
+  </div>
+</main>
+
+<footer class="sitefooter">
+  <p data-i18n="footerText">Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales; usa solo material de dominio público o con permiso.</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vexflow/4.2.2/vexflow.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
