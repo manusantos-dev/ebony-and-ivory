@@ -37,24 +37,25 @@ a{ color: var(--accent); }
 [hidden] { display: none !important; }
 
 /* =========================================================
-   TOPBAR
+   TOPBAR & LOGOS (Disney Style)
    ========================================================= */
 .topbar{
   display:flex; align-items:center; justify-content:space-between; padding: 14px 28px; background: var(--paper);
   border-bottom: 1px solid var(--line); position: sticky; top:0; z-index: 50; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+  transition: transform 0.3s ease;
 }
-.brand{ display:flex; align-items:baseline; gap:8px; cursor:pointer; user-select:none; transition: opacity 0.2s; }
+.brand{ display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; transition: opacity 0.2s; }
 .brand:hover { opacity: 0.7; }
-.brand-mark{ font-size: 26px; line-height:1; }
-.brand-word{ font-family: var(--font-display); font-weight: 700; font-size: 24px; letter-spacing: .02em; }
+.brand-word{ font-family: var(--font-display); font-weight: 700; font-size: 24px; letter-spacing: .02em; color: var(--ink); }
 
-/* Ocultar la marca de arriba a la izquierda cuando estamos en el inicio */
+/* Control del Header en Home */
+body.is-home .topbar { background: transparent; border: none; box-shadow: none; position: absolute; width: 100%; }
 body.is-home .brand { opacity: 0; pointer-events: none; visibility: hidden; }
 
 .topbar-right { display:flex; align-items:center; gap: 24px; }
 .topbar-actions{ display:flex; gap:10px; align-items:center; }
 
-.lang-switch { display: flex; gap: 4px; border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 2px;}
+.lang-switch { display: flex; gap: 4px; border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 2px; background: var(--paper);}
 .lang-btn { background: transparent; border: none; font-size: 11px; font-weight: 600; cursor: pointer; padding: 4px 8px; border-radius: 4px; color: var(--ink-soft); }
 .lang-btn.active { background: var(--gold-wash); color: var(--ink); }
 
@@ -64,7 +65,7 @@ body.is-home .brand { opacity: 0; pointer-events: none; visibility: hidden; }
 .save-indicator.show { opacity: 1; }
 
 /* =========================================================
-   BUTTONS / INPUTS
+   BUTTONS / INPUTS / CUSTOM SELECT
    ========================================================= */
 .btn{ font-family: var(--font-body); font-size: 13px; font-weight: 600; padding: 9px 16px; border-radius: var(--radius); border: 1px solid var(--line-strong); background: var(--paper); color: var(--ink); cursor: pointer; transition: all .15s ease; }
 .btn:hover{ border-color: var(--brass); background: #fff; }
@@ -89,6 +90,16 @@ body.is-home .brand { opacity: 0; pointer-events: none; visibility: hidden; }
 .field-row > div{ flex:1; }
 .check-inline{ display:flex; align-items:center; gap:7px; font-size:13px; margin: 10px 0 0; color: var(--ink-soft); }
 
+/* Custom Dropdown (Notación US / EU) */
+.custom-select { position: relative; width: 100%; user-select: none; font-family: var(--font-body); font-size: 14px; }
+.select-selected { background: #fff; border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 8px 10px; cursor: pointer; display: flex; justify-content: space-between; color: var(--ink); }
+.select-selected:focus { border-color: var(--brass); outline: none; box-shadow: 0 0 0 2px var(--gold-wash); }
+.select-items { position: absolute; background: #fff; top: 100%; left: 0; right: 0; z-index: 99; border: 1px solid var(--line-strong); border-radius: var(--radius); box-shadow: var(--shadow-card); margin-top: 4px; display: none; max-height: 200px; overflow-y: auto; }
+.custom-select.active .select-items { display: block; }
+.select-items div { padding: 8px 10px; cursor: pointer; display: flex; justify-content: space-between; border-bottom: 1px solid var(--paper-edge); }
+.select-items div:hover { background-color: var(--gold-wash); }
+.translucent { opacity: 0.4; font-size: 12px; }
+
 /* =========================================================
    VIEWS LAYOUT
    ========================================================= */
@@ -97,9 +108,8 @@ body.is-home .brand { opacity: 0; pointer-events: none; visibility: hidden; }
 /* --- HOME (LANDING PAGE) --- */
 #viewHome { display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; max-width: 100%; padding: 0; }
 .home-hero { text-align: center; max-width: 800px; padding: 60px 40px; background: rgba(250, 248, 245, 0.95); border-radius: 16px; box-shadow: var(--shadow-paper); border: 1px solid var(--line); position: relative; z-index: 2; backdrop-filter: blur(4px); }
-.hero-logo { display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 24px; }
-.hero-mark { font-size: 72px; line-height: 1; margin-bottom: 10px; }
-.hero-word { font-family: var(--font-display); font-weight: 700; font-size: 64px; color: var(--ink); letter-spacing: 0.02em; line-height: 1; }
+.hero-logo { margin-bottom: 24px; }
+.hero-logo .hero-word { font-family: var(--font-display); font-weight: 700; font-size: 80px; color: var(--ink); letter-spacing: 0.02em; line-height: 1; display: block;}
 .home-hero h1 { font-family: var(--font-display); font-size: 32px; font-weight: 600; font-style: italic; margin: 0 0 20px; color: var(--brass); }
 .home-hero .hero-sub { font-size: 18px; color: var(--ink-soft); margin: 0 auto 32px; line-height: 1.6; max-width: 600px; }
 
@@ -115,7 +125,6 @@ body.is-home .brand { opacity: 0; pointer-events: none; visibility: hidden; }
 .search-input { flex: 3; font-size: 15px; padding: 10px 16px; min-width: 250px; }
 .sort-select { flex: 1.5; font-size: 14px; padding: 10px 12px; cursor: pointer; min-width: 200px; }
 
-/* Panel de Filtros */
 .catalog-filters { background: var(--gold-wash); padding: 20px 24px; border-radius: 8px; border: 1px solid var(--line-strong); display: flex; gap: 24px; flex-wrap: wrap; margin-top: -10px; }
 .filter-group { flex: 1; min-width: 200px; }
 .filter-group .field-label { color: var(--ink); font-weight: 600; }
@@ -141,10 +150,10 @@ body.is-home .brand { opacity: 0; pointer-events: none; visibility: hidden; }
 .btn-danger-card { flex: 0.5; background: transparent; border-color: var(--line); }
 .btn-danger-card:hover { background: #ffebee; border-color: var(--danger); color: var(--danger); }
 
-/* --- EDITOR --- */
+/* --- EDITOR & PAPER --- */
 #viewEditor.view{ max-width: none; padding: 0 0 64px 0; background: var(--paper-edge); }
-.editor-subnav { max-width: 1340px; margin: 0 auto; padding: 12px 28px; display: flex; align-items: center; }
-.editor-layout{ display:flex; align-items:flex-start; max-width: 1340px; margin: 0 auto; border: 1px solid var(--line); border-radius: 8px; overflow: hidden;}
+.editor-subnav { max-width: 1400px; margin: 0 auto; padding: 12px 28px; display: flex; align-items: center; }
+.editor-layout{ display:flex; align-items:flex-start; max-width: 1400px; margin: 0 auto; border: 1px solid var(--line); border-radius: 8px; overflow: hidden;}
 
 .engrave-desk{ width: 340px; min-width:340px; background: var(--paper); border-right: 1px solid var(--line); padding: 24px 24px 60px; height: calc(100vh - 120px); overflow-y: auto; position: sticky; top:120px; }
 .desk-section{ margin-bottom: 4px; }
@@ -161,27 +170,65 @@ body.is-home .brand { opacity: 0; pointer-events: none; visibility: hidden; }
 .dur-btn{ font-size: 20px; padding: 8px 0; border:1px solid var(--line-strong); border-radius: var(--radius); background:#fff; cursor:pointer; color: var(--ink); transition: background 0.1s; }
 .dur-btn.is-active{ background: var(--accent); border-color: var(--accent); color:#fff; }
 
-.paper-wrap{ flex:1; padding: 0px 48px 100px; display:flex; flex-direction:column; align-items:center; background: var(--paper-edge);}
-.paper{ background: var(--paper); width: 100%; max-width: 1000px; box-shadow: var(--shadow-paper); padding: 50px 56px 40px; position:relative; min-height: 500px; }
-.paper-hint{ color: var(--ink-soft); font-size:13px; margin-top:16px; font-style: italic; background: var(--paper); padding: 6px 12px; border-radius: 20px; border: 1px solid var(--line); }
-.plate-mark{ position:absolute; bottom:18px; right:30px; font-family: var(--font-mono); font-size: 11px; color: var(--brass); letter-spacing:.05em; font-weight: 600; }
-#vexContainer svg{ width:100%; height:auto; display:block; }
-#vexContainer .measure-hit{ cursor:pointer; }
-#vexContainer .measure-hit.active rect{ fill: rgba(179, 142, 80, 0.15); }
+.paper-wrap{ flex:1; padding: 0px 40px 100px; display:flex; flex-direction:column; align-items:center; background: var(--paper-edge); overflow-x: auto;}
 
-.score-letterhead{ text-align:center; margin-bottom: 10px; }
-.score-letterhead h2{ font-family: var(--font-display); font-weight:700; font-size: 34px; margin:0; }
+/* Paginación Web (Múltiples hojas) */
+.paper-page { background: var(--paper); width: 100%; max-width: 950px; box-shadow: var(--shadow-paper); padding: 50px 40px; position:relative; margin-bottom: 30px; }
+.paper-page svg { width: 100%; height: auto; display: block; }
+.measure-hit{ cursor:pointer; }
+.measure-hit.active rect{ fill: rgba(179, 142, 80, 0.15); }
+
+.score-letterhead{ text-align:center; margin-bottom: 30px; }
+.score-letterhead h2{ font-family: var(--font-display); font-weight:700; font-size: 38px; margin:0; }
 .score-letterhead p{ font-family: var(--font-display); font-style: italic; font-size: 18px; margin: 4px 0 0; color: var(--ink-soft); }
 
+/* Elementos exclusivos para impresión (Ocultos en web) */
+.print-header-content, .print-footer-content { display: none; }
+
 /* =========================================================
-   FOOTER & PRINT
+   FOOTER
    ========================================================= */
 .sitefooter{ max-width: 1180px; margin: 0 auto; padding: 24px 28px 40px; color: var(--ink-soft); font-size: 12px; border-top: 1px solid var(--line); text-align: center; margin-top: auto;}
 
+/* =========================================================
+   PRINT CSS (PDF GENERATOR EXACTO)
+   ========================================================= */
 @media print{
-  .topbar, .engrave-desk, .editor-subnav, .paper-hint, .sitefooter{ display:none !important; }
+  /* Esconder la UI del navegador y la página web */
+  .topbar, .engrave-desk, .editor-subnav, .sitefooter, .paper-hint { display:none !important; }
   body, .paper-wrap{ background: #fff !important; padding:0 !important; margin:0 !important; display: block; }
-  .editor-layout { border: none; max-width: none; display: block; }
-  .paper{ box-shadow:none !important; max-width:none !important; padding: 10mm 14mm !important; }
-  @page{ size: A4 portrait; margin: 10mm; }
+  .editor-layout { border: none; max-width: none; display: block; margin: 0; }
+  
+  /* Ajuste de márgenes para eliminar la URL predeterminada del navegador */
+  @page { size: A4 portrait; margin: 15mm 10mm 20mm 10mm; }
+
+  /* Cada div.paper-page ocupará una página física exacta */
+  .paper-page { 
+      box-shadow: none !important; max-width: none !important; 
+      padding: 0 !important; margin: 0 !important; 
+      page-break-after: always; /* Salto de página */
+      height: 100vh; /* Ocupa la hoja entera */
+      position: relative;
+  }
+  .paper-page:last-child { page-break-after: auto; }
+
+  /* Encabezados y Pies de página personalizados (CSS Fixed repite en cada página) */
+  .print-header-content { 
+      display: flex; position: absolute; top: 0; left: 0; right: 0; 
+      justify-content: space-between; font-family: var(--font-mono); 
+      font-size: 10px; color: var(--ink-soft); text-transform: uppercase;
+      border-bottom: 1px solid var(--line); padding-bottom: 8px;
+  }
+  
+  .print-footer-content {
+      display: flex; position: absolute; bottom: 0; left: 0; right: 0;
+      justify-content: space-between; align-items: center;
+      font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft);
+      border-top: 1px solid var(--line); padding-top: 8px;
+  }
+  
+  /* Ocultar el Header en la primera página porque ya está el título gigante */
+  .paper-page:first-child .print-header-content { display: none; }
+  
+  .print-logo-isotipo { width: 16px; height: 16px; fill: var(--ink-soft); }
 }
