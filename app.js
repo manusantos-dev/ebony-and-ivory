@@ -62,12 +62,14 @@
     }
   };
 
-  let currentLang = "es";
+  let currentLang = "en"; // Por defecto, hasta que se autodetecte
 
   window.setLang = function(lang) {
     currentLang = lang;
     document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    // Encontrar y activar el botón correcto
+    const activeBtn = Array.from(document.querySelectorAll('.lang-btn')).find(btn => btn.textContent.toLowerCase() === lang);
+    if(activeBtn) activeBtn.classList.add('active');
     
     document.querySelectorAll('[data-i18n]').forEach(el => {
       const key = el.getAttribute('data-i18n');
@@ -111,8 +113,7 @@
   const hiddenKeySigInput = document.getElementById('keySig');
 
   customKeySigSelected.addEventListener('click', function(e) {
-      e.stopPropagation();
-      customKeySig.classList.toggle('active');
+      e.stopPropagation(); customKeySig.classList.toggle('active');
   });
 
   customKeySigOptions.addEventListener('click', function(e) {
@@ -139,9 +140,8 @@
   const STORAGE_KEY = "ebony_ivory:scores";
   const DURATION_QUARTERS = { w: 4, h: 2, q: 1, "8": 0.5, "16": 0.25, "32": 0.125 };
   
-  // PARÁMETROS NUEVOS DE DISTRIBUCIÓN
-  const MEASURES_PER_LINE = 4; // Cambiado a 4 según tu petición
-  const LINES_PER_PAGE = 5;    // Líneas por hoja A4
+  const MEASURES_PER_LINE = 4;
+  const LINES_PER_PAGE = 5;
   
   const FIRST_OF_LINE_WIDTH = 250; 
   const REST_OF_LINE_WIDTH = 210;
@@ -198,30 +198,23 @@
         const scoreId = hash.split("/")[1];
         const allScores = loadAll();
         if (allScores[scoreId]) { showEditorUI(allScores[scoreId]); } else { window.location.hash = "#catalogo"; }
-    } else if (hash === "#catalogo") {
-        showLibraryUI();
-    } else {
-        showHomeUI();
-    }
+    } else if (hash === "#catalogo") { showLibraryUI(); } 
+    else { showHomeUI(); }
   }
 
   function showHomeUI() {
     currentScore = null;
     viewHome.hidden = false; viewLibrary.hidden = true; viewEditor.hidden = true;
     libraryActions.hidden = true; editorActions.hidden = true;
-    document.body.classList.add('is-home');
-    document.title = "Ebony & Ivory";
-    window.scrollTo(0,0);
+    document.body.classList.add('is-home'); document.title = "Ebony & Ivory"; window.scrollTo(0,0);
   }
 
   function showLibraryUI() {
     currentScore = null;
     viewHome.hidden = true; viewLibrary.hidden = false; viewEditor.hidden = true;
     libraryActions.hidden = false; editorActions.hidden = true;
-    document.body.classList.remove('is-home');
-    document.title = t('catalogTitle') + " — Ebony & Ivory";
-    renderLibrary();
-    window.scrollTo(0,0);
+    document.body.classList.remove('is-home'); document.title = t('catalogTitle') + " — Ebony & Ivory";
+    renderLibrary(); window.scrollTo(0,0);
   }
 
   function showEditorUI(score) {
@@ -229,10 +222,8 @@
     editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
     viewHome.hidden = true; viewLibrary.hidden = true; viewEditor.hidden = false;
     libraryActions.hidden = true; editorActions.hidden = false;
-    document.body.classList.remove('is-home');
-    document.title = (score.title || t('untitled')) + " — Ebony & Ivory";
-    fillEditorFields(); renderScore();
-    window.scrollTo(0,0);
+    document.body.classList.remove('is-home'); document.title = (score.title || t('untitled')) + " — Ebony & Ivory";
+    fillEditorFields(); renderScore(); window.scrollTo(0,0);
   }
 
   window.addEventListener("hashchange", handleNavigation);
@@ -298,6 +289,8 @@
     }
   }
 
+  function escapeHtml(str) { const d = document.createElement("div"); d.textContent = str; return d.innerHTML; }
+
   /* -----------------------------------------------------------------------
      Campos del editor
      ----------------------------------------------------------------------- */
@@ -357,10 +350,9 @@
   });
 
   /* -----------------------------------------------------------------------
-     VexFlow Render Paginado (Para impresión perfecta en PDF)
+     VexFlow Render Paginado
      ----------------------------------------------------------------------- */
   const vexPagesContainer = document.getElementById("vexPagesContainer");
-
   function noteToVexKey(n) { let acc = n.accidental === "#" || n.accidental === "b" ? n.accidental : ""; return n.letter.toLowerCase() + acc + "/" + n.octave; }
 
   function buildVexNotes(staffNotes, clef) {
@@ -380,79 +372,55 @@
   function measureNeededQuarters(timeSig) { const [num, den] = timeSig.split("/").map(Number); return num * (4 / den); }
 
   function renderScore() {
-    if (!currentScore) return;
-    persistScore(currentScore);
-    vexPagesContainer.innerHTML = "";
+    if (!currentScore) return; persistScore(currentScore); vexPagesContainer.innerHTML = "";
 
     if (typeof Vex === "undefined") {
       vexPagesContainer.innerHTML = '<p style="padding:40px;color:#8C2F39;font-weight:bold;">No se ha podido cargar VexFlow.</p>'; return;
     }
 
     try {
-      const VF = Vex.Flow;
-      const measures = currentScore.measures;
-      const [num, den] = currentScore.timeSig.split("/").map(Number);
-      
+      const VF = Vex.Flow; const measures = currentScore.measures; const [num, den] = currentScore.timeSig.split("/").map(Number);
       const totalLines = Math.ceil(measures.length / MEASURES_PER_LINE);
       const totalPages = Math.ceil(totalLines / LINES_PER_PAGE) || 1;
       const totalWidth = LEFT_MARGIN * 2 + FIRST_OF_LINE_WIDTH + (REST_OF_LINE_WIDTH * (MEASURES_PER_LINE - 1));
       
-      // Icono SVG para el pie de página
       const svgIcon = `<svg class="print-logo-isotipo" viewBox="0 0 100 100"><rect x="10" y="20" width="80" height="60" rx="8" fill="currentColor"/><rect x="25" y="20" width="12" height="35" fill="var(--paper)"/><rect x="44" y="20" width="12" height="35" fill="var(--paper)"/><rect x="63" y="20" width="12" height="35" fill="var(--paper)"/></svg>`;
 
       for (let p = 0; p < totalPages; p++) {
-          const pageDiv = document.createElement('div');
-          pageDiv.className = 'paper-page';
+          const pageDiv = document.createElement('div'); pageDiv.className = 'paper-page';
           
-          // Encabezado de Impresión (Invisible en web, visible en PDF excepto pág 1)
-          const printHeader = document.createElement('div');
-          printHeader.className = 'print-header-content';
+          const printHeader = document.createElement('div'); printHeader.className = 'print-header-content';
           printHeader.innerHTML = `<span>${escapeHtml(currentScore.title)} — ${escapeHtml(currentScore.composer)}</span> <span>${plateLabel(currentScore.plate)}</span>`;
           pageDiv.appendChild(printHeader);
 
-          // Si es la página 1, añadimos el Título Grande
           let startY = TOP_MARGIN;
           if (p === 0) {
               const head = document.createElement("div"); head.className = "score-letterhead";
               head.innerHTML = `<h2>${escapeHtml(currentScore.title || t('untitled'))}</h2><p>${escapeHtml(currentScore.composer || "")}</p>`;
-              pageDiv.appendChild(head);
-              startY += 100; // Desplazar el primer pentagrama hacia abajo
+              pageDiv.appendChild(head); startY += 100;
           }
 
-          // Pie de Página de Impresión
-          const printFooter = document.createElement('div');
-          printFooter.className = 'print-footer-content';
+          const printFooter = document.createElement('div'); printFooter.className = 'print-footer-content';
           printFooter.innerHTML = `<span>${svgIcon}</span> <span>Pág ${p + 1} de ${totalPages}</span>`;
           pageDiv.appendChild(printFooter);
 
-          // Contenedor SVG de VexFlow
-          const svgWrap = document.createElement('div');
-          pageDiv.appendChild(svgWrap);
-          vexPagesContainer.appendChild(pageDiv);
+          const svgWrap = document.createElement('div'); pageDiv.appendChild(svgWrap); vexPagesContainer.appendChild(pageDiv);
 
-          // Determinar cuántas líneas tocan en esta página
           const linesOnThisPage = Math.min(LINES_PER_PAGE, totalLines - (p * LINES_PER_PAGE));
           const pageHeight = startY + (linesOnThisPage * LINE_GAP) + 20;
 
-          const renderer = new VF.Renderer(svgWrap, VF.Renderer.Backends.SVG);
-          renderer.resize(totalWidth, pageHeight);
-          const ctx = renderer.getContext();
-          const hitRects = [];
+          const renderer = new VF.Renderer(svgWrap, VF.Renderer.Backends.SVG); renderer.resize(totalWidth, pageHeight);
+          const ctx = renderer.getContext(); const hitRects = [];
 
           for (let l = 0; l < linesOnThisPage; l++) {
               const globalLineIdx = (p * LINES_PER_PAGE) + l;
-              
               for (let m = 0; m < MEASURES_PER_LINE; m++) {
-                  const idx = (globalLineIdx * MEASURES_PER_LINE) + m;
-                  if (idx >= measures.length) break;
+                  const idx = (globalLineIdx * MEASURES_PER_LINE) + m; if (idx >= measures.length) break;
                   
-                  const measure = measures[idx];
-                  const isFirstOfLine = (m === 0);
+                  const measure = measures[idx]; const isFirstOfLine = (m === 0);
                   const width = isFirstOfLine ? FIRST_OF_LINE_WIDTH : REST_OF_LINE_WIDTH;
                   const x = LEFT_MARGIN + (isFirstOfLine ? 0 : FIRST_OF_LINE_WIDTH + (REST_OF_LINE_WIDTH * (m - 1)));
-                  
-                  const yTreble = startY + (l * LINE_GAP); 
-                  const yBass = yTreble + STAVE_GAP;
+                  const yTreble = startY + (l * LINE_GAP); const yBass = yTreble + STAVE_GAP;
 
                   const staveTreble = new VF.Stave(x, yTreble, width); const staveBass = new VF.Stave(x, yBass, width);
 
@@ -499,19 +467,16 @@
               }
           }
 
-          // Interactividad y Clics (Ajustando ViewBox)
           const svg = svgWrap.querySelector("svg");
           if (svg) {
-            svg.setAttribute("viewBox", `0 0 ${totalWidth} ${pageHeight}`);
-            svg.removeAttribute("width"); svg.removeAttribute("height");
+            svg.setAttribute("viewBox", `0 0 ${totalWidth} ${pageHeight}`); svg.removeAttribute("width"); svg.removeAttribute("height");
             const ns = "http://www.w3.org/2000/svg";
             hitRects.forEach((hr) => {
               const g = document.createElementNS(ns, "g"); g.setAttribute("class", "measure-hit" + (hr.idx === editorState.activeMeasure ? " active" : ""));
               const rect = document.createElementNS(ns, "rect");
               rect.setAttribute("x", hr.x - 4); rect.setAttribute("y", hr.y); rect.setAttribute("width", hr.width + 4); rect.setAttribute("height", hr.height);
               rect.setAttribute("fill", hr.idx === editorState.activeMeasure ? "rgba(179, 142, 80, 0.15)" : "transparent"); rect.setAttribute("rx", "4");
-              g.appendChild(rect);
-              g.addEventListener("click", () => { editorState.activeMeasure = hr.idx; syncMeasureControls(); renderScore(); });
+              g.appendChild(rect); g.addEventListener("click", () => { editorState.activeMeasure = hr.idx; syncMeasureControls(); renderScore(); });
               svg.insertBefore(g, svg.firstChild);
             });
           }
@@ -531,16 +496,12 @@
      ----------------------------------------------------------------------- */
   document.getElementById("btnExportJson").addEventListener("click", () => { downloadBlob(slugify(currentScore.title) + ".json", JSON.stringify(currentScore, null, 2)); });
   
-  // FUNCION DE PDF MEJORADA (Cambia temporalmente el titulo para nombrar el archivo .pdf)
   document.getElementById("btnExportPdf").addEventListener("click", () => { 
       const originalTitle = document.title;
       const safeTitle = (currentScore.title || t('untitled')).trim();
       const safeAuthor = (currentScore.composer || t('unknownAuthor')).trim();
       document.title = `${safeTitle} — ${safeAuthor}`;
-      
       window.print();
-      
-      // Tras imprimir, restaurar título
       setTimeout(() => { document.title = originalTitle; }, 500);
   });
 
@@ -561,9 +522,12 @@
   document.getElementById("brandHome").addEventListener("click", () => { window.location.hash = "#inicio"; });
 
   /* -----------------------------------------------------------------------
-     Arranque Inicial
+     Arranque Inicial con Detección de Idioma Automática
      ----------------------------------------------------------------------- */
-  setLang('es'); 
+  const userLang = navigator.language || navigator.userLanguage;
+  const defaultLang = (userLang && userLang.toLowerCase().startsWith('es')) ? 'es' : 'en';
+  setLang(defaultLang);
+  
   if(!window.location.hash || window.location.hash === "#" || window.location.hash === "") { window.location.hash = "#inicio"; } 
   else { handleNavigation(); }
 })();
