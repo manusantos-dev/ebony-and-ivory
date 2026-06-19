@@ -9,11 +9,12 @@
      ----------------------------------------------------------------------- */
   const translations = {
     es: {
-      importBtn: "Importar .json", newScoreBtn: "+ Nueva partitura", backBtn: "← Biblioteca",
+      importBtn: "Importar .json", newScoreBtn: "+ Nueva partitura", backBtn: "← Volver al Catálogo",
       exportJsonBtn: "Exportar .json", exportPdfBtn: "Exportar PDF", saveBtn: "Guardar",
       heroEyebrow: "Tu catálogo personal", heroTitle: "Cada partitura, bajo el mismo sello.",
       heroSub: "Reescribe partituras de dominio público o crea las tuyas. Mismo papel, misma tinta, mismo orden — para siempre.",
-      emptyLibrary: "Tu atril está vacío. Pulsa «Nueva partitura» para comenzar.",
+      emptyLibraryTitle: "Tu atril está vacío",
+      emptyLibrary: "Pulsa «Nueva partitura» en la esquina superior derecha o importa un archivo .json para comenzar a llenar tu catálogo.",
       lblTitle: "Título", lblComposer: "Compositor / origen", lblTimeSig: "Compás", lblKeySig: "Tonalidad",
       lblActiveMeasure: "Compás activo", btnPrev: "‹ anterior", btnNext: "siguiente ›",
       btnAddMeasure: "+ añadir compás", btnDelMeasure: "eliminar compás", lblInputStaff: "Pentagrama de entrada",
@@ -26,15 +27,17 @@
       footerText: "Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales; usa solo material de dominio público o con permiso.",
       // Alertas y dinámicos
       untitled: "Sin título", unknownAuthor: "Autor desconocido", measuresTxt: "compases",
+      editBtn: "✎ Editar", copyBtn: "⎘ Copiar", deleteBtn: "🗑️ Borrar",
       delConfirm: "¿Eliminar partitura? No se puede deshacer.", delMeasureConfirm: "¿Eliminar este compás?",
       copySuffix: "(copia)", saved: "Guardado ✓", minMeasureAlert: "La partitura necesita al menos un compás."
     },
     en: {
-      importBtn: "Import .json", newScoreBtn: "+ New Score", backBtn: "← Library",
+      importBtn: "Import .json", newScoreBtn: "+ New Score", backBtn: "← Back to Library",
       exportJsonBtn: "Export .json", exportPdfBtn: "Export PDF", saveBtn: "Save",
       heroEyebrow: "Your personal catalog", heroTitle: "Every score, under the same seal.",
       heroSub: "Rewrite public domain scores or create your own. Same paper, same ink, same layout — forever.",
-      emptyLibrary: "Your library is empty. Click «New Score» to begin.",
+      emptyLibraryTitle: "Your library is empty",
+      emptyLibrary: "Click «New Score» in the top right corner or import a .json file to begin building your catalog.",
       lblTitle: "Title", lblComposer: "Composer / origin", lblTimeSig: "Time Sig.", lblKeySig: "Key Sig.",
       lblActiveMeasure: "Active Measure", btnPrev: "‹ previous", btnNext: "next ›",
       btnAddMeasure: "+ add measure", btnDelMeasure: "delete measure", lblInputStaff: "Input Staff",
@@ -47,6 +50,7 @@
       footerText: "Ebony & Ivory is a personal tool for transcribing and archiving sheet music. Rewritten works still belong to their original authors; use only public domain material or with permission.",
       // Alerts & Dynamics
       untitled: "Untitled", unknownAuthor: "Unknown author", measuresTxt: "measures",
+      editBtn: "✎ Edit", copyBtn: "⎘ Copy", deleteBtn: "🗑️ Delete",
       delConfirm: "Delete this score? This cannot be undone.", delMeasureConfirm: "Delete this measure?",
       copySuffix: "(copy)", saved: "Saved ✓", minMeasureAlert: "The score needs at least one measure."
     }
@@ -71,10 +75,9 @@
   function t(key) { return translations[currentLang][key] || key; }
 
   /* -----------------------------------------------------------------------
-     Constantes e Identificadores (Aislados para Ebony & Ivory)
+     Constantes e Identificadores
      ----------------------------------------------------------------------- */
   const STORAGE_KEY = "ebony_ivory:scores";
-  const PLATE_KEY = "ebony_ivory:plateCounter";
 
   const DURATION_QUARTERS = { w: 4, h: 2, q: 1, "8": 0.5, "16": 0.25, "32": 0.125 };
   const MEASURES_PER_LINE = 2;
@@ -93,10 +96,13 @@
      ----------------------------------------------------------------------- */
   function uid() { return "s_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 
+  // FIX: Calcula el siguiente número de placa basándose en lo que hay guardado realmente.
   function nextPlateNumber() {
-    const n = parseInt(localStorage.getItem(PLATE_KEY) || "0", 10) + 1;
-    localStorage.setItem(PLATE_KEY, String(n));
-    return n;
+    const all = loadAll();
+    const scores = Object.values(all);
+    if (scores.length === 0) return 1;
+    const maxPlate = Math.max(...scores.map(s => s.plate || 0));
+    return maxPlate + 1;
   }
 
   function plateLabel(n) { return "E&I " + String(n).padStart(3, "0"); }
@@ -153,6 +159,7 @@
     libraryActions.hidden = false; editorActions.hidden = true;
     document.title = "Ebony & Ivory — Sheet Music Library";
     renderLibrary();
+    window.scrollTo(0,0);
   }
 
   function showEditor(score) {
@@ -162,6 +169,7 @@
     libraryActions.hidden = true; editorActions.hidden = false;
     document.title = (score.title || t('untitled')) + " — Ebony & Ivory";
     fillEditorFields(); renderScore();
+    window.scrollTo(0,0);
   }
 
   /* -----------------------------------------------------------------------
@@ -174,40 +182,55 @@
     const all = loadAll();
     const scores = Object.values(all).sort((a, b) => b.updatedAt - a.updatedAt);
     libraryGrid.innerHTML = "";
-    libraryEmpty.hidden = scores.length > 0;
-
-    scores.forEach((score) => {
-      const card = document.createElement("div");
-      card.className = "score-card";
-      card.innerHTML = `
-        <div class="card-actions">
-          <button class="icon-btn" data-action="duplicate" title="Copy">⎘</button>
-          <button class="icon-btn" data-action="delete" title="Delete">✕</button>
-        </div>
-        <span class="card-eyebrow">${plateLabel(score.plate)} · ${score.timeSig}</span>
-        <h3>${escapeHtml(score.title || t('untitled'))}</h3>
-        <p class="composer">${escapeHtml(score.composer || t('unknownAuthor'))}</p>
-        <div class="meta"><span>${score.measures.length} ${t('measuresTxt')}</span><span>${formatDate(score.updatedAt)}</span></div>
-      `;
-      card.addEventListener("click", (e) => {
-        const action = e.target.closest("[data-action]");
-        if (action) {
-          e.stopPropagation();
-          if (action.dataset.action === "delete") {
-            if (confirm(t('delConfirm'))) { deleteScoreById(score.id); renderLibrary(); }
-          } else if (action.dataset.action === "duplicate") {
-            const copy = JSON.parse(JSON.stringify(score));
-            copy.id = uid(); copy.plate = nextPlateNumber();
-            copy.title = (score.title || t('untitled')) + " " + t('copySuffix');
-            copy.createdAt = copy.updatedAt = Date.now();
-            persistScore(copy); renderLibrary();
-          }
-          return;
-        }
-        showEditor(score);
-      });
-      libraryGrid.appendChild(card);
-    });
+    
+    if (scores.length === 0) {
+        libraryEmpty.hidden = false;
+        libraryGrid.hidden = true;
+    } else {
+        libraryEmpty.hidden = true;
+        libraryGrid.hidden = false;
+        
+        scores.forEach((score) => {
+          const card = document.createElement("div");
+          card.className = "score-card";
+          
+          // NUEVO DISEÑO DE TARJETA CON BOTONES VISIBLES
+          card.innerHTML = `
+            <span class="card-eyebrow">${plateLabel(score.plate)} · ${score.timeSig}</span>
+            <h3>${escapeHtml(score.title || t('untitled'))}</h3>
+            <p class="composer">${escapeHtml(score.composer || t('unknownAuthor'))}</p>
+            <div class="meta"><span>${score.measures.length} ${t('measuresTxt')}</span><span>${formatDate(score.updatedAt)}</span></div>
+            
+            <div class="card-actions-row">
+              <button class="btn-card" data-action="edit">${t('editBtn')}</button>
+              <button class="btn-card" data-action="duplicate">${t('copyBtn')}</button>
+              <button class="btn-card btn-danger-card" data-action="delete">${t('deleteBtn')}</button>
+            </div>
+          `;
+          
+          card.addEventListener("click", (e) => {
+            const action = e.target.closest("[data-action]");
+            if (action) {
+              e.stopPropagation();
+              if (action.dataset.action === "delete") {
+                if (confirm(t('delConfirm'))) { deleteScoreById(score.id); renderLibrary(); }
+              } else if (action.dataset.action === "duplicate") {
+                const copy = JSON.parse(JSON.stringify(score));
+                copy.id = uid(); copy.plate = nextPlateNumber();
+                copy.title = (score.title || t('untitled')) + " " + t('copySuffix');
+                copy.createdAt = copy.updatedAt = Date.now();
+                persistScore(copy); renderLibrary();
+              } else if (action.dataset.action === "edit") {
+                showEditor(score);
+              }
+              return;
+            }
+            // Si hacen clic en cualquier otro lado de la tarjeta, también edita
+            showEditor(score);
+          });
+          libraryGrid.appendChild(card);
+        });
+    }
   }
 
   function escapeHtml(str) { const d = document.createElement("div"); d.textContent = str; return d.innerHTML; }
@@ -317,8 +340,11 @@
   });
 
   document.getElementById("btnUndoNote").addEventListener("click", () => {
-    currentScore.measures[editorState.activeMeasure][editorState.activeStaff].pop();
-    renderScore();
+    const measure = currentScore.measures[editorState.activeMeasure];
+    if (measure[editorState.activeStaff].length > 0) {
+        measure[editorState.activeStaff].pop();
+        renderScore();
+    }
   });
 
   /* -----------------------------------------------------------------------
@@ -361,7 +387,7 @@
     vexContainer.innerHTML = "";
 
     if (typeof Vex === "undefined") {
-      vexContainer.innerHTML = '<p style="padding:24px;color:#8C2F39;">Engine load failed. Check connection.</p>';
+      vexContainer.innerHTML = '<p style="padding:40px;text-align:center;color:#8C2F39;font-weight:bold;">No se ha podido cargar el motor de partituras.<br><br>Parece que tu red o un bloqueador de anuncios (AdBlock/uBlock) está impidiendo la descarga de VexFlow.<br>Por favor, desactívalo y recarga la página.</p>';
       return;
     }
 
@@ -467,7 +493,7 @@
       updateBeatCounters();
     } catch (err) {
       console.error(err);
-      vexContainer.innerHTML = `<p style="padding:24px;color:#8C2F39;">Error. Check note duration limits for this time signature.</p>`;
+      vexContainer.innerHTML = `<p style="padding:24px;color:#8C2F39;">Error al dibujar. Revisa que las notas no superen la duración del compás.</p>`;
     }
   }
 
@@ -519,11 +545,16 @@
 
   document.getElementById("btnNewScore").addEventListener("click", () => { const score = newScore(); persistScore(score); showEditor(score); });
   document.getElementById("btnBackLibrary").addEventListener("click", () => { persistScore(currentScore); showLibrary(); });
-  document.getElementById("brandHome").addEventListener("click", () => { if (currentScore) persistScore(currentScore); showLibrary(); });
+  
+  // FUNCIONALIDAD DE VUELTA A CASA PULSANDO EL LOGO
+  document.getElementById("brandHome").addEventListener("click", () => { 
+      if (currentScore) persistScore(currentScore); 
+      showLibrary(); 
+  });
 
   /* -----------------------------------------------------------------------
      Arranque
      ----------------------------------------------------------------------- */
-  setLang('es'); // Inicializar idioma
+  setLang('es'); 
   showLibrary();
 })();
