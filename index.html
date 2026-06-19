@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ebony & Ivory — Sheet Music Library</title>
-<meta name="description" content="Crea, guarda y exporta tus propias partituras en una estética unificada.">
+<meta name="description" content="El arte de preservar la música.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎹</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
 
 <!-- ============ CABECERA PRINCIPAL ============ -->
 <header class="topbar">
-  <div class="brand" id="brandHome" title="Inicio">
+  <div class="brand" id="brandHome" title="Ir al Catálogo">
     <span class="brand-mark">🎹</span>
     <span class="brand-word">Ebony & Ivory</span>
   </div>
@@ -25,14 +25,14 @@
       <button class="lang-btn" onclick="setLang('en')">EN</button>
     </div>
     
-    <!-- Botones del Catálogo (Ocultos en Inicio) -->
+    <!-- Botones del Catálogo -->
     <nav class="topbar-actions" id="libraryActions" hidden>
       <button class="btn btn-ghost" id="btnImport" data-i18n="importBtn">Importar .json</button>
       <input type="file" id="fileImport" accept="application/json" hidden>
       <button class="btn btn-primary" id="btnNewScore" data-i18n="newScoreBtn">+ Nueva partitura</button>
     </nav>
     
-    <!-- Botones del Editor (Ocultos en Inicio y Catálogo) -->
+    <!-- Botones del Editor -->
     <nav class="topbar-actions" id="editorActions" hidden>
       <span id="saveIndicator" class="save-indicator" data-i18n="savedIndicator">Guardado ✓</span>
       <button class="btn btn-ghost" id="btnExportJson" data-i18n="exportJsonBtn">Descargar .json</button>
@@ -45,9 +45,14 @@
 <main id="viewHome" class="view">
   <div class="floating-notes" id="floatingNotes"></div>
   <div class="home-hero">
-    <h1 data-i18n="heroTitle">Cada partitura, bajo el mismo sello.</h1>
-    <p class="hero-sub" data-i18n="heroSub">Reescribe partituras de dominio público o crea las tuyas propias. Mismo papel, misma tinta, mismo orden — para siempre.</p>
-    <button class="btn btn-primary btn-huge" onclick="window.location.hash='#catalogo'" data-i18n="goToCatalog">Ir a mi Catálogo</button>
+    <!-- LOGO GIGANTE CENTRAL -->
+    <div class="hero-logo">
+      <span class="hero-mark">🎹</span>
+      <span class="hero-word">Ebony & Ivory</span>
+    </div>
+    <h1 data-i18n="heroTitle">El arte de preservar la música.</h1>
+    <p class="hero-sub" data-i18n="heroSub">Un lienzo digital estandarizado para transcribir, clasificar y eternizar tus partituras con una elegancia inigualable.</p>
+    <button class="btn btn-primary btn-huge" onclick="window.location.hash='#catalogo'" data-i18n="goToCatalog">Abrir mi Catálogo</button>
   </div>
 </main>
 
@@ -57,21 +62,55 @@
     <h2 data-i18n="catalogTitle">Catálogo de Partituras</h2>
     
     <div class="catalog-toolbar">
-      <input type="text" id="searchScores" class="field-input search-input" placeholder="Buscar por título, autor o número..." data-i18n-placeholder="searchPlaceholder">
+      <input type="text" id="searchScores" class="field-input search-input" placeholder="Buscar por título, autor o E&I..." data-i18n-placeholder="searchPlaceholder">
+      
+      <button class="btn btn-ghost" id="btnToggleFilters" data-i18n="filterBtn">Filtros ⧨</button>
+      
       <select id="sortScores" class="field-input sort-select">
-        <option value="dateDesc" data-i18n="sortDateDesc">Más recientes primero</option>
-        <option value="dateAsc" data-i18n="sortDateAsc">Más antiguas primero</option>
-        <option value="titleAsc" data-i18n="sortTitle">Título (A-Z)</option>
-        <option value="numAsc" data-i18n="sortNum">Número (E&I asc.)</option>
+        <option value="numAsc" data-i18n="sortNumAsc">Número (E&I asc.)</option>
+        <option value="numDesc" data-i18n="sortNumDesc">Número (E&I desc.)</option>
+        <option value="dateDesc" data-i18n="sortDateDesc">Última edición (Reciente)</option>
+        <option value="dateAsc" data-i18n="sortDateAsc">Última edición (Antigua)</option>
+        <option value="titleAsc" data-i18n="sortTitleAsc">Título (A-Z)</option>
+        <option value="authorAsc" data-i18n="sortAuthorAsc">Autor (A-Z)</option>
       </select>
+    </div>
+
+    <!-- Panel de filtros expandible -->
+    <div class="catalog-filters" id="catalogFilters" hidden>
+      <div class="filter-group">
+        <label class="field-label" data-i18n="lblTimeSig">Compás</label>
+        <select id="filterTimeSig" class="field-input">
+          <option value="all" data-i18n="optAll">Cualquiera</option>
+          <option value="4/4">4/4</option><option value="3/4">3/4</option><option value="2/4">2/4</option>
+          <option value="6/8">6/8</option><option value="9/8">9/8</option><option value="12/8">12/8</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="field-label" data-i18n="lblKeySig">Tonalidad</label>
+        <select id="filterKeySig" class="field-input">
+          <option value="all" data-i18n="optAll">Cualquiera</option>
+          <option value="C">C / Am</option><option value="G">G / Em</option><option value="D">D / Bm</option>
+          <option value="F">F / Dm</option><option value="Bb">Bb / Gm</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="field-label" data-i18n="lblHands">Manos / Pentagramas</label>
+        <select id="filterHands" class="field-input">
+          <option value="all" data-i18n="optAll">Cualquiera</option>
+          <option value="both" data-i18n="optBothHands">Ambas manos</option>
+          <option value="treble" data-i18n="optTrebleOnly">Solo mano derecha</option>
+          <option value="bass" data-i18n="optBassOnly">Solo mano izquierda</option>
+        </select>
+      </div>
     </div>
   </div>
   
   <section class="library-grid" id="libraryGrid"></section>
   
   <div class="library-empty" id="libraryEmpty" hidden>
-    <h3 data-i18n="emptyLibraryTitle">Tu catálogo está vacío</h3>
-    <p data-i18n="emptyLibrary">Pulsa «Nueva partitura» en la esquina superior derecha o importa un archivo .json para comenzar a llenar tu colección.</p>
+    <h3 data-i18n="emptyLibraryTitle">Tu catálogo está vacío (o sin resultados)</h3>
+    <p data-i18n="emptyLibrary">Pulsa «Nueva partitura» en la esquina superior derecha o cambia los filtros de búsqueda.</p>
   </div>
 </main>
 
