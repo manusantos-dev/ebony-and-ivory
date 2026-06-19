@@ -11,13 +11,15 @@
     es: {
       importBtn: "Importar .json", newScoreBtn: "+ Nueva partitura", backBtn: "← Volver al Catálogo",
       exportJsonBtn: "Descargar .json", exportPdfBtn: "Exportar PDF", savedIndicator: "Guardado ✓",
-      heroTitle: "Cada partitura, bajo el mismo sello.",
-      heroSub: "Reescribe partituras de dominio público o crea las tuyas propias. Mismo papel, misma tinta, mismo orden — para siempre.",
-      goToCatalog: "Ir a mi Catálogo", catalogTitle: "Catálogo de Partituras",
-      searchPlaceholder: "Buscar por título, autor o E&I...",
-      sortDateDesc: "Más recientes primero", sortDateAsc: "Más antiguas primero", sortTitle: "Título (A-Z)", sortNum: "Número (E&I asc.)",
-      emptyLibraryTitle: "Tu catálogo está vacío",
-      emptyLibrary: "Pulsa «Nueva partitura» en la esquina superior derecha o importa un archivo .json para comenzar a llenar tu colección.",
+      heroTitle: "El arte de preservar la música.",
+      heroSub: "Un lienzo digital estandarizado para transcribir, clasificar y eternizar tus partituras con una elegancia inigualable.",
+      goToCatalog: "Abrir mi Catálogo", catalogTitle: "Catálogo de Partituras",
+      searchPlaceholder: "Buscar por título, autor o E&I...", filterBtn: "Filtros ⧨",
+      sortNumAsc: "Número (E&I asc.)", sortNumDesc: "Número (E&I desc.)", sortDateDesc: "Última edición (Reciente)", 
+      sortDateAsc: "Última edición (Antigua)", sortTitleAsc: "Título (A-Z)", sortAuthorAsc: "Autor (A-Z)",
+      lblHands: "Manos / Pentagramas", optAll: "Cualquiera", optBothHands: "Ambas manos", optTrebleOnly: "Solo mano derecha", optBassOnly: "Solo mano izquierda",
+      emptyLibraryTitle: "Tu catálogo está vacío (o sin resultados)",
+      emptyLibrary: "Pulsa «Nueva partitura» en la esquina superior derecha o cambia los filtros de búsqueda.",
       lblTitle: "Título", lblComposer: "Compositor / origen", lblTimeSig: "Compás", lblKeySig: "Tonalidad",
       lblActiveMeasure: "Compás activo", btnPrev: "‹ anterior", btnNext: "siguiente ›",
       btnAddMeasure: "+ añadir compás", btnDelMeasure: "eliminar compás", lblInputStaff: "Pentagrama de entrada",
@@ -36,13 +38,15 @@
     en: {
       importBtn: "Import .json", newScoreBtn: "+ New Score", backBtn: "← Back to Catalog",
       exportJsonBtn: "Download .json", exportPdfBtn: "Export PDF", savedIndicator: "Saved ✓",
-      heroTitle: "Every score, under the same seal.",
-      heroSub: "Rewrite public domain scores or create your own. Same paper, same ink, same layout — forever.",
-      goToCatalog: "Go to my Catalog", catalogTitle: "Sheet Music Catalog",
-      searchPlaceholder: "Search by title, author or E&I...",
-      sortDateDesc: "Newest first", sortDateAsc: "Oldest first", sortTitle: "Title (A-Z)", sortNum: "Number (E&I asc.)",
-      emptyLibraryTitle: "Your catalog is empty",
-      emptyLibrary: "Click «New Score» in the top right corner or import a .json file to begin building your collection.",
+      heroTitle: "The art of preserving music.",
+      heroSub: "A standardized digital canvas to transcribe, classify, and immortalize your sheet music with unmatched elegance.",
+      goToCatalog: "Open my Catalog", catalogTitle: "Sheet Music Catalog",
+      searchPlaceholder: "Search by title, author or E&I...", filterBtn: "Filters ⧨",
+      sortNumAsc: "Number (E&I asc.)", sortNumDesc: "Number (E&I desc.)", sortDateDesc: "Last edited (Newest)", 
+      sortDateAsc: "Last edited (Oldest)", sortTitleAsc: "Title (A-Z)", sortAuthorAsc: "Author (A-Z)",
+      lblHands: "Hands / Staves", optAll: "Any", optBothHands: "Both hands", optTrebleOnly: "Right hand only", optBassOnly: "Left hand only",
+      emptyLibraryTitle: "Your catalog is empty (or no results)",
+      emptyLibrary: "Click «New Score» in the top right corner or change your search filters.",
       lblTitle: "Title", lblComposer: "Composer / origin", lblTimeSig: "Time Sig.", lblKeySig: "Key Sig.",
       lblActiveMeasure: "Active Measure", btnPrev: "‹ previous", btnNext: "next ›",
       btnAddMeasure: "+ add measure", btnDelMeasure: "delete measure", lblInputStaff: "Input Staff",
@@ -117,7 +121,9 @@
   let currentScore = null;     
   let editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
   let saveTimeout = null;
-  let libraryFilter = { query: "", sortBy: "dateDesc" };
+  
+  // Estado inicial del Catálogo (Orden E&I asc por defecto)
+  let libraryState = { query: "", sortBy: "numAsc", filterTime: "all", filterKey: "all", filterHands: "all" };
 
   /* -----------------------------------------------------------------------
      Utilidades
@@ -130,7 +136,7 @@
   function downloadBlob(filename, text, type) { const blob = new Blob([text], { type: type || "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 2000); }
 
   /* -----------------------------------------------------------------------
-     Modelo de datos y Guardado Automático
+     Modelo de datos
      ----------------------------------------------------------------------- */
   function newMeasure() { return { treble: [], bass: [], repeatStart: false, repeatEnd: false, directive: "" }; }
   function newScore() { return { id: uid(), plate: nextPlateNumber(), title: "", composer: "", timeSig: "4/4", keySig: "C", tempoText: "", measures: [newMeasure()], createdAt: Date.now(), updatedAt: Date.now() }; }
@@ -148,7 +154,7 @@
   }
 
   /* -----------------------------------------------------------------------
-     Navegación por URL Hash
+     Navegación
      ----------------------------------------------------------------------- */
   const viewHome = document.getElementById("viewHome");
   const viewLibrary = document.getElementById("viewLibrary");
@@ -173,6 +179,7 @@
     currentScore = null;
     viewHome.hidden = false; viewLibrary.hidden = true; viewEditor.hidden = true;
     libraryActions.hidden = true; editorActions.hidden = true;
+    document.body.classList.add('is-home');
     document.title = "Ebony & Ivory";
     window.scrollTo(0,0);
   }
@@ -181,6 +188,7 @@
     currentScore = null;
     viewHome.hidden = true; viewLibrary.hidden = false; viewEditor.hidden = true;
     libraryActions.hidden = false; editorActions.hidden = true;
+    document.body.classList.remove('is-home');
     document.title = t('catalogTitle') + " — Ebony & Ivory";
     renderLibrary();
     window.scrollTo(0,0);
@@ -191,6 +199,7 @@
     editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
     viewHome.hidden = true; viewLibrary.hidden = true; viewEditor.hidden = false;
     libraryActions.hidden = true; editorActions.hidden = false;
+    document.body.classList.remove('is-home');
     document.title = (score.title || t('untitled')) + " — Ebony & Ivory";
     fillEditorFields(); renderScore();
     window.scrollTo(0,0);
@@ -203,38 +212,68 @@
      ----------------------------------------------------------------------- */
   const libraryGrid = document.getElementById("libraryGrid");
   const libraryEmpty = document.getElementById("libraryEmpty");
+  
+  // UI Elementos
   const elSearch = document.getElementById("searchScores");
   const elSort = document.getElementById("sortScores");
+  const elBtnFilters = document.getElementById("btnToggleFilters");
+  const elFiltersPanel = document.getElementById("catalogFilters");
+  const elFilterTime = document.getElementById("filterTimeSig");
+  const elFilterKey = document.getElementById("filterKeySig");
+  const elFilterHands = document.getElementById("filterHands");
 
-  elSearch.addEventListener("input", (e) => { libraryFilter.query = e.target.value.toLowerCase(); renderLibrary(); });
-  elSort.addEventListener("change", (e) => { libraryFilter.sortBy = e.target.value; renderLibrary(); });
+  elSearch.addEventListener("input", (e) => { libraryState.query = e.target.value.toLowerCase(); renderLibrary(); });
+  elSort.addEventListener("change", (e) => { libraryState.sortBy = e.target.value; renderLibrary(); });
+  
+  elBtnFilters.addEventListener("click", () => { elFiltersPanel.hidden = !elFiltersPanel.hidden; });
+  elFilterTime.addEventListener("change", (e) => { libraryState.filterTime = e.target.value; renderLibrary(); });
+  elFilterKey.addEventListener("change", (e) => { libraryState.filterKey = e.target.value; renderLibrary(); });
+  elFilterHands.addEventListener("change", (e) => { libraryState.filterHands = e.target.value; renderLibrary(); });
 
   function renderLibrary() {
     const all = loadAll();
     let scores = Object.values(all);
 
-    // Búsqueda
-    if (libraryFilter.query) {
+    // 1. Filtrado de Texto
+    if (libraryState.query) {
         scores = scores.filter(s => 
-            (s.title || "").toLowerCase().includes(libraryFilter.query) ||
-            (s.composer || "").toLowerCase().includes(libraryFilter.query) ||
-            plateLabel(s.plate).toLowerCase().includes(libraryFilter.query)
+            (s.title || "").toLowerCase().includes(libraryState.query) ||
+            (s.composer || "").toLowerCase().includes(libraryState.query) ||
+            plateLabel(s.plate).toLowerCase().includes(libraryState.query)
         );
     }
+    
+    // 2. Filtrado por Atributos Musicales
+    scores = scores.filter(s => {
+        let match = true;
+        if (libraryState.filterTime !== "all" && s.timeSig !== libraryState.filterTime) match = false;
+        if (libraryState.filterKey !== "all" && s.keySig !== libraryState.filterKey) match = false;
+        
+        if (libraryState.filterHands !== "all") {
+            let hasTreble = s.measures.some(m => m.treble && m.treble.length > 0);
+            let hasBass = s.measures.some(m => m.bass && m.bass.length > 0);
+            
+            if (libraryState.filterHands === "both" && (!hasTreble || !hasBass)) match = false;
+            if (libraryState.filterHands === "treble" && hasBass) match = false;
+            if (libraryState.filterHands === "bass" && hasTreble) match = false;
+        }
+        return match;
+    });
 
-    // Ordenación
+    // 3. Ordenación
     scores.sort((a, b) => {
-        if (libraryFilter.sortBy === "dateDesc") return b.updatedAt - a.updatedAt;
-        if (libraryFilter.sortBy === "dateAsc") return a.updatedAt - b.updatedAt;
-        if (libraryFilter.sortBy === "titleAsc") return (a.title || "").localeCompare(b.title || "");
-        if (libraryFilter.sortBy === "numAsc") return a.plate - b.plate;
+        if (libraryState.sortBy === "numAsc") return a.plate - b.plate;
+        if (libraryState.sortBy === "numDesc") return b.plate - a.plate;
+        if (libraryState.sortBy === "dateDesc") return b.updatedAt - a.updatedAt;
+        if (libraryState.sortBy === "dateAsc") return a.updatedAt - b.updatedAt;
+        if (libraryState.sortBy === "titleAsc") return (a.title || "").localeCompare(b.title || "");
+        if (libraryState.sortBy === "authorAsc") return (a.composer || "").localeCompare(b.composer || "");
         return 0;
     });
 
     libraryGrid.innerHTML = "";
     
-    // Si no hay partituras EN ABSOLUTO (sin filtro)
-    if (Object.keys(all).length === 0) {
+    if (scores.length === 0) {
         libraryEmpty.hidden = false; libraryGrid.hidden = true;
     } else {
         libraryEmpty.hidden = true; libraryGrid.hidden = false;
@@ -278,8 +317,10 @@
     }
   }
 
+  function escapeHtml(str) { const d = document.createElement("div"); d.textContent = str; return d.innerHTML; }
+
   /* -----------------------------------------------------------------------
-     Campos del editor y Controles
+     Campos del editor
      ----------------------------------------------------------------------- */
   const elTitle = document.getElementById("scoreTitle"); const elComposer = document.getElementById("scoreComposer");
   const elTimeSig = document.getElementById("timeSig"); const elKeySig = document.getElementById("keySig");
@@ -346,7 +387,7 @@
   });
 
   /* -----------------------------------------------------------------------
-     VexFlow Render (Protegido con try/catch en barras de agrupación)
+     VexFlow Render
      ----------------------------------------------------------------------- */
   const vexContainer = document.getElementById("vexContainer");
   const plateMarkEl = document.getElementById("plateMark");
@@ -437,11 +478,7 @@
         if (trebleNotes.length > 0) {
           const vTreble = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT);
           vTreble.addTickables(trebleNotes);
-          
-          // PROTECCIÓN ANTI-CRASHES DE VEXFLOW (Beaming)
-          try { VF.Beam.generateBeams(trebleNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } 
-          catch(e) { console.warn("VexFlow agrupando corcheas (Sol):", e); }
-          
+          try { VF.Beam.generateBeams(trebleNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch(e) {}
           new VF.Formatter().joinVoices([vTreble]).format([vTreble], width - 30);
           vTreble.draw(ctx, staveTreble);
         }
@@ -449,11 +486,7 @@
         if (bassNotes.length > 0) {
           const vBass = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT);
           vBass.addTickables(bassNotes);
-          
-          // PROTECCIÓN ANTI-CRASHES DE VEXFLOW (Beaming)
-          try { VF.Beam.generateBeams(bassNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } 
-          catch(e) { console.warn("VexFlow agrupando corcheas (Fa):", e); }
-          
+          try { VF.Beam.generateBeams(bassNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch(e) {}
           new VF.Formatter().joinVoices([vBass]).format([vBass], width - 30);
           vBass.draw(ctx, staveBass);
         }
@@ -523,7 +556,7 @@
         data.id = uid(); data.plate = nextPlateNumber(); data.updatedAt = Date.now();
         persistScore(data); window.location.hash = "#catalogo";
       } catch (err) { alert("Error: " + err.message); }
-      e.target.value = "";
+      e.target.value = ""; // Vuelve a vaciar el valor para que puedas reimportar si quieres
     };
     reader.readAsText(file);
   });
