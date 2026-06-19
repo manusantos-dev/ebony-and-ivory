@@ -12,9 +12,9 @@
 </head>
 <body>
 
-<!-- ============ CABECERA ============ -->
+<!-- ============ CABECERA PRINCIPAL ============ -->
 <header class="topbar">
-  <div class="brand" id="brandHome" title="Ir al Catálogo">
+  <div class="brand" id="brandHome" title="Inicio">
     <span class="brand-mark">🎹</span>
     <span class="brand-word">Ebony & Ivory</span>
   </div>
@@ -25,14 +25,14 @@
       <button class="lang-btn" onclick="setLang('en')">EN</button>
     </div>
     
-    <!-- Botones exclusivos de la Biblioteca -->
-    <nav class="topbar-actions" id="libraryActions">
+    <!-- Botones del Catálogo (Ocultos en Inicio) -->
+    <nav class="topbar-actions" id="libraryActions" hidden>
       <button class="btn btn-ghost" id="btnImport" data-i18n="importBtn">Importar .json</button>
       <input type="file" id="fileImport" accept="application/json" hidden>
       <button class="btn btn-primary" id="btnNewScore" data-i18n="newScoreBtn">+ Nueva partitura</button>
     </nav>
     
-    <!-- Botones exclusivos del Editor -->
+    <!-- Botones del Editor (Ocultos en Inicio y Catálogo) -->
     <nav class="topbar-actions" id="editorActions" hidden>
       <span id="saveIndicator" class="save-indicator" data-i18n="savedIndicator">Guardado ✓</span>
       <button class="btn btn-ghost" id="btnExportJson" data-i18n="exportJsonBtn">Descargar .json</button>
@@ -41,32 +41,47 @@
   </div>
 </header>
 
-<!-- ============ VISTA: BIBLIOTECA ============ -->
-<main id="viewLibrary" class="view">
-  <section class="library-hero">
-    <div class="hero-content">
-      <p class="eyebrow" data-i18n="heroEyebrow">Tu catálogo personal</p>
-      <h1 data-i18n="heroTitle">Cada partitura, bajo el mismo sello.</h1>
-      <p class="hero-sub" data-i18n="heroSub">Reescribe partituras de dominio público o crea las tuyas. Mismo papel, misma tinta, mismo orden — para siempre.</p>
+<!-- ============ VISTA 1: INICIO (LANDING PAGE) ============ -->
+<main id="viewHome" class="view">
+  <div class="floating-notes" id="floatingNotes"></div>
+  <div class="home-hero">
+    <h1 data-i18n="heroTitle">Cada partitura, bajo el mismo sello.</h1>
+    <p class="hero-sub" data-i18n="heroSub">Reescribe partituras de dominio público o crea las tuyas propias. Mismo papel, misma tinta, mismo orden — para siempre.</p>
+    <button class="btn btn-primary btn-huge" onclick="window.location.hash='#catalogo'" data-i18n="goToCatalog">Ir a mi Catálogo</button>
+  </div>
+</main>
+
+<!-- ============ VISTA 2: CATÁLOGO ============ -->
+<main id="viewLibrary" class="view" hidden>
+  <div class="catalog-header">
+    <h2 data-i18n="catalogTitle">Catálogo de Partituras</h2>
+    
+    <div class="catalog-toolbar">
+      <input type="text" id="searchScores" class="field-input search-input" placeholder="Buscar por título, autor o número..." data-i18n-placeholder="searchPlaceholder">
+      <select id="sortScores" class="field-input sort-select">
+        <option value="dateDesc" data-i18n="sortDateDesc">Más recientes primero</option>
+        <option value="dateAsc" data-i18n="sortDateAsc">Más antiguas primero</option>
+        <option value="titleAsc" data-i18n="sortTitle">Título (A-Z)</option>
+        <option value="numAsc" data-i18n="sortNum">Número (E&I asc.)</option>
+      </select>
     </div>
-  </section>
+  </div>
   
   <section class="library-grid" id="libraryGrid"></section>
   
   <div class="library-empty" id="libraryEmpty" hidden>
-    <h3 data-i18n="emptyLibraryTitle">Tu atril está vacío</h3>
-    <p data-i18n="emptyLibrary">Pulsa «Nueva partitura» en la esquina superior derecha o importa un archivo .json para comenzar a llenar tu catálogo.</p>
+    <h3 data-i18n="emptyLibraryTitle">Tu catálogo está vacío</h3>
+    <p data-i18n="emptyLibrary">Pulsa «Nueva partitura» en la esquina superior derecha o importa un archivo .json para comenzar a llenar tu colección.</p>
   </div>
 </main>
 
-<!-- ============ VISTA: EDITOR ============ -->
+<!-- ============ VISTA 3: EDITOR ============ -->
 <main id="viewEditor" class="view" hidden>
   <div class="editor-subnav">
     <button class="btn-ghost-small" id="btnBackLibrary" data-i18n="backBtn">← Volver al Catálogo</button>
   </div>
   
   <div class="editor-layout">
-    <!-- Panel lateral: mesa de grabado -->
     <aside class="engrave-desk">
       <div class="desk-section">
         <label class="field-label" data-i18n="lblTitle">Título</label>
@@ -80,27 +95,17 @@
           <div>
             <label class="field-label" data-i18n="lblTimeSig">Compás</label>
             <select id="timeSig" class="field-input">
-              <option value="4/4">4/4</option>
-              <option value="3/4">3/4</option>
-              <option value="2/4">2/4</option>
-              <option value="6/8">6/8</option>
-              <option value="9/8">9/8</option>
-              <option value="12/8">12/8</option>
+              <option value="4/4">4/4</option><option value="3/4">3/4</option><option value="2/4">2/4</option>
+              <option value="6/8">6/8</option><option value="9/8">9/8</option><option value="12/8">12/8</option>
               <option value="2/2">2/2</option>
             </select>
           </div>
           <div>
             <label class="field-label" data-i18n="lblKeySig">Tonalidad</label>
             <select id="keySig" class="field-input">
-              <option value="C">C / Am</option>
-              <option value="G">G / Em</option>
-              <option value="D">D / Bm</option>
-              <option value="A">A / F#m</option>
-              <option value="E">E / C#m</option>
-              <option value="B">B / G#m</option>
-              <option value="F">F / Dm</option>
-              <option value="Bb">Bb / Gm</option>
-              <option value="Eb">Eb / Cm</option>
+              <option value="C">C / Am</option><option value="G">G / Em</option><option value="D">D / Bm</option>
+              <option value="A">A / F#m</option><option value="E">E / C#m</option><option value="B">B / G#m</option>
+              <option value="F">F / Dm</option><option value="Bb">Bb / Gm</option><option value="Eb">Eb / Cm</option>
               <option value="Ab">Ab / Fm</option>
             </select>
           </div>
@@ -146,10 +151,7 @@
           <div>
             <label class="field-label" data-i18n="lblAccidental">Alteración</label>
             <select id="pitchAccidental" class="field-input">
-              <option value="">—</option>
-              <option value="#">♯</option>
-              <option value="b">♭</option>
-              <option value="n">♮</option>
+              <option value="">—</option><option value="#">♯</option><option value="b">♭</option><option value="n">♮</option>
             </select>
           </div>
           <div>
@@ -173,10 +175,8 @@
 
         <label class="field-label" data-i18n="lblDynamics">Dinámica</label>
         <select id="dynamicSelect" class="field-input">
-          <option value="">—</option>
-          <option value="pp">pp</option><option value="p">p</option><option value="mp">mp</option><option value="mf">mf</option>
-          <option value="f">f</option><option value="ff">ff</option><option value="sfz">sfz</option>
-          <option value="cresc.">cresc.</option><option value="dim.">dim.</option>
+          <option value="">—</option><option value="pp">pp</option><option value="p">p</option><option value="mp">mp</option><option value="mf">mf</option>
+          <option value="f">f</option><option value="ff">ff</option><option value="sfz">sfz</option><option value="cresc.">cresc.</option><option value="dim.">dim.</option>
         </select>
 
         <button class="btn btn-primary btn-block" id="btnAddNote" data-i18n="btnAddNote">Añadir al compás</button>
@@ -191,17 +191,15 @@
         <label class="check-inline"><input type="checkbox" id="repeatEnd"> <span data-i18n="lblRepEnd">Fin repetición :‖</label>
         <label class="field-label" data-i18n="lblDirective">Indicación (Fine, D.C.)</label>
         <select id="directiveSelect" class="field-input">
-          <option value="">—</option>
-          <option value="Fine">Fine</option><option value="D.C.">D.C.</option><option value="D.C. al Fine">D.C. al Fine</option>
-          <option value="D.C. al Coda">D.C. al Coda</option><option value="D.S. al Fine">D.S. al Fine</option>
-          <option value="D.S. al Coda">D.S. al Coda</option><option value="𝄌 Coda">𝄌 Coda</option><option value="𝄋 Segno">𝄋 Segno</option>
+          <option value="">—</option><option value="Fine">Fine</option><option value="D.C.">D.C.</option><option value="D.C. al Fine">D.C. al Fine</option>
+          <option value="D.C. al Coda">D.C. al Coda</option><option value="D.S. al Fine">D.S. al Fine</option><option value="D.S. al Coda">D.S. al Coda</option>
+          <option value="𝄌 Coda">𝄌 Coda</option><option value="𝄋 Segno">𝄋 Segno</option>
         </select>
         <label class="field-label" data-i18n="lblTempo">Texto libre / Tempo</label>
         <input type="text" id="tempoText" class="field-input" placeholder="Andante ♩ = 92">
       </div>
     </aside>
 
-    <!-- Lienzo: el papel -->
     <section class="paper-wrap">
       <div class="paper" id="paper">
         <div id="vexContainer"></div>
@@ -213,7 +211,7 @@
 </main>
 
 <footer class="sitefooter">
-  <p data-i18n="footerText">Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales; usa solo material de dominio público o con permiso.</p>
+  <p data-i18n="footerText">Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales.</p>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
