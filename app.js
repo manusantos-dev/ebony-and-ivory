@@ -11,10 +11,13 @@
     es: {
       importBtn: "Importar .json", newScoreBtn: "+ Nueva partitura", backBtn: "← Volver al Catálogo",
       exportJsonBtn: "Descargar .json", exportPdfBtn: "Exportar PDF", savedIndicator: "Guardado ✓",
-      heroEyebrow: "Tu catálogo personal", heroTitle: "Cada partitura, bajo el mismo sello.",
-      heroSub: "Reescribe partituras de dominio público o crea las tuyas. Mismo papel, misma tinta, mismo orden — para siempre.",
-      emptyLibraryTitle: "Tu atril está vacío",
-      emptyLibrary: "Pulsa «Nueva partitura» en la esquina superior derecha o importa un archivo .json para comenzar a llenar tu catálogo.",
+      heroTitle: "Cada partitura, bajo el mismo sello.",
+      heroSub: "Reescribe partituras de dominio público o crea las tuyas propias. Mismo papel, misma tinta, mismo orden — para siempre.",
+      goToCatalog: "Ir a mi Catálogo", catalogTitle: "Catálogo de Partituras",
+      searchPlaceholder: "Buscar por título, autor o E&I...",
+      sortDateDesc: "Más recientes primero", sortDateAsc: "Más antiguas primero", sortTitle: "Título (A-Z)", sortNum: "Número (E&I asc.)",
+      emptyLibraryTitle: "Tu catálogo está vacío",
+      emptyLibrary: "Pulsa «Nueva partitura» en la esquina superior derecha o importa un archivo .json para comenzar a llenar tu colección.",
       lblTitle: "Título", lblComposer: "Compositor / origen", lblTimeSig: "Compás", lblKeySig: "Tonalidad",
       lblActiveMeasure: "Compás activo", btnPrev: "‹ anterior", btnNext: "siguiente ›",
       btnAddMeasure: "+ añadir compás", btnDelMeasure: "eliminar compás", lblInputStaff: "Pentagrama de entrada",
@@ -24,19 +27,22 @@
       lblMeasureDetails: "Compás · Detalles", lblRepStart: "Inicio repetición ‖:", lblRepEnd: "Fin repetición :‖</",
       lblDirective: "Indicación (Fine, D.C.)", lblTempo: "Texto libre / Tempo",
       paperHint: "Pulsa un compás en la partitura para hacerlo el compás activo.",
-      footerText: "Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales; usa solo material de dominio público o con permiso.",
+      footerText: "Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales.",
       untitled: "Sin título", unknownAuthor: "Autor desconocido", measuresTxt: "compases",
       editBtn: "✎ Editar", copyBtn: "⎘ Copiar", deleteBtn: "🗑️ Borrar",
       delConfirm: "¿Eliminar partitura? No se puede deshacer.", delMeasureConfirm: "¿Eliminar este compás?",
       copySuffix: "(copia)", minMeasureAlert: "La partitura necesita al menos un compás."
     },
     en: {
-      importBtn: "Import .json", newScoreBtn: "+ New Score", backBtn: "← Back to Library",
+      importBtn: "Import .json", newScoreBtn: "+ New Score", backBtn: "← Back to Catalog",
       exportJsonBtn: "Download .json", exportPdfBtn: "Export PDF", savedIndicator: "Saved ✓",
-      heroEyebrow: "Your personal catalog", heroTitle: "Every score, under the same seal.",
+      heroTitle: "Every score, under the same seal.",
       heroSub: "Rewrite public domain scores or create your own. Same paper, same ink, same layout — forever.",
-      emptyLibraryTitle: "Your library is empty",
-      emptyLibrary: "Click «New Score» in the top right corner or import a .json file to begin building your catalog.",
+      goToCatalog: "Go to my Catalog", catalogTitle: "Sheet Music Catalog",
+      searchPlaceholder: "Search by title, author or E&I...",
+      sortDateDesc: "Newest first", sortDateAsc: "Oldest first", sortTitle: "Title (A-Z)", sortNum: "Number (E&I asc.)",
+      emptyLibraryTitle: "Your catalog is empty",
+      emptyLibrary: "Click «New Score» in the top right corner or import a .json file to begin building your collection.",
       lblTitle: "Title", lblComposer: "Composer / origin", lblTimeSig: "Time Sig.", lblKeySig: "Key Sig.",
       lblActiveMeasure: "Active Measure", btnPrev: "‹ previous", btnNext: "next ›",
       btnAddMeasure: "+ add measure", btnDelMeasure: "delete measure", lblInputStaff: "Input Staff",
@@ -46,7 +52,7 @@
       lblMeasureDetails: "Measure · Details", lblRepStart: "Start repeat ‖:", lblRepEnd: "End repeat :‖</",
       lblDirective: "Directive (Fine, D.C.)", lblTempo: "Free text / Tempo",
       paperHint: "Click a measure on the sheet to make it active.",
-      footerText: "Ebony & Ivory is a personal tool for transcribing and archiving sheet music. Rewritten works still belong to their original authors; use only public domain material or with permission.",
+      footerText: "Ebony & Ivory is a personal tool for transcribing and archiving sheet music. Rewritten works still belong to their original authors.",
       untitled: "Untitled", unknownAuthor: "Unknown author", measuresTxt: "measures",
       editBtn: "✎ Edit", copyBtn: "⎘ Copy", deleteBtn: "🗑️ Delete",
       delConfirm: "Delete this score? This cannot be undone.", delMeasureConfirm: "Delete this measure?",
@@ -65,12 +71,35 @@
       const key = el.getAttribute('data-i18n');
       if (translations[lang][key]) el.innerHTML = translations[lang][key];
     });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (translations[lang][key]) el.setAttribute('placeholder', translations[lang][key]);
+    });
     
     if (document.getElementById("viewLibrary") && !document.getElementById("viewLibrary").hidden) renderLibrary();
     if (document.getElementById("viewEditor") && !document.getElementById("viewEditor").hidden) renderLetterhead();
   };
 
   function t(key) { return translations[currentLang][key] || key; }
+
+  /* -----------------------------------------------------------------------
+     Animación de Fondo (Inicio)
+     ----------------------------------------------------------------------- */
+  function createFloatingNotes() {
+    const container = document.getElementById('floatingNotes');
+    const symbols = ['♪', '♫', '♬', '♭', '♮', '♯', '𝄞', '𝄢'];
+    for(let i=0; i<15; i++) {
+        let note = document.createElement('div');
+        note.className = 'note-anim';
+        note.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+        note.style.left = Math.random() * 100 + 'vw';
+        note.style.animationDuration = (Math.random() * 10 + 10) + 's';
+        note.style.animationDelay = (Math.random() * 5) + 's';
+        note.style.fontSize = (Math.random() * 30 + 20) + 'px';
+        container.appendChild(note);
+    }
+  }
+  createFloatingNotes();
 
   /* -----------------------------------------------------------------------
      Constantes e Identificadores
@@ -88,63 +117,26 @@
   let currentScore = null;     
   let editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
   let saveTimeout = null;
+  let libraryFilter = { query: "", sortBy: "dateDesc" };
 
   /* -----------------------------------------------------------------------
      Utilidades
      ----------------------------------------------------------------------- */
   function uid() { return "s_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
-
-  function nextPlateNumber() {
-    const all = loadAll();
-    const scores = Object.values(all);
-    if (scores.length === 0) return 1;
-    return Math.max(...scores.map(s => s.plate || 0)) + 1;
-  }
-
+  function nextPlateNumber() { const all = loadAll(); const scores = Object.values(all); if (scores.length === 0) return 1; return Math.max(...scores.map(s => s.plate || 0)) + 1; }
   function plateLabel(n) { return "E&I " + String(n).padStart(3, "0"); }
-
-  function slugify(str) {
-    return (str || "score").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "score";
-  }
-
-  function formatDate(ts) {
-    try { return new Date(ts).toLocaleDateString(currentLang === 'es' ? "es-ES" : "en-US", { day: "2-digit", month: "short", year: "numeric" }); } 
-    catch (e) { return ""; }
-  }
-
-  function downloadBlob(filename, text, type) {
-    const blob = new Blob([text], { type: type || "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
-  }
+  function slugify(str) { return (str || "score").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "score"; }
+  function formatDate(ts) { try { return new Date(ts).toLocaleDateString(currentLang === 'es' ? "es-ES" : "en-US", { day: "2-digit", month: "short", year: "numeric" }); } catch (e) { return ""; } }
+  function downloadBlob(filename, text, type) { const blob = new Blob([text], { type: type || "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 2000); }
 
   /* -----------------------------------------------------------------------
      Modelo de datos y Guardado Automático
      ----------------------------------------------------------------------- */
   function newMeasure() { return { treble: [], bass: [], repeatStart: false, repeatEnd: false, directive: "" }; }
-
-  function newScore() {
-    return {
-      id: uid(), plate: nextPlateNumber(), title: "", composer: "",
-      timeSig: "4/4", keySig: "C", tempoText: "", measures: [newMeasure()],
-      createdAt: Date.now(), updatedAt: Date.now(),
-    };
-  }
-
+  function newScore() { return { id: uid(), plate: nextPlateNumber(), title: "", composer: "", timeSig: "4/4", keySig: "C", tempoText: "", measures: [newMeasure()], createdAt: Date.now(), updatedAt: Date.now() }; }
   function loadAll() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch (e) { return {}; } }
   function saveAll(map) { localStorage.setItem(STORAGE_KEY, JSON.stringify(map)); }
-  
-  function persistScore(score) { 
-    score.updatedAt = Date.now(); 
-    const all = loadAll(); 
-    all[score.id] = score; 
-    saveAll(all); 
-    showSaveIndicator();
-  }
-  
+  function persistScore(score) { score.updatedAt = Date.now(); const all = loadAll(); all[score.id] = score; saveAll(all); showSaveIndicator(); }
   function deleteScoreById(id) { const all = loadAll(); delete all[id]; saveAll(all); }
 
   function showSaveIndicator() {
@@ -156,8 +148,9 @@
   }
 
   /* -----------------------------------------------------------------------
-     Navegación por URL Hash (Botón Atrás del Navegador)
+     Navegación por URL Hash
      ----------------------------------------------------------------------- */
+  const viewHome = document.getElementById("viewHome");
   const viewLibrary = document.getElementById("viewLibrary");
   const viewEditor = document.getElementById("viewEditor");
   const libraryActions = document.getElementById("libraryActions");
@@ -165,25 +158,30 @@
 
   function handleNavigation() {
     const hash = window.location.hash;
-    
     if (hash.startsWith("#editor/")) {
         const scoreId = hash.split("/")[1];
         const allScores = loadAll();
-        if (allScores[scoreId]) {
-            showEditorUI(allScores[scoreId]);
-        } else {
-            window.location.hash = "#biblioteca";
-        }
-    } else {
+        if (allScores[scoreId]) { showEditorUI(allScores[scoreId]); } else { window.location.hash = "#catalogo"; }
+    } else if (hash === "#catalogo") {
         showLibraryUI();
+    } else {
+        showHomeUI();
     }
+  }
+
+  function showHomeUI() {
+    currentScore = null;
+    viewHome.hidden = false; viewLibrary.hidden = true; viewEditor.hidden = true;
+    libraryActions.hidden = true; editorActions.hidden = true;
+    document.title = "Ebony & Ivory";
+    window.scrollTo(0,0);
   }
 
   function showLibraryUI() {
     currentScore = null;
-    viewLibrary.hidden = false; viewEditor.hidden = true;
+    viewHome.hidden = true; viewLibrary.hidden = false; viewEditor.hidden = true;
     libraryActions.hidden = false; editorActions.hidden = true;
-    document.title = "Ebony & Ivory — Sheet Music Library";
+    document.title = t('catalogTitle') + " — Ebony & Ivory";
     renderLibrary();
     window.scrollTo(0,0);
   }
@@ -191,7 +189,7 @@
   function showEditorUI(score) {
     currentScore = score;
     editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
-    viewLibrary.hidden = true; viewEditor.hidden = false;
+    viewHome.hidden = true; viewLibrary.hidden = true; viewEditor.hidden = false;
     libraryActions.hidden = true; editorActions.hidden = false;
     document.title = (score.title || t('untitled')) + " — Ebony & Ivory";
     fillEditorFields(); renderScore();
@@ -201,22 +199,45 @@
   window.addEventListener("hashchange", handleNavigation);
 
   /* -----------------------------------------------------------------------
-     Biblioteca
+     Catálogo (Filtros y Búsqueda)
      ----------------------------------------------------------------------- */
   const libraryGrid = document.getElementById("libraryGrid");
   const libraryEmpty = document.getElementById("libraryEmpty");
+  const elSearch = document.getElementById("searchScores");
+  const elSort = document.getElementById("sortScores");
+
+  elSearch.addEventListener("input", (e) => { libraryFilter.query = e.target.value.toLowerCase(); renderLibrary(); });
+  elSort.addEventListener("change", (e) => { libraryFilter.sortBy = e.target.value; renderLibrary(); });
 
   function renderLibrary() {
     const all = loadAll();
-    const scores = Object.values(all).sort((a, b) => b.updatedAt - a.updatedAt);
+    let scores = Object.values(all);
+
+    // Búsqueda
+    if (libraryFilter.query) {
+        scores = scores.filter(s => 
+            (s.title || "").toLowerCase().includes(libraryFilter.query) ||
+            (s.composer || "").toLowerCase().includes(libraryFilter.query) ||
+            plateLabel(s.plate).toLowerCase().includes(libraryFilter.query)
+        );
+    }
+
+    // Ordenación
+    scores.sort((a, b) => {
+        if (libraryFilter.sortBy === "dateDesc") return b.updatedAt - a.updatedAt;
+        if (libraryFilter.sortBy === "dateAsc") return a.updatedAt - b.updatedAt;
+        if (libraryFilter.sortBy === "titleAsc") return (a.title || "").localeCompare(b.title || "");
+        if (libraryFilter.sortBy === "numAsc") return a.plate - b.plate;
+        return 0;
+    });
+
     libraryGrid.innerHTML = "";
     
-    if (scores.length === 0) {
-        libraryEmpty.hidden = false;
-        libraryGrid.hidden = true;
+    // Si no hay partituras EN ABSOLUTO (sin filtro)
+    if (Object.keys(all).length === 0) {
+        libraryEmpty.hidden = false; libraryGrid.hidden = true;
     } else {
-        libraryEmpty.hidden = true;
-        libraryGrid.hidden = false;
+        libraryEmpty.hidden = true; libraryGrid.hidden = false;
         
         scores.forEach((score) => {
           const card = document.createElement("div");
@@ -247,9 +268,7 @@
                 copy.title = (score.title || t('untitled')) + " " + t('copySuffix');
                 copy.createdAt = copy.updatedAt = Date.now();
                 persistScore(copy); renderLibrary();
-              } else if (action.dataset.action === "edit") {
-                window.location.hash = "#editor/" + score.id;
-              }
+              } else if (action.dataset.action === "edit") { window.location.hash = "#editor/" + score.id; }
               return;
             }
             window.location.hash = "#editor/" + score.id;
@@ -259,50 +278,27 @@
     }
   }
 
-  function escapeHtml(str) { const d = document.createElement("div"); d.textContent = str; return d.innerHTML; }
-
   /* -----------------------------------------------------------------------
-     Campos del editor
+     Campos del editor y Controles
      ----------------------------------------------------------------------- */
-  const elTitle = document.getElementById("scoreTitle");
-  const elComposer = document.getElementById("scoreComposer");
-  const elTimeSig = document.getElementById("timeSig");
-  const elKeySig = document.getElementById("keySig");
-  const elTempoText = document.getElementById("tempoText");
+  const elTitle = document.getElementById("scoreTitle"); const elComposer = document.getElementById("scoreComposer");
+  const elTimeSig = document.getElementById("timeSig"); const elKeySig = document.getElementById("keySig");
+  const elTempoText = document.getElementById("tempoText"); const elActiveMeasureLabel = document.getElementById("activeMeasureLabel");
+  const elRepeatStart = document.getElementById("repeatStart"); const elRepeatEnd = document.getElementById("repeatEnd");
+  const elDirective = document.getElementById("directiveSelect");
 
-  function fillEditorFields() {
-    elTitle.value = currentScore.title || ""; elComposer.value = currentScore.composer || "";
-    elTimeSig.value = currentScore.timeSig || "4/4"; elKeySig.value = currentScore.keySig || "C";
-    elTempoText.value = currentScore.tempoText || ""; syncMeasureControls();
-  }
+  function fillEditorFields() { elTitle.value = currentScore.title || ""; elComposer.value = currentScore.composer || ""; elTimeSig.value = currentScore.timeSig || "4/4"; elKeySig.value = currentScore.keySig || "C"; elTempoText.value = currentScore.tempoText || ""; syncMeasureControls(); }
 
-  [elTitle, elComposer].forEach((el) =>
-    el.addEventListener("input", () => {
-      currentScore[el === elTitle ? "title" : "composer"] = el.value;
-      renderLetterhead();
-      persistScore(currentScore); // Guardado automático
-    })
-  );
+  [elTitle, elComposer].forEach((el) => el.addEventListener("input", () => { currentScore[el === elTitle ? "title" : "composer"] = el.value; renderLetterhead(); persistScore(currentScore); }));
   elTimeSig.addEventListener("change", () => { currentScore.timeSig = elTimeSig.value; renderScore(); });
   elKeySig.addEventListener("change", () => { currentScore.keySig = elKeySig.value; renderScore(); });
   elTempoText.addEventListener("input", () => { currentScore.tempoText = elTempoText.value; renderScore(); });
 
-  /* -----------------------------------------------------------------------
-     Control de compás activo
-     ----------------------------------------------------------------------- */
-  const elActiveMeasureLabel = document.getElementById("activeMeasureLabel");
-  const elRepeatStart = document.getElementById("repeatStart");
-  const elRepeatEnd = document.getElementById("repeatEnd");
-  const elDirective = document.getElementById("directiveSelect");
-
   function clampActiveMeasure() { editorState.activeMeasure = Math.max(0, Math.min(editorState.activeMeasure, currentScore.measures.length - 1)); }
-
   function syncMeasureControls() {
-    clampActiveMeasure();
-    const m = currentScore.measures[editorState.activeMeasure];
+    clampActiveMeasure(); const m = currentScore.measures[editorState.activeMeasure];
     elActiveMeasureLabel.textContent = (editorState.activeMeasure + 1) + " / " + currentScore.measures.length;
-    elRepeatStart.checked = !!m.repeatStart; elRepeatEnd.checked = !!m.repeatEnd;
-    elDirective.value = m.directive || "";
+    elRepeatStart.checked = !!m.repeatStart; elRepeatEnd.checked = !!m.repeatEnd; elDirective.value = m.directive || "";
   }
 
   document.getElementById("btnPrevMeasure").addEventListener("click", () => { editorState.activeMeasure--; clampActiveMeasure(); syncMeasureControls(); renderScore(); });
@@ -318,44 +314,25 @@
   elRepeatEnd.addEventListener("change", () => { currentScore.measures[editorState.activeMeasure].repeatEnd = elRepeatEnd.checked; renderScore(); });
   elDirective.addEventListener("change", () => { currentScore.measures[editorState.activeMeasure].directive = elDirective.value; renderScore(); });
 
-  /* -----------------------------------------------------------------------
-     Entrada
-     ----------------------------------------------------------------------- */
-  const btnStaffTreble = document.getElementById("btnStaffTreble");
-  const btnStaffBass = document.getElementById("btnStaffBass");
-  [btnStaffTreble, btnStaffBass].forEach((btn) =>
-    btn.addEventListener("click", () => {
+  /* Entrada de Notas */
+  const btnStaffTreble = document.getElementById("btnStaffTreble"); const btnStaffBass = document.getElementById("btnStaffBass");
+  [btnStaffTreble, btnStaffBass].forEach((btn) => btn.addEventListener("click", () => {
       editorState.activeStaff = btn.dataset.staff;
       btnStaffTreble.classList.toggle("is-active", editorState.activeStaff === "treble");
       btnStaffBass.classList.toggle("is-active", editorState.activeStaff === "bass");
-    })
-  );
+  }));
 
-  const elIsRest = document.getElementById("isRest");
-  const elPitchFields = document.getElementById("pitchFields");
-  const elPitchLetter = document.getElementById("pitchLetter");
-  const elPitchAccidental = document.getElementById("pitchAccidental");
-  const elPitchOctave = document.getElementById("pitchOctave");
-  const elIsDotted = document.getElementById("isDotted");
-  const elDynamicSelect = document.getElementById("dynamicSelect");
-  const durationGrid = document.getElementById("durationGrid");
+  const elIsRest = document.getElementById("isRest"); const elPitchFields = document.getElementById("pitchFields");
+  const elPitchLetter = document.getElementById("pitchLetter"); const elPitchAccidental = document.getElementById("pitchAccidental");
+  const elPitchOctave = document.getElementById("pitchOctave"); const elIsDotted = document.getElementById("isDotted");
+  const elDynamicSelect = document.getElementById("dynamicSelect"); const durationGrid = document.getElementById("durationGrid");
 
-  elIsRest.addEventListener("change", () => {
-    elPitchFields.style.opacity = elIsRest.checked ? 0.4 : 1;
-    elPitchFields.querySelectorAll("select").forEach((s) => (s.disabled = elIsRest.checked));
-  });
-
-  durationGrid.addEventListener("click", (e) => {
-    const btn = e.target.closest(".dur-btn");
-    if (!btn) return;
-    editorState.duration = btn.dataset.dur;
-    durationGrid.querySelectorAll(".dur-btn").forEach((b) => b.classList.toggle("is-active", b === btn));
-  });
+  elIsRest.addEventListener("change", () => { elPitchFields.style.opacity = elIsRest.checked ? 0.4 : 1; elPitchFields.querySelectorAll("select").forEach((s) => (s.disabled = elIsRest.checked)); });
+  durationGrid.addEventListener("click", (e) => { const btn = e.target.closest(".dur-btn"); if (!btn) return; editorState.duration = btn.dataset.dur; durationGrid.querySelectorAll(".dur-btn").forEach((b) => b.classList.toggle("is-active", b === btn)); });
 
   document.getElementById("btnAddNote").addEventListener("click", () => {
     const measure = currentScore.measures[editorState.activeMeasure];
-    const list = measure[editorState.activeStaff];
-    list.push({
+    measure[editorState.activeStaff].push({
       rest: elIsRest.checked, letter: elPitchLetter.value, accidental: elPitchAccidental.value,
       octave: parseInt(elPitchOctave.value, 10), duration: editorState.duration,
       dotted: elIsDotted.checked, dynamic: elDynamicSelect.value,
@@ -365,34 +342,25 @@
 
   document.getElementById("btnUndoNote").addEventListener("click", () => {
     const measure = currentScore.measures[editorState.activeMeasure];
-    if (measure[editorState.activeStaff].length > 0) {
-        measure[editorState.activeStaff].pop();
-        renderScore();
-    }
+    if (measure[editorState.activeStaff].length > 0) { measure[editorState.activeStaff].pop(); renderScore(); }
   });
 
   /* -----------------------------------------------------------------------
-     VexFlow Render
+     VexFlow Render (Protegido con try/catch en barras de agrupación)
      ----------------------------------------------------------------------- */
   const vexContainer = document.getElementById("vexContainer");
   const plateMarkEl = document.getElementById("plateMark");
 
-  function noteToVexKey(n) {
-    let acc = n.accidental === "#" || n.accidental === "b" ? n.accidental : "";
-    return n.letter.toLowerCase() + acc + "/" + n.octave;
-  }
+  function noteToVexKey(n) { let acc = n.accidental === "#" || n.accidental === "b" ? n.accidental : ""; return n.letter.toLowerCase() + acc + "/" + n.octave; }
 
   function buildVexNotes(staffNotes, clef) {
     const VF = Vex.Flow;
     const restKey = clef === "bass" ? "d/3" : "b/4";
     const out = [];
     staffNotes.forEach((n) => {
-      // FIX VITAL: Para que VexFlow calcule los tiempos correctamente con puntillos, la 'd' debe ir pegada a la duración.
       const durStr = n.duration + (n.dotted ? "d" : "") + (n.rest ? "r" : "");
       const keys = n.rest ? [restKey] : [noteToVexKey(n)];
-      
       const sn = new VF.StaveNote({ clef: clef, keys: keys, duration: durStr });
-      
       if (n.dotted) VF.Dot.buildAndAttach([sn], { all: true });
       if (!n.rest && n.accidental) sn.addModifier(new VF.Accidental(n.accidental), 0);
       if (n.dynamic) {
@@ -410,15 +378,12 @@
 
   function renderScore() {
     if (!currentScore) return;
-    
-    // GUARDADO AUTOMÁTICO CADA VEZ QUE SE DIBUJA ALGO NUEVO
     persistScore(currentScore);
-
     renderLetterhead();
     vexContainer.innerHTML = "";
 
     if (typeof Vex === "undefined") {
-      vexContainer.innerHTML = '<p style="padding:40px;text-align:center;color:#8C2F39;font-weight:bold;">No se ha podido cargar el motor de partituras.<br><br>Parece que tu red o un bloqueador de anuncios (AdBlock/uBlock) está impidiendo la descarga de VexFlow.<br>Por favor, desactívalo y recarga la página.</p>';
+      vexContainer.innerHTML = '<p style="padding:40px;text-align:center;color:#8C2F39;font-weight:bold;">No se ha podido cargar el motor de partituras (VexFlow).<br>Revisa tu conexión o desactiva tu AdBlocker.</p>';
       return;
     }
 
@@ -436,16 +401,12 @@
       const hitRects = [];
 
       measures.forEach((measure, idx) => {
-        const posInLine = idx % MEASURES_PER_LINE;
-        const lineIdx = Math.floor(idx / MEASURES_PER_LINE);
-        const isFirstOfLine = posInLine === 0;
-        const width = isFirstOfLine ? FIRST_OF_LINE_WIDTH : REST_OF_LINE_WIDTH;
+        const posInLine = idx % MEASURES_PER_LINE; const lineIdx = Math.floor(idx / MEASURES_PER_LINE);
+        const isFirstOfLine = posInLine === 0; const width = isFirstOfLine ? FIRST_OF_LINE_WIDTH : REST_OF_LINE_WIDTH;
         const x = LEFT_MARGIN + (isFirstOfLine ? 0 : FIRST_OF_LINE_WIDTH);
-        const yTreble = TOP_MARGIN + lineIdx * LINE_GAP;
-        const yBass = yTreble + STAVE_GAP;
+        const yTreble = TOP_MARGIN + lineIdx * LINE_GAP; const yBass = yTreble + STAVE_GAP;
 
-        const staveTreble = new VF.Stave(x, yTreble, width);
-        const staveBass = new VF.Stave(x, yBass, width);
+        const staveTreble = new VF.Stave(x, yTreble, width); const staveBass = new VF.Stave(x, yBass, width);
 
         if (isFirstOfLine) {
           staveTreble.addClef("treble"); staveBass.addClef("bass");
@@ -453,9 +414,7 @@
             staveTreble.addKeySignature(currentScore.keySig); staveBass.addKeySignature(currentScore.keySig);
           }
         }
-        if (idx === 0) {
-          staveTreble.addTimeSignature(currentScore.timeSig); staveBass.addTimeSignature(currentScore.timeSig);
-        }
+        if (idx === 0) { staveTreble.addTimeSignature(currentScore.timeSig); staveBass.addTimeSignature(currentScore.timeSig); }
 
         staveTreble.setBegBarType(measure.repeatStart ? VF.Barline.type.REPEAT_BEGIN : VF.Barline.type.SINGLE);
         staveBass.setBegBarType(measure.repeatStart ? VF.Barline.type.REPEAT_BEGIN : VF.Barline.type.SINGLE);
@@ -478,21 +437,28 @@
         if (trebleNotes.length > 0) {
           const vTreble = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT);
           vTreble.addTickables(trebleNotes);
-          VF.Beam.generateBeams(trebleNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw());
+          
+          // PROTECCIÓN ANTI-CRASHES DE VEXFLOW (Beaming)
+          try { VF.Beam.generateBeams(trebleNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } 
+          catch(e) { console.warn("VexFlow agrupando corcheas (Sol):", e); }
+          
           new VF.Formatter().joinVoices([vTreble]).format([vTreble], width - 30);
           vTreble.draw(ctx, staveTreble);
         }
+        
         if (bassNotes.length > 0) {
           const vBass = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT);
           vBass.addTickables(bassNotes);
-          VF.Beam.generateBeams(bassNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw());
+          
+          // PROTECCIÓN ANTI-CRASHES DE VEXFLOW (Beaming)
+          try { VF.Beam.generateBeams(bassNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } 
+          catch(e) { console.warn("VexFlow agrupando corcheas (Fa):", e); }
+          
           new VF.Formatter().joinVoices([vBass]).format([vBass], width - 30);
           vBass.draw(ctx, staveBass);
         }
 
-        if (idx === 0 && currentScore.tempoText && trebleNotes.length > 0) {
-          trebleNotes[0].addModifier(new VF.Annotation(currentScore.tempoText).setFont("Inter", 12, "bold").setVerticalJustification(VF.Annotation.VerticalJustify.TOP), 0);
-        }
+        if (idx === 0 && currentScore.tempoText && trebleNotes.length > 0) { trebleNotes[0].addModifier(new VF.Annotation(currentScore.tempoText).setFont("Inter", 12, "bold").setVerticalJustification(VF.Annotation.VerticalJustify.TOP), 0); }
         if (measure.directive) {
           const targetArr = trebleNotes.length ? trebleNotes : bassNotes;
           if (targetArr.length) targetArr[targetArr.length - 1].addModifier(new VF.Annotation(measure.directive).setFont("Cormorant Garamond", 15, "italic").setVerticalJustification(VF.Annotation.VerticalJustify.TOP), 0);
@@ -524,23 +490,19 @@
       updateBeatCounters();
     } catch (err) {
       console.error(err);
-      vexContainer.innerHTML = `<p style="padding:24px;color:#8C2F39;">Error matemático en el dibujo. Revisa que las notas no superen la duración del compás en ninguno de los dos pentagramas.</p>`;
+      vexContainer.innerHTML = `<p style="padding:40px;text-align:center;color:#8C2F39;font-weight:bold;">Error matemático crítico.<br>Asegúrate de que la suma de todas las notas coincida exactamente con el tiempo del compás.</p>`;
     }
   }
 
   function updateBeatCounters() {
-    const m = currentScore.measures[editorState.activeMeasure];
-    const needed = measureNeededQuarters(currentScore.timeSig);
+    const m = currentScore.measures[editorState.activeMeasure]; const needed = measureNeededQuarters(currentScore.timeSig);
     elActiveMeasureLabel.textContent = `${editorState.activeMeasure + 1}/${currentScore.measures.length} · ♩ Sol ${trim(quartersUsed(m.treble))}/${trim(needed)} · Fa ${trim(quartersUsed(m.bass))}/${trim(needed)}`;
   }
   function trim(n) { return Number.isInteger(n) ? n : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, ""); }
 
   window.renderLetterhead = function() {
     let head = vexContainer.parentElement.querySelector(".score-letterhead");
-    if (!head) {
-      head = document.createElement("div"); head.className = "score-letterhead";
-      vexContainer.parentElement.insertBefore(head, vexContainer);
-    }
+    if (!head) { head = document.createElement("div"); head.className = "score-letterhead"; vexContainer.parentElement.insertBefore(head, vexContainer); }
     head.innerHTML = `<h2>${escapeHtml(currentScore.title || t('untitled'))}</h2><p>${escapeHtml(currentScore.composer || "")}</p>`;
   }
 
@@ -559,29 +521,23 @@
         const data = JSON.parse(reader.result);
         if (!data.measures) throw new Error("Format error");
         data.id = uid(); data.plate = nextPlateNumber(); data.updatedAt = Date.now();
-        persistScore(data); window.location.hash = "#biblioteca";
+        persistScore(data); window.location.hash = "#catalogo";
       } catch (err) { alert("Error: " + err.message); }
       e.target.value = "";
     };
     reader.readAsText(file);
   });
 
-  document.getElementById("btnNewScore").addEventListener("click", () => { 
-      const score = newScore(); 
-      persistScore(score); 
-      window.location.hash = "#editor/" + score.id; 
-  });
-  
-  document.getElementById("btnBackLibrary").addEventListener("click", () => { window.location.hash = "#biblioteca"; });
-  document.getElementById("brandHome").addEventListener("click", () => { window.location.hash = "#biblioteca"; });
+  document.getElementById("btnNewScore").addEventListener("click", () => { const score = newScore(); persistScore(score); window.location.hash = "#editor/" + score.id; });
+  document.getElementById("btnBackLibrary").addEventListener("click", () => { window.location.hash = "#catalogo"; });
+  document.getElementById("brandHome").addEventListener("click", () => { window.location.hash = "#inicio"; });
 
   /* -----------------------------------------------------------------------
-     Arranque
+     Arranque Inicial
      ----------------------------------------------------------------------- */
   setLang('es'); 
-  
-  if(!window.location.hash) {
-      window.location.hash = "#biblioteca";
+  if(!window.location.hash || window.location.hash === "#" || window.location.hash === "") {
+      window.location.hash = "#inicio";
   } else {
       handleNavigation();
   }
