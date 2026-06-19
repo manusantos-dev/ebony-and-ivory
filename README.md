@@ -1,7 +1,7 @@
 # 🎹 Ebony & Ivory
 
-> **A personal sheet music library and engraving tool.**
-> Create, archive, and export elegant, unified scores directly from your browser.
+> **El arte de preservar la música.**
+> Un lienzo digital estandarizado para transcribir, clasificar y eternizar tus partituras con una elegancia inigualable.
 
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white)
@@ -17,7 +17,7 @@ Ebony & Ivory is a web-based tool designed to transcribe, archive, and standardi
 * 📝 **Visual Engraving Desk:** A step-by-step measure editor to build your scores. Easily add notes, rests, specific durations (including strict dotted note math support), accidentals, dynamics, and structural directives (Fine, D.C., Coda, repeats).
 * 🎹 **Grand Staff Support:** Native support for piano scores, allowing input for both Treble and Bass clefs simultaneously.
 * 🗂️ **Local Library Catalog:** Your scores are automatically saved to your browser's `localStorage` instantly on every keystroke via our Auto-save system.
-* 🔍 **Search & Sort:** Easily filter your catalog by title, composer, or score number, and sort by date or alphabetical order.
+* 🔍 **Advanced Filtering & Sorting:** Easily search your catalog by title, composer, or score number. A dedicated toolbar allows sorting (by E&I number, Title, Last Edited) and filtering by Time Signature, Key Signature, and instrumentation (e.g. Right hand only).
 * 🔗 **Internal Routing:** Hash-based URL routing allows you to natively use your browser's back and forward buttons across the interactive Landing Page, your Catalog, and the Editor.
 * 🖨️ **Print to PDF:** Export your scores to beautifully formatted PDFs via the browser's native print dialogue. 
 * 💾 **JSON Import & Export:** Download your individual scores as `.json` files to back them up, share them, or move them between devices.
@@ -37,19 +37,11 @@ Since this project uses vanilla HTML, CSS, and JS, there is no build process or 
 2. Open `index.html` in your favorite web browser.
 3. Start engraving!
 
-## 🎨 Design System
-
-The UI is built with a custom aesthetic inspired by traditional sheet music:
-* **Paper:** Warm ivory tones (`#FAF8F5`).
-* **Ink:** Deep ebony darks (`#121212`).
-* **Highlights:** Elegant brass and gold washes for active states and typography.
-
 ## ⚖️ Disclaimer & Copyright
 
 Ebony & Ivory is a personal tool meant for transcribing and archiving sheet music. Please note:
 * **The tool itself** is open-source.
 * **The musical works** you transcribe remain the property of their respective original authors. 
-* It is highly recommended to only use this tool to rewrite and publish material that is in the **Public Domain** (e.g., classical music) or material for which you have explicit permission.
 
 ---
 *Created with ❤️ for the love of music and clean code.*
