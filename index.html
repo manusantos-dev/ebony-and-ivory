@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ebony & Ivory — Sheet Music Library</title>
-<meta name="description" content="El arte de preservar la música.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎹</text></svg>">
+<title>Ebony & Ivory</title>
+<meta name="description" content="El arte de preservar la música">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2220%22 width=%2280%22 height=%2260%22 rx=%228%22 fill=%22%23121212%22/><rect x=%2225%22 y=%2220%22 width=%2212%22 height=%2235%22 fill=%22%23FAF8F5%22/><rect x=%2244%22 y=%2220%22 width=%2212%22 height=%2235%22 fill=%22%23FAF8F5%22/><rect x=%2263%22 y=%2220%22 width=%2212%22 height=%2235%22 fill=%22%23FAF8F5%22/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
@@ -13,9 +13,15 @@
 <body>
 
 <!-- ============ CABECERA PRINCIPAL ============ -->
-<header class="topbar">
+<header class="topbar" id="mainHeader">
   <div class="brand" id="brandHome" title="Ir al Catálogo">
-    <span class="brand-mark">🎹</span>
+    <!-- IMAGOTIPO (Símbolo + Texto) -->
+    <svg class="brand-mark" viewBox="0 0 100 100" width="28" height="28">
+      <rect x="10" y="20" width="80" height="60" rx="8" fill="var(--ink)"/>
+      <rect x="25" y="20" width="12" height="35" fill="var(--paper)"/>
+      <rect x="44" y="20" width="12" height="35" fill="var(--paper)"/>
+      <rect x="63" y="20" width="12" height="35" fill="var(--paper)"/>
+    </svg>
     <span class="brand-word">Ebony & Ivory</span>
   </div>
   
@@ -25,14 +31,12 @@
       <button class="lang-btn" onclick="setLang('en')">EN</button>
     </div>
     
-    <!-- Botones del Catálogo -->
     <nav class="topbar-actions" id="libraryActions" hidden>
       <button class="btn btn-ghost" id="btnImport" data-i18n="importBtn">Importar .json</button>
       <input type="file" id="fileImport" accept="application/json" hidden>
       <button class="btn btn-primary" id="btnNewScore" data-i18n="newScoreBtn">+ Nueva partitura</button>
     </nav>
     
-    <!-- Botones del Editor -->
     <nav class="topbar-actions" id="editorActions" hidden>
       <span id="saveIndicator" class="save-indicator" data-i18n="savedIndicator">Guardado ✓</span>
       <button class="btn btn-ghost" id="btnExportJson" data-i18n="exportJsonBtn">Descargar .json</button>
@@ -45,12 +49,11 @@
 <main id="viewHome" class="view">
   <div class="floating-notes" id="floatingNotes"></div>
   <div class="home-hero">
-    <!-- LOGO GIGANTE CENTRAL -->
+    <!-- LOGOTIPO (Tipografía principal) -->
     <div class="hero-logo">
-      <span class="hero-mark">🎹</span>
       <span class="hero-word">Ebony & Ivory</span>
     </div>
-    <h1 data-i18n="heroTitle">El arte de preservar la música.</h1>
+    <h1 data-i18n="heroTitle">El arte de preservar la música</h1>
     <p class="hero-sub" data-i18n="heroSub">Un lienzo digital estandarizado para transcribir, clasificar y eternizar tus partituras con una elegancia inigualable.</p>
     <button class="btn btn-primary btn-huge" onclick="window.location.hash='#catalogo'" data-i18n="goToCatalog">Abrir mi Catálogo</button>
   </div>
@@ -63,9 +66,7 @@
     
     <div class="catalog-toolbar">
       <input type="text" id="searchScores" class="field-input search-input" placeholder="Buscar por título, autor o E&I..." data-i18n-placeholder="searchPlaceholder">
-      
       <button class="btn btn-ghost" id="btnToggleFilters" data-i18n="filterBtn">Filtros ⧨</button>
-      
       <select id="sortScores" class="field-input sort-select">
         <option value="numAsc" data-i18n="sortNumAsc">Número (E&I asc.)</option>
         <option value="numDesc" data-i18n="sortNumDesc">Número (E&I desc.)</option>
@@ -76,7 +77,6 @@
       </select>
     </div>
 
-    <!-- Panel de filtros expandible -->
     <div class="catalog-filters" id="catalogFilters" hidden>
       <div class="filter-group">
         <label class="field-label" data-i18n="lblTimeSig">Compás</label>
@@ -91,7 +91,8 @@
         <select id="filterKeySig" class="field-input">
           <option value="all" data-i18n="optAll">Cualquiera</option>
           <option value="C">C / Am</option><option value="G">G / Em</option><option value="D">D / Bm</option>
-          <option value="F">F / Dm</option><option value="Bb">Bb / Gm</option>
+          <option value="A">A / F#m</option><option value="E">E / C#m</option><option value="B">B / G#m</option>
+          <option value="F">F / Dm</option><option value="Bb">Bb / Gm</option><option value="Eb">Eb / Cm</option><option value="Ab">Ab / Fm</option>
         </select>
       </div>
       <div class="filter-group">
@@ -107,7 +108,6 @@
   </div>
   
   <section class="library-grid" id="libraryGrid"></section>
-  
   <div class="library-empty" id="libraryEmpty" hidden>
     <h3 data-i18n="emptyLibraryTitle">Tu catálogo está vacío (o sin resultados)</h3>
     <p data-i18n="emptyLibrary">Pulsa «Nueva partitura» en la esquina superior derecha o cambia los filtros de búsqueda.</p>
@@ -141,12 +141,24 @@
           </div>
           <div>
             <label class="field-label" data-i18n="lblKeySig">Tonalidad</label>
-            <select id="keySig" class="field-input">
-              <option value="C">C / Am</option><option value="G">G / Em</option><option value="D">D / Bm</option>
-              <option value="A">A / F#m</option><option value="E">E / C#m</option><option value="B">B / G#m</option>
-              <option value="F">F / Dm</option><option value="Bb">Bb / Gm</option><option value="Eb">Eb / Cm</option>
-              <option value="Ab">Ab / Fm</option>
-            </select>
+            <!-- Custom Dropdown para US / EU -->
+            <div class="custom-select" id="customKeySig" tabindex="0">
+              <div class="select-selected" id="customKeySigSelected"><span>C / Am</span><span class="translucent">Do / La m</span></div>
+              <div class="select-items" id="customKeySigOptions">
+                <div data-val="C"><span>C / Am</span><span class="translucent">Do / La m</span></div>
+                <div data-val="G"><span>G / Em</span><span class="translucent">Sol / Mi m</span></div>
+                <div data-val="D"><span>D / Bm</span><span class="translucent">Re / Si m</span></div>
+                <div data-val="A"><span>A / F#m</span><span class="translucent">La / Fa# m</span></div>
+                <div data-val="E"><span>E / C#m</span><span class="translucent">Mi / Do# m</span></div>
+                <div data-val="B"><span>B / G#m</span><span class="translucent">Si / Sol# m</span></div>
+                <div data-val="F"><span>F / Dm</span><span class="translucent">Fa / Re m</span></div>
+                <div data-val="Bb"><span>Bb / Gm</span><span class="translucent">Sib / Sol m</span></div>
+                <div data-val="Eb"><span>Eb / Cm</span><span class="translucent">Mib / Do m</span></div>
+                <div data-val="Ab"><span>Ab / Fm</span><span class="translucent">Lab / Fa m</span></div>
+              </div>
+            </div>
+            <!-- Hidden input para mantener la lógica -->
+            <input type="hidden" id="keySig" value="C">
           </div>
         </div>
       </div>
@@ -239,19 +251,12 @@
       </div>
     </aside>
 
-    <section class="paper-wrap">
-      <div class="paper" id="paper">
-        <div id="vexContainer"></div>
-        <div class="plate-mark" id="plateMark">E&I 001</div>
-      </div>
-      <p class="paper-hint" data-i18n="paperHint">Pulsa un compás en la partitura para hacerlo el compás activo.</p>
+    <section class="paper-wrap" id="paperWrap">
+      <!-- El contenido se genera por JS por páginas para el PDF -->
+      <div id="vexPagesContainer"></div>
     </section>
   </div>
 </main>
-
-<footer class="sitefooter">
-  <p data-i18n="footerText">Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales.</p>
-</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
 <script src="app.js"></script>
