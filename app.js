@@ -10,7 +10,7 @@
   const translations = {
     es: {
       importBtn: "Importar .json", newScoreBtn: "+ Nueva partitura", backBtn: "← Volver al Catálogo",
-      exportJsonBtn: "Exportar .json", exportPdfBtn: "Exportar PDF", saveBtn: "Guardar",
+      exportJsonBtn: "Descargar .json", exportPdfBtn: "Exportar PDF", savedIndicator: "Guardado ✓",
       heroEyebrow: "Tu catálogo personal", heroTitle: "Cada partitura, bajo el mismo sello.",
       heroSub: "Reescribe partituras de dominio público o crea las tuyas. Mismo papel, misma tinta, mismo orden — para siempre.",
       emptyLibraryTitle: "Tu atril está vacío",
@@ -25,15 +25,14 @@
       lblDirective: "Indicación (Fine, D.C.)", lblTempo: "Texto libre / Tempo",
       paperHint: "Pulsa un compás en la partitura para hacerlo el compás activo.",
       footerText: "Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales; usa solo material de dominio público o con permiso.",
-      // Alertas y dinámicos
       untitled: "Sin título", unknownAuthor: "Autor desconocido", measuresTxt: "compases",
       editBtn: "✎ Editar", copyBtn: "⎘ Copiar", deleteBtn: "🗑️ Borrar",
       delConfirm: "¿Eliminar partitura? No se puede deshacer.", delMeasureConfirm: "¿Eliminar este compás?",
-      copySuffix: "(copia)", saved: "Guardado ✓", minMeasureAlert: "La partitura necesita al menos un compás."
+      copySuffix: "(copia)", minMeasureAlert: "La partitura necesita al menos un compás."
     },
     en: {
       importBtn: "Import .json", newScoreBtn: "+ New Score", backBtn: "← Back to Library",
-      exportJsonBtn: "Export .json", exportPdfBtn: "Export PDF", saveBtn: "Save",
+      exportJsonBtn: "Download .json", exportPdfBtn: "Export PDF", savedIndicator: "Saved ✓",
       heroEyebrow: "Your personal catalog", heroTitle: "Every score, under the same seal.",
       heroSub: "Rewrite public domain scores or create your own. Same paper, same ink, same layout — forever.",
       emptyLibraryTitle: "Your library is empty",
@@ -48,11 +47,10 @@
       lblDirective: "Directive (Fine, D.C.)", lblTempo: "Free text / Tempo",
       paperHint: "Click a measure on the sheet to make it active.",
       footerText: "Ebony & Ivory is a personal tool for transcribing and archiving sheet music. Rewritten works still belong to their original authors; use only public domain material or with permission.",
-      // Alerts & Dynamics
       untitled: "Untitled", unknownAuthor: "Unknown author", measuresTxt: "measures",
       editBtn: "✎ Edit", copyBtn: "⎘ Copy", deleteBtn: "🗑️ Delete",
       delConfirm: "Delete this score? This cannot be undone.", delMeasureConfirm: "Delete this measure?",
-      copySuffix: "(copy)", saved: "Saved ✓", minMeasureAlert: "The score needs at least one measure."
+      copySuffix: "(copy)", minMeasureAlert: "The score needs at least one measure."
     }
   };
 
@@ -68,8 +66,8 @@
       if (translations[lang][key]) el.innerHTML = translations[lang][key];
     });
     
-    if (viewLibrary && !viewLibrary.hidden) renderLibrary();
-    if (viewEditor && !viewEditor.hidden) renderLetterhead();
+    if (document.getElementById("viewLibrary") && !document.getElementById("viewLibrary").hidden) renderLibrary();
+    if (document.getElementById("viewEditor") && !document.getElementById("viewEditor").hidden) renderLetterhead();
   };
 
   function t(key) { return translations[currentLang][key] || key; }
@@ -78,7 +76,6 @@
      Constantes e Identificadores
      ----------------------------------------------------------------------- */
   const STORAGE_KEY = "ebony_ivory:scores";
-
   const DURATION_QUARTERS = { w: 4, h: 2, q: 1, "8": 0.5, "16": 0.25, "32": 0.125 };
   const MEASURES_PER_LINE = 2;
   const FIRST_OF_LINE_WIDTH = 300;
@@ -90,27 +87,24 @@
 
   let currentScore = null;     
   let editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
+  let saveTimeout = null;
 
   /* -----------------------------------------------------------------------
      Utilidades
      ----------------------------------------------------------------------- */
   function uid() { return "s_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 
-  // FIX: Calcula el siguiente número de placa basándose en lo que hay guardado realmente.
   function nextPlateNumber() {
     const all = loadAll();
     const scores = Object.values(all);
     if (scores.length === 0) return 1;
-    const maxPlate = Math.max(...scores.map(s => s.plate || 0));
-    return maxPlate + 1;
+    return Math.max(...scores.map(s => s.plate || 0)) + 1;
   }
 
   function plateLabel(n) { return "E&I " + String(n).padStart(3, "0"); }
 
   function slugify(str) {
-    return (str || "score")
-      .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "score";
+    return (str || "score").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "score";
   }
 
   function formatDate(ts) {
@@ -128,7 +122,7 @@
   }
 
   /* -----------------------------------------------------------------------
-     Modelo de datos
+     Modelo de datos y Guardado Automático
      ----------------------------------------------------------------------- */
   function newMeasure() { return { treble: [], bass: [], repeatStart: false, repeatEnd: false, directive: "" }; }
 
@@ -142,18 +136,50 @@
 
   function loadAll() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch (e) { return {}; } }
   function saveAll(map) { localStorage.setItem(STORAGE_KEY, JSON.stringify(map)); }
-  function persistScore(score) { score.updatedAt = Date.now(); const all = loadAll(); all[score.id] = score; saveAll(all); }
+  
+  function persistScore(score) { 
+    score.updatedAt = Date.now(); 
+    const all = loadAll(); 
+    all[score.id] = score; 
+    saveAll(all); 
+    showSaveIndicator();
+  }
+  
   function deleteScoreById(id) { const all = loadAll(); delete all[id]; saveAll(all); }
 
+  function showSaveIndicator() {
+      const ind = document.getElementById('saveIndicator');
+      if(!ind) return;
+      ind.classList.add('show');
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => { ind.classList.remove('show'); }, 1500);
+  }
+
   /* -----------------------------------------------------------------------
-     Navegación
+     Navegación por URL Hash (Botón Atrás del Navegador)
      ----------------------------------------------------------------------- */
   const viewLibrary = document.getElementById("viewLibrary");
   const viewEditor = document.getElementById("viewEditor");
   const libraryActions = document.getElementById("libraryActions");
   const editorActions = document.getElementById("editorActions");
 
-  function showLibrary() {
+  function handleNavigation() {
+    const hash = window.location.hash;
+    
+    if (hash.startsWith("#editor/")) {
+        const scoreId = hash.split("/")[1];
+        const allScores = loadAll();
+        if (allScores[scoreId]) {
+            showEditorUI(allScores[scoreId]);
+        } else {
+            window.location.hash = "#biblioteca";
+        }
+    } else {
+        showLibraryUI();
+    }
+  }
+
+  function showLibraryUI() {
     currentScore = null;
     viewLibrary.hidden = false; viewEditor.hidden = true;
     libraryActions.hidden = false; editorActions.hidden = true;
@@ -162,7 +188,7 @@
     window.scrollTo(0,0);
   }
 
-  function showEditor(score) {
+  function showEditorUI(score) {
     currentScore = score;
     editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
     viewLibrary.hidden = true; viewEditor.hidden = false;
@@ -171,6 +197,8 @@
     fillEditorFields(); renderScore();
     window.scrollTo(0,0);
   }
+
+  window.addEventListener("hashchange", handleNavigation);
 
   /* -----------------------------------------------------------------------
      Biblioteca
@@ -194,7 +222,6 @@
           const card = document.createElement("div");
           card.className = "score-card";
           
-          // NUEVO DISEÑO DE TARJETA CON BOTONES VISIBLES
           card.innerHTML = `
             <span class="card-eyebrow">${plateLabel(score.plate)} · ${score.timeSig}</span>
             <h3>${escapeHtml(score.title || t('untitled'))}</h3>
@@ -221,12 +248,11 @@
                 copy.createdAt = copy.updatedAt = Date.now();
                 persistScore(copy); renderLibrary();
               } else if (action.dataset.action === "edit") {
-                showEditor(score);
+                window.location.hash = "#editor/" + score.id;
               }
               return;
             }
-            // Si hacen clic en cualquier otro lado de la tarjeta, también edita
-            showEditor(score);
+            window.location.hash = "#editor/" + score.id;
           });
           libraryGrid.appendChild(card);
         });
@@ -245,18 +271,16 @@
   const elTempoText = document.getElementById("tempoText");
 
   function fillEditorFields() {
-    elTitle.value = currentScore.title || "";
-    elComposer.value = currentScore.composer || "";
-    elTimeSig.value = currentScore.timeSig || "4/4";
-    elKeySig.value = currentScore.keySig || "C";
-    elTempoText.value = currentScore.tempoText || "";
-    syncMeasureControls();
+    elTitle.value = currentScore.title || ""; elComposer.value = currentScore.composer || "";
+    elTimeSig.value = currentScore.timeSig || "4/4"; elKeySig.value = currentScore.keySig || "C";
+    elTempoText.value = currentScore.tempoText || ""; syncMeasureControls();
   }
 
   [elTitle, elComposer].forEach((el) =>
     el.addEventListener("input", () => {
       currentScore[el === elTitle ? "title" : "composer"] = el.value;
       renderLetterhead();
+      persistScore(currentScore); // Guardado automático
     })
   );
   elTimeSig.addEventListener("change", () => { currentScore.timeSig = elTimeSig.value; renderScore(); });
@@ -363,9 +387,12 @@
     const restKey = clef === "bass" ? "d/3" : "b/4";
     const out = [];
     staffNotes.forEach((n) => {
-      const durStr = n.duration + (n.rest ? "r" : "");
+      // FIX VITAL: Para que VexFlow calcule los tiempos correctamente con puntillos, la 'd' debe ir pegada a la duración.
+      const durStr = n.duration + (n.dotted ? "d" : "") + (n.rest ? "r" : "");
       const keys = n.rest ? [restKey] : [noteToVexKey(n)];
+      
       const sn = new VF.StaveNote({ clef: clef, keys: keys, duration: durStr });
+      
       if (n.dotted) VF.Dot.buildAndAttach([sn], { all: true });
       if (!n.rest && n.accidental) sn.addModifier(new VF.Accidental(n.accidental), 0);
       if (n.dynamic) {
@@ -383,6 +410,10 @@
 
   function renderScore() {
     if (!currentScore) return;
+    
+    // GUARDADO AUTOMÁTICO CADA VEZ QUE SE DIBUJA ALGO NUEVO
+    persistScore(currentScore);
+
     renderLetterhead();
     vexContainer.innerHTML = "";
 
@@ -493,7 +524,7 @@
       updateBeatCounters();
     } catch (err) {
       console.error(err);
-      vexContainer.innerHTML = `<p style="padding:24px;color:#8C2F39;">Error al dibujar. Revisa que las notas no superen la duración del compás.</p>`;
+      vexContainer.innerHTML = `<p style="padding:24px;color:#8C2F39;">Error matemático en el dibujo. Revisa que las notas no superen la duración del compás en ninguno de los dos pentagramas.</p>`;
     }
   }
 
@@ -514,18 +545,10 @@
   }
 
   /* -----------------------------------------------------------------------
-     Guardar / Exportar / Importar
+     Exportar / Importar
      ----------------------------------------------------------------------- */
-  document.getElementById("btnSave").addEventListener("click", () => {
-    persistScore(currentScore);
-    const btn = document.getElementById("btnSave");
-    const original = btn.textContent;
-    btn.textContent = t('saved');
-    setTimeout(() => (btn.textContent = original), 1200);
-  });
-
-  document.getElementById("btnExportJson").addEventListener("click", () => { persistScore(currentScore); downloadBlob(slugify(currentScore.title) + ".json", JSON.stringify(currentScore, null, 2)); });
-  document.getElementById("btnExportPdf").addEventListener("click", () => { persistScore(currentScore); window.print(); });
+  document.getElementById("btnExportJson").addEventListener("click", () => { downloadBlob(slugify(currentScore.title) + ".json", JSON.stringify(currentScore, null, 2)); });
+  document.getElementById("btnExportPdf").addEventListener("click", () => { window.print(); });
 
   document.getElementById("btnImport").addEventListener("click", () => document.getElementById("fileImport").click());
   document.getElementById("fileImport").addEventListener("change", (e) => {
@@ -536,25 +559,30 @@
         const data = JSON.parse(reader.result);
         if (!data.measures) throw new Error("Format error");
         data.id = uid(); data.plate = nextPlateNumber(); data.updatedAt = Date.now();
-        persistScore(data); renderLibrary();
+        persistScore(data); window.location.hash = "#biblioteca";
       } catch (err) { alert("Error: " + err.message); }
       e.target.value = "";
     };
     reader.readAsText(file);
   });
 
-  document.getElementById("btnNewScore").addEventListener("click", () => { const score = newScore(); persistScore(score); showEditor(score); });
-  document.getElementById("btnBackLibrary").addEventListener("click", () => { persistScore(currentScore); showLibrary(); });
-  
-  // FUNCIONALIDAD DE VUELTA A CASA PULSANDO EL LOGO
-  document.getElementById("brandHome").addEventListener("click", () => { 
-      if (currentScore) persistScore(currentScore); 
-      showLibrary(); 
+  document.getElementById("btnNewScore").addEventListener("click", () => { 
+      const score = newScore(); 
+      persistScore(score); 
+      window.location.hash = "#editor/" + score.id; 
   });
+  
+  document.getElementById("btnBackLibrary").addEventListener("click", () => { window.location.hash = "#biblioteca"; });
+  document.getElementById("brandHome").addEventListener("click", () => { window.location.hash = "#biblioteca"; });
 
   /* -----------------------------------------------------------------------
      Arranque
      ----------------------------------------------------------------------- */
   setLang('es'); 
-  showLibrary();
+  
+  if(!window.location.hash) {
+      window.location.hash = "#biblioteca";
+  } else {
+      handleNavigation();
+  }
 })();
