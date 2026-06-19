@@ -30,9 +30,10 @@
       lblDirective: "Indicación (Fine, D.C.)", lblTempo: "Texto libre / Tempo",
       footerText: "Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales.",
       untitled: "Sin título", unknownAuthor: "Autor desconocido", measuresTxt: "compases",
-      editBtn: "✎ Editar", copyBtn: "⎘ Copiar", deleteBtn: "🗑️ Borrar",
+      editBtn: "✎ Editar", viewBtn: "👁 Ver", copyBtn: "⎘ Copiar", deleteBtn: "🗑️ Borrar",
       delConfirm: "¿Eliminar partitura? No se puede deshacer.", delMeasureConfirm: "¿Eliminar este compás?",
-      copySuffix: "(copia)", minMeasureAlert: "La partitura necesita al menos un compás."
+      copySuffix: "(copia)", minMeasureAlert: "La partitura necesita al menos un compás.",
+      toggleViewBtn: "Alternar Visor", optKeyAll: "Cualquiera"
     },
     en: {
       importBtn: "Import .json", newScoreBtn: "+ New Score", backBtn: "← Back to Catalog",
@@ -56,29 +57,38 @@
       lblDirective: "Directive (Fine, D.C.)", lblTempo: "Free text / Tempo",
       footerText: "Ebony & Ivory is a personal tool for transcribing and archiving sheet music. Rewritten works still belong to their original authors.",
       untitled: "Untitled", unknownAuthor: "Unknown author", measuresTxt: "measures",
-      editBtn: "✎ Edit", copyBtn: "⎘ Copy", deleteBtn: "🗑️ Delete",
+      editBtn: "✎ Edit", viewBtn: "👁 View", copyBtn: "⎘ Copy", deleteBtn: "🗑️ Delete",
       delConfirm: "Delete this score? This cannot be undone.", delMeasureConfirm: "Delete this measure?",
-      copySuffix: "(copy)", minMeasureAlert: "The score needs at least one measure."
+      copySuffix: "(copy)", minMeasureAlert: "The score needs at least one measure.",
+      toggleViewBtn: "Toggle Viewer", optKeyAll: "Any"
     }
   };
 
-  let currentLang = "en"; // Por defecto, hasta que se autodetecte
+  // Nomenclatura Tonalidades
+  const keysDB = [
+    { val: "C", us: "C / Am", eu: "Do / La m" }, { val: "G", us: "G / Em", eu: "Sol / Mi m" },
+    { val: "D", us: "D / Bm", eu: "Re / Si m" }, { val: "A", us: "A / F#m", eu: "La / Fa# m" },
+    { val: "E", us: "E / C#m", eu: "Mi / Do# m" }, { val: "B", us: "B / G#m", eu: "Si / Sol# m" },
+    { val: "F", us: "F / Dm", eu: "Fa / Re m" }, { val: "Bb", us: "Bb / Gm", eu: "Sib / Sol m" },
+    { val: "Eb", us: "Eb / Cm", eu: "Mib / Do m" }, { val: "Ab", us: "Ab / Fm", eu: "Lab / Fa m" }
+  ];
+
+  let currentLang = "en";
 
   window.setLang = function(lang) {
     currentLang = lang;
     document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-    // Encontrar y activar el botón correcto
     const activeBtn = Array.from(document.querySelectorAll('.lang-btn')).find(btn => btn.textContent.toLowerCase() === lang);
     if(activeBtn) activeBtn.classList.add('active');
     
     document.querySelectorAll('[data-i18n]').forEach(el => {
-      const key = el.getAttribute('data-i18n');
-      if (translations[lang][key]) el.innerHTML = translations[lang][key];
+      const key = el.getAttribute('data-i18n'); if (translations[lang][key]) el.innerHTML = translations[lang][key];
     });
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-      const key = el.getAttribute('data-i18n-placeholder');
-      if (translations[lang][key]) el.setAttribute('placeholder', translations[lang][key]);
+      const key = el.getAttribute('data-i18n-placeholder'); if (translations[lang][key]) el.setAttribute('placeholder', translations[lang][key]);
     });
+    
+    renderCustomSelects(); // Actualiza los dropdowns de Tonalidad (EU/US)
     
     if (document.getElementById("viewLibrary") && !document.getElementById("viewLibrary").hidden) renderLibrary();
     if (document.getElementById("viewEditor") && !document.getElementById("viewEditor").hidden) renderScore();
@@ -87,68 +97,86 @@
   function t(key) { return translations[currentLang][key] || key; }
 
   /* -----------------------------------------------------------------------
+     Custom Dropdowns Bilingües
+     ----------------------------------------------------------------------- */
+  function renderCustomSelects() {
+    const buildOptions = (isFilter) => {
+        let html = isFilter ? `<div data-val="all"><span>${t('optKeyAll')}</span></div>` : '';
+        keysDB.forEach(k => {
+            const left = currentLang === 'es' ? k.eu : k.us;
+            const right = currentLang === 'es' ? k.us : k.eu;
+            html += `<div data-val="${k.val}"><span>${left}</span><span class="translucent">${right}</span></div>`;
+        });
+        return html;
+    };
+
+    // Editor Select
+    document.getElementById('customKeySigOptions').innerHTML = buildOptions(false);
+    updateCustomSelectUI('customKeySig', document.getElementById('keySig').value, false);
+
+    // Filter Select
+    document.getElementById('customFilterKeyOptions').innerHTML = buildOptions(true);
+    updateCustomSelectUI('customFilterKeySig', document.getElementById('filterKeySig').value, true);
+  }
+
+  function setupCustomSelect(wrapperId, inputId, isFilter) {
+      const wrapper = document.getElementById(wrapperId);
+      const selected = wrapper.querySelector('.select-selected');
+      const options = wrapper.querySelector('.select-items');
+      const hiddenInput = document.getElementById(inputId);
+
+      selected.addEventListener('click', function(e) {
+          e.stopPropagation(); wrapper.classList.toggle('active');
+      });
+
+      options.addEventListener('click', function(e) {
+          const item = e.target.closest('div');
+          if (item && item.hasAttribute('data-val')) {
+              const val = item.getAttribute('data-val');
+              hiddenInput.value = val;
+              updateCustomSelectUI(wrapperId, val, isFilter);
+              wrapper.classList.remove('active');
+              
+              if (isFilter) { libraryState.filterKey = val; renderLibrary(); } 
+              else if (currentScore) { currentScore.keySig = val; renderScore(); }
+          }
+      });
+  }
+
+  function updateCustomSelectUI(wrapperId, val, isFilter) {
+      const wrapper = document.getElementById(wrapperId);
+      const selected = wrapper.querySelector('.select-selected');
+      const option = wrapper.querySelector(`.select-items div[data-val="${val}"]`);
+      if (option) { selected.innerHTML = option.innerHTML; document.getElementById(wrapperId === 'customKeySig' ? 'keySig' : 'filterKeySig').value = val; }
+  }
+
+  setupCustomSelect('customKeySig', 'keySig', false);
+  setupCustomSelect('customFilterKeySig', 'filterKeySig', true);
+
+  /* -----------------------------------------------------------------------
      Animación de Fondo (Inicio)
      ----------------------------------------------------------------------- */
   function createFloatingNotes() {
-    const container = document.getElementById('floatingNotes');
-    const symbols = ['♪', '♫', '♬', '♭', '♮', '♯', '𝄞', '𝄢'];
+    const container = document.getElementById('floatingNotes'); const symbols = ['♪', '♫', '♬', '♭', '♮', '♯', '𝄞', '𝄢'];
     for(let i=0; i<15; i++) {
-        let note = document.createElement('div');
-        note.className = 'note-anim'; note.innerText = symbols[Math.floor(Math.random() * symbols.length)];
-        note.style.left = Math.random() * 100 + 'vw';
-        note.style.animationDuration = (Math.random() * 10 + 10) + 's';
-        note.style.animationDelay = (Math.random() * 5) + 's';
-        note.style.fontSize = (Math.random() * 30 + 20) + 'px';
+        let note = document.createElement('div'); note.className = 'note-anim'; note.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+        note.style.left = Math.random() * 100 + 'vw'; note.style.animationDuration = (Math.random() * 10 + 10) + 's';
+        note.style.animationDelay = (Math.random() * 5) + 's'; note.style.fontSize = (Math.random() * 30 + 20) + 'px';
         container.appendChild(note);
     }
   }
   createFloatingNotes();
 
   /* -----------------------------------------------------------------------
-     Custom Dropdown Tonalidad (Notación US / EU)
-     ----------------------------------------------------------------------- */
-  const customKeySig = document.getElementById('customKeySig');
-  const customKeySigSelected = document.getElementById('customKeySigSelected');
-  const customKeySigOptions = document.getElementById('customKeySigOptions');
-  const hiddenKeySigInput = document.getElementById('keySig');
-
-  customKeySigSelected.addEventListener('click', function(e) {
-      e.stopPropagation(); customKeySig.classList.toggle('active');
-  });
-
-  customKeySigOptions.addEventListener('click', function(e) {
-      const item = e.target.closest('div');
-      if (item && item.hasAttribute('data-val')) {
-          const val = item.getAttribute('data-val');
-          hiddenKeySigInput.value = val;
-          customKeySigSelected.innerHTML = item.innerHTML;
-          customKeySig.classList.remove('active');
-          if (currentScore) { currentScore.keySig = val; renderScore(); }
-      }
-  });
-
-  document.addEventListener('click', function() { customKeySig.classList.remove('active'); });
-
-  function updateCustomSelectUI(val) {
-      const option = customKeySigOptions.querySelector(`div[data-val="${val}"]`);
-      if (option) { customKeySigSelected.innerHTML = option.innerHTML; hiddenKeySigInput.value = val; }
-  }
-
-  /* -----------------------------------------------------------------------
-     Constantes e Identificadores (PDF y VexFlow)
+     Constantes e Identificadores
      ----------------------------------------------------------------------- */
   const STORAGE_KEY = "ebony_ivory:scores";
   const DURATION_QUARTERS = { w: 4, h: 2, q: 1, "8": 0.5, "16": 0.25, "32": 0.125 };
   
   const MEASURES_PER_LINE = 4;
   const LINES_PER_PAGE = 5;
-  
-  const FIRST_OF_LINE_WIDTH = 250; 
-  const REST_OF_LINE_WIDTH = 210;
-  const STAVE_GAP = 92;     
-  const LINE_GAP = 180;     
-  const TOP_MARGIN = 20;
-  const LEFT_MARGIN = 10;
+  const FIRST_OF_LINE_WIDTH = 250; const REST_OF_LINE_WIDTH = 210;
+  const STAVE_GAP = 92; const LINE_GAP = 180; const TOP_MARGIN = 20; const LEFT_MARGIN = 10;
 
   let currentScore = null;     
   let editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
@@ -176,11 +204,8 @@
   function deleteScoreById(id) { const all = loadAll(); delete all[id]; saveAll(all); }
 
   function showSaveIndicator() {
-      const ind = document.getElementById('saveIndicator');
-      if(!ind) return;
-      ind.classList.add('show');
-      clearTimeout(saveTimeout);
-      saveTimeout = setTimeout(() => { ind.classList.remove('show'); }, 1500);
+      const ind = document.getElementById('saveIndicator'); if(!ind) return;
+      ind.classList.add('show'); clearTimeout(saveTimeout); saveTimeout = setTimeout(() => { ind.classList.remove('show'); }, 1500);
   }
 
   /* -----------------------------------------------------------------------
@@ -194,10 +219,14 @@
 
   function handleNavigation() {
     const hash = window.location.hash;
+    document.body.classList.remove('is-home', 'is-viewer');
+
     if (hash.startsWith("#editor/")) {
-        const scoreId = hash.split("/")[1];
-        const allScores = loadAll();
-        if (allScores[scoreId]) { showEditorUI(allScores[scoreId]); } else { window.location.hash = "#catalogo"; }
+        const scoreId = hash.split("/")[1]; const allScores = loadAll();
+        if (allScores[scoreId]) { showEditorUI(allScores[scoreId], false); } else { window.location.hash = "#catalogo"; }
+    } else if (hash.startsWith("#viewer/")) {
+        const scoreId = hash.split("/")[1]; const allScores = loadAll();
+        if (allScores[scoreId]) { showEditorUI(allScores[scoreId], true); } else { window.location.hash = "#catalogo"; }
     } else if (hash === "#catalogo") { showLibraryUI(); } 
     else { showHomeUI(); }
   }
@@ -213,23 +242,30 @@
     currentScore = null;
     viewHome.hidden = true; viewLibrary.hidden = false; viewEditor.hidden = true;
     libraryActions.hidden = false; editorActions.hidden = true;
-    document.body.classList.remove('is-home'); document.title = t('catalogTitle') + " — Ebony & Ivory";
-    renderLibrary(); window.scrollTo(0,0);
+    document.title = t('catalogTitle') + " — Ebony & Ivory"; renderLibrary(); window.scrollTo(0,0);
   }
 
-  function showEditorUI(score) {
-    currentScore = score;
-    editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
+  function showEditorUI(score, isViewer) {
+    currentScore = score; editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
     viewHome.hidden = true; viewLibrary.hidden = true; viewEditor.hidden = false;
     libraryActions.hidden = true; editorActions.hidden = false;
-    document.body.classList.remove('is-home'); document.title = (score.title || t('untitled')) + " — Ebony & Ivory";
+    if (isViewer) document.body.classList.add('is-viewer');
+    document.title = (score.title || t('untitled')) + " — Ebony & Ivory";
     fillEditorFields(); renderScore(); window.scrollTo(0,0);
   }
 
   window.addEventListener("hashchange", handleNavigation);
 
+  // Toggle Viewer/Editor inside the view
+  document.getElementById("btnToggleViewer").addEventListener("click", () => {
+      const isViewer = document.body.classList.contains('is-viewer');
+      window.location.hash = (isViewer ? "#editor/" : "#viewer/") + currentScore.id;
+  });
+
+  document.addEventListener('click', function() { document.querySelectorAll('.custom-select').forEach(el => el.classList.remove('active')); });
+
   /* -----------------------------------------------------------------------
-     Catálogo (Filtros y Búsqueda)
+     Catálogo
      ----------------------------------------------------------------------- */
   const libraryGrid = document.getElementById("libraryGrid");
   const libraryEmpty = document.getElementById("libraryEmpty");
@@ -238,14 +274,12 @@
   const elBtnFilters = document.getElementById("btnToggleFilters");
   const elFiltersPanel = document.getElementById("catalogFilters");
   const elFilterTime = document.getElementById("filterTimeSig");
-  const elFilterKey = document.getElementById("filterKeySig");
   const elFilterHands = document.getElementById("filterHands");
 
   elSearch.addEventListener("input", (e) => { libraryState.query = e.target.value.toLowerCase(); renderLibrary(); });
   elSort.addEventListener("change", (e) => { libraryState.sortBy = e.target.value; renderLibrary(); });
   elBtnFilters.addEventListener("click", () => { elFiltersPanel.hidden = !elFiltersPanel.hidden; });
   elFilterTime.addEventListener("change", (e) => { libraryState.filterTime = e.target.value; renderLibrary(); });
-  elFilterKey.addEventListener("change", (e) => { libraryState.filterKey = e.target.value; renderLibrary(); });
   elFilterHands.addEventListener("change", (e) => { libraryState.filterHands = e.target.value; renderLibrary(); });
 
   function renderLibrary() {
@@ -274,7 +308,13 @@
         libraryEmpty.hidden = true; libraryGrid.hidden = false;
         scores.forEach((score) => {
           const card = document.createElement("div"); card.className = "score-card";
-          card.innerHTML = `<span class="card-eyebrow">${plateLabel(score.plate)} · ${score.timeSig}</span><h3>${escapeHtml(score.title || t('untitled'))}</h3><p class="composer">${escapeHtml(score.composer || t('unknownAuthor'))}</p><div class="meta"><span>${score.measures.length} ${t('measuresTxt')}</span><span>${formatDate(score.updatedAt)}</span></div><div class="card-actions-row"><button class="btn-card" data-action="edit">${t('editBtn')}</button><button class="btn-card" data-action="duplicate">${t('copyBtn')}</button><button class="btn-card btn-danger-card" data-action="delete">${t('deleteBtn')}</button></div>`;
+          card.innerHTML = `<span class="card-eyebrow">${plateLabel(score.plate)} · ${score.timeSig}</span><h3>${escapeHtml(score.title || t('untitled'))}</h3><p class="composer">${escapeHtml(score.composer || t('unknownAuthor'))}</p><div class="meta"><span>${score.measures.length} ${t('measuresTxt')}</span><span>${formatDate(score.updatedAt)}</span></div>
+            <div class="card-actions-row">
+              <button class="btn-card" data-action="view">${t('viewBtn')}</button>
+              <button class="btn-card" data-action="edit">${t('editBtn')}</button>
+              <button class="btn-card" data-action="duplicate">${t('copyBtn')}</button>
+              <button class="btn-card btn-danger-card" data-action="delete">${t('deleteBtn')}</button>
+            </div>`;
           card.addEventListener("click", (e) => {
             const action = e.target.closest("[data-action]");
             if (action) {
@@ -282,8 +322,9 @@
               if (action.dataset.action === "delete") { if (confirm(t('delConfirm'))) { deleteScoreById(score.id); renderLibrary(); } } 
               else if (action.dataset.action === "duplicate") { const copy = JSON.parse(JSON.stringify(score)); copy.id = uid(); copy.plate = nextPlateNumber(); copy.title = (score.title || t('untitled')) + " " + t('copySuffix'); copy.createdAt = copy.updatedAt = Date.now(); persistScore(copy); renderLibrary(); } 
               else if (action.dataset.action === "edit") { window.location.hash = "#editor/" + score.id; }
+              else if (action.dataset.action === "view") { window.location.hash = "#viewer/" + score.id; }
               return;
-            } window.location.hash = "#editor/" + score.id;
+            } window.location.hash = "#viewer/" + score.id;
           }); libraryGrid.appendChild(card);
         });
     }
@@ -303,7 +344,7 @@
   function fillEditorFields() { 
     elTitle.value = currentScore.title || ""; elComposer.value = currentScore.composer || ""; 
     elTimeSig.value = currentScore.timeSig || "4/4"; 
-    updateCustomSelectUI(currentScore.keySig || "C");
+    updateCustomSelectUI('customKeySig', currentScore.keySig || "C", false);
     elTempoText.value = currentScore.tempoText || ""; syncMeasureControls(); 
   }
 
@@ -353,6 +394,7 @@
      VexFlow Render Paginado
      ----------------------------------------------------------------------- */
   const vexPagesContainer = document.getElementById("vexPagesContainer");
+
   function noteToVexKey(n) { let acc = n.accidental === "#" || n.accidental === "b" ? n.accidental : ""; return n.letter.toLowerCase() + acc + "/" + n.octave; }
 
   function buildVexNotes(staffNotes, clef) {
@@ -380,6 +422,7 @@
 
     try {
       const VF = Vex.Flow; const measures = currentScore.measures; const [num, den] = currentScore.timeSig.split("/").map(Number);
+      
       const totalLines = Math.ceil(measures.length / MEASURES_PER_LINE);
       const totalPages = Math.ceil(totalLines / LINES_PER_PAGE) || 1;
       const totalWidth = LEFT_MARGIN * 2 + FIRST_OF_LINE_WIDTH + (REST_OF_LINE_WIDTH * (MEASURES_PER_LINE - 1));
@@ -512,7 +555,8 @@
       try {
         const data = JSON.parse(reader.result); if (!data.measures) throw new Error("Format error");
         data.id = uid(); data.plate = nextPlateNumber(); data.updatedAt = Date.now();
-        persistScore(data); window.location.hash = "#catalogo";
+        persistScore(data); 
+        if (window.location.hash === "#catalogo") { renderLibrary(); } else { window.location.hash = "#catalogo"; }
       } catch (err) { alert("Error: " + err.message); } e.target.value = ""; 
     }; reader.readAsText(file);
   });
@@ -522,10 +566,11 @@
   document.getElementById("brandHome").addEventListener("click", () => { window.location.hash = "#inicio"; });
 
   /* -----------------------------------------------------------------------
-     Arranque Inicial con Detección de Idioma Automática
+     Arranque Inicial
      ----------------------------------------------------------------------- */
   const userLang = navigator.language || navigator.userLanguage;
   const defaultLang = (userLang && userLang.toLowerCase().startsWith('es')) ? 'es' : 'en';
+  renderCustomSelects(); // Inicializar opciones primero
   setLang(defaultLang);
   
   if(!window.location.hash || window.location.hash === "#" || window.location.hash === "") { window.location.hash = "#inicio"; } 

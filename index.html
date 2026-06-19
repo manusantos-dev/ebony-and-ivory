@@ -12,10 +12,8 @@
 </head>
 <body>
 
-<!-- ============ CABECERA PRINCIPAL ============ -->
 <header class="topbar" id="mainHeader">
   <div class="brand" id="brandHome" title="Ir al Catálogo">
-    <!-- IMAGOTIPO (Símbolo + Texto) -->
     <svg class="brand-mark" viewBox="0 0 100 100" width="28" height="28">
       <rect x="10" y="20" width="80" height="60" rx="8" fill="var(--ink)"/>
       <rect x="25" y="20" width="12" height="35" fill="var(--paper)"/>
@@ -45,21 +43,16 @@
   </div>
 </header>
 
-<!-- ============ VISTA 1: INICIO (LANDING PAGE) ============ -->
 <main id="viewHome" class="view">
   <div class="floating-notes" id="floatingNotes"></div>
   <div class="home-hero">
-    <!-- LOGOTIPO (Tipografía principal) -->
-    <div class="hero-logo">
-      <span class="hero-word">Ebony & Ivory</span>
-    </div>
+    <div class="hero-logo"><span class="hero-word">Ebony & Ivory</span></div>
     <h1 data-i18n="heroTitle">El arte de preservar la música</h1>
     <p class="hero-sub" data-i18n="heroSub">Un lienzo digital estandarizado para transcribir, clasificar y eternizar tus partituras con una elegancia inigualable.</p>
     <button class="btn btn-primary btn-huge" onclick="window.location.hash='#catalogo'" data-i18n="goToCatalog">Abrir mi Catálogo</button>
   </div>
 </main>
 
-<!-- ============ VISTA 2: CATÁLOGO ============ -->
 <main id="viewLibrary" class="view" hidden>
   <div class="catalog-header">
     <h2 data-i18n="catalogTitle">Catálogo de Partituras</h2>
@@ -88,12 +81,11 @@
       </div>
       <div class="filter-group">
         <label class="field-label" data-i18n="lblKeySig">Tonalidad</label>
-        <select id="filterKeySig" class="field-input">
-          <option value="all" data-i18n="optAll">Cualquiera</option>
-          <option value="C">C / Am</option><option value="G">G / Em</option><option value="D">D / Bm</option>
-          <option value="A">A / F#m</option><option value="E">E / C#m</option><option value="B">B / G#m</option>
-          <option value="F">F / Dm</option><option value="Bb">Bb / Gm</option><option value="Eb">Eb / Cm</option><option value="Ab">Ab / Fm</option>
-        </select>
+        <div class="custom-select" id="customFilterKeySig" tabindex="0">
+          <div class="select-selected" id="customFilterKeySelected"></div>
+          <div class="select-items" id="customFilterKeyOptions"></div>
+        </div>
+        <input type="hidden" id="filterKeySig" value="all">
       </div>
       <div class="filter-group">
         <label class="field-label" data-i18n="lblHands">Manos / Pentagramas</label>
@@ -114,14 +106,14 @@
   </div>
 </main>
 
-<!-- ============ VISTA 3: EDITOR ============ -->
 <main id="viewEditor" class="view" hidden>
   <div class="editor-subnav">
     <button class="btn-ghost-small" id="btnBackLibrary" data-i18n="backBtn">← Volver al Catálogo</button>
+    <button class="btn-ghost-small" id="btnToggleViewer" style="margin-left:auto; border: 1px solid var(--line-strong);" data-i18n="toggleViewBtn">Alternar Modo Edición</button>
   </div>
   
-  <div class="editor-layout">
-    <aside class="engrave-desk">
+  <div class="editor-layout" id="editorLayout">
+    <aside class="engrave-desk" id="engraveDesk">
       <div class="desk-section">
         <label class="field-label" data-i18n="lblTitle">Título</label>
         <input type="text" id="scoreTitle" class="field-input field-input--title">
@@ -141,23 +133,10 @@
           </div>
           <div>
             <label class="field-label" data-i18n="lblKeySig">Tonalidad</label>
-            <!-- Custom Dropdown para US / EU -->
             <div class="custom-select" id="customKeySig" tabindex="0">
-              <div class="select-selected" id="customKeySigSelected"><span>C / Am</span><span class="translucent">Do / La m</span></div>
-              <div class="select-items" id="customKeySigOptions">
-                <div data-val="C"><span>C / Am</span><span class="translucent">Do / La m</span></div>
-                <div data-val="G"><span>G / Em</span><span class="translucent">Sol / Mi m</span></div>
-                <div data-val="D"><span>D / Bm</span><span class="translucent">Re / Si m</span></div>
-                <div data-val="A"><span>A / F#m</span><span class="translucent">La / Fa# m</span></div>
-                <div data-val="E"><span>E / C#m</span><span class="translucent">Mi / Do# m</span></div>
-                <div data-val="B"><span>B / G#m</span><span class="translucent">Si / Sol# m</span></div>
-                <div data-val="F"><span>F / Dm</span><span class="translucent">Fa / Re m</span></div>
-                <div data-val="Bb"><span>Bb / Gm</span><span class="translucent">Sib / Sol m</span></div>
-                <div data-val="Eb"><span>Eb / Cm</span><span class="translucent">Mib / Do m</span></div>
-                <div data-val="Ab"><span>Ab / Fm</span><span class="translucent">Lab / Fa m</span></div>
-              </div>
+              <div class="select-selected" id="customKeySigSelected"></div>
+              <div class="select-items" id="customKeySigOptions"></div>
             </div>
-            <!-- Hidden input para mantener la lógica -->
             <input type="hidden" id="keySig" value="C">
           </div>
         </div>
@@ -252,11 +231,14 @@
     </aside>
 
     <section class="paper-wrap" id="paperWrap">
-      <!-- El contenido se genera por JS por páginas para el PDF -->
       <div id="vexPagesContainer"></div>
     </section>
   </div>
 </main>
+
+<footer class="sitefooter">
+  <p data-i18n="footerText">Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales.</p>
+</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
 <script src="app.js"></script>
