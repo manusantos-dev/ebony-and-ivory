@@ -53,7 +53,7 @@ Ebony & Ivory is an open-source personal tool. The musical works you transcribe 
 
 <div align="center">
 
-<h1 id="español"><img src="assets/imagotipo.png" height="30" align="center" alt="Ebony & Ivory"></h1>
+<h1 id="español"><img src="assets/logotipo-w.png" height="30" align="center" alt="Ebony & Ivory"></h1>
 
 > **El arte de preservar la música.**
 > Un lienzo digital estandarizado para transcribir, clasificar y eternizar tus partituras con una elegancia inigualable.
