@@ -14,7 +14,7 @@
 
 <!-- ============ CABECERA ============ -->
 <header class="topbar">
-  <div class="brand" id="brandHome" title="Volver al inicio">
+  <div class="brand" id="brandHome" title="Ir al Catálogo">
     <span class="brand-mark">🎹</span>
     <span class="brand-word">Ebony & Ivory</span>
   </div>
@@ -24,16 +24,19 @@
       <button class="lang-btn active" onclick="setLang('es')">ES</button>
       <button class="lang-btn" onclick="setLang('en')">EN</button>
     </div>
+    
+    <!-- Botones exclusivos de la Biblioteca -->
     <nav class="topbar-actions" id="libraryActions">
       <button class="btn btn-ghost" id="btnImport" data-i18n="importBtn">Importar .json</button>
       <input type="file" id="fileImport" accept="application/json" hidden>
       <button class="btn btn-primary" id="btnNewScore" data-i18n="newScoreBtn">+ Nueva partitura</button>
     </nav>
+    
+    <!-- Botones exclusivos del Editor -->
     <nav class="topbar-actions" id="editorActions" hidden>
-      <button class="btn btn-ghost" id="btnBackLibrary" data-i18n="backBtn">← Volver al Catálogo</button>
-      <button class="btn btn-ghost" id="btnExportJson" data-i18n="exportJsonBtn">Exportar .json</button>
-      <button class="btn btn-ghost" id="btnExportPdf" data-i18n="exportPdfBtn">Exportar PDF</button>
-      <button class="btn btn-primary" id="btnSave" data-i18n="saveBtn">Guardar</button>
+      <span id="saveIndicator" class="save-indicator" data-i18n="savedIndicator">Guardado ✓</span>
+      <button class="btn btn-ghost" id="btnExportJson" data-i18n="exportJsonBtn">Descargar .json</button>
+      <button class="btn btn-primary" id="btnExportPdf" data-i18n="exportPdfBtn">Exportar PDF</button>
     </nav>
   </div>
 </header>
@@ -48,9 +51,7 @@
     </div>
   </section>
   
-  <section class="library-grid" id="libraryGrid">
-    <!-- tarjetas de partituras generadas por JS -->
-  </section>
+  <section class="library-grid" id="libraryGrid"></section>
   
   <div class="library-empty" id="libraryEmpty" hidden>
     <h3 data-i18n="emptyLibraryTitle">Tu atril está vacío</h3>
@@ -60,8 +61,11 @@
 
 <!-- ============ VISTA: EDITOR ============ -->
 <main id="viewEditor" class="view" hidden>
+  <div class="editor-subnav">
+    <button class="btn-ghost-small" id="btnBackLibrary" data-i18n="backBtn">← Volver al Catálogo</button>
+  </div>
+  
   <div class="editor-layout">
-
     <!-- Panel lateral: mesa de grabado -->
     <aside class="engrave-desk">
       <div class="desk-section">
@@ -170,15 +174,9 @@
         <label class="field-label" data-i18n="lblDynamics">Dinámica</label>
         <select id="dynamicSelect" class="field-input">
           <option value="">—</option>
-          <option value="pp">pp</option>
-          <option value="p">p</option>
-          <option value="mp">mp</option>
-          <option value="mf">mf</option>
-          <option value="f">f</option>
-          <option value="ff">ff</option>
-          <option value="sfz">sfz</option>
-          <option value="cresc.">cresc.</option>
-          <option value="dim.">dim.</option>
+          <option value="pp">pp</option><option value="p">p</option><option value="mp">mp</option><option value="mf">mf</option>
+          <option value="f">f</option><option value="ff">ff</option><option value="sfz">sfz</option>
+          <option value="cresc.">cresc.</option><option value="dim.">dim.</option>
         </select>
 
         <button class="btn btn-primary btn-block" id="btnAddNote" data-i18n="btnAddNote">Añadir al compás</button>
@@ -194,14 +192,9 @@
         <label class="field-label" data-i18n="lblDirective">Indicación (Fine, D.C.)</label>
         <select id="directiveSelect" class="field-input">
           <option value="">—</option>
-          <option value="Fine">Fine</option>
-          <option value="D.C.">D.C.</option>
-          <option value="D.C. al Fine">D.C. al Fine</option>
-          <option value="D.C. al Coda">D.C. al Coda</option>
-          <option value="D.S. al Fine">D.S. al Fine</option>
-          <option value="D.S. al Coda">D.S. al Coda</option>
-          <option value="𝄌 Coda">𝄌 Coda</option>
-          <option value="𝄋 Segno">𝄋 Segno</option>
+          <option value="Fine">Fine</option><option value="D.C.">D.C.</option><option value="D.C. al Fine">D.C. al Fine</option>
+          <option value="D.C. al Coda">D.C. al Coda</option><option value="D.S. al Fine">D.S. al Fine</option>
+          <option value="D.S. al Coda">D.S. al Coda</option><option value="𝄌 Coda">𝄌 Coda</option><option value="𝄋 Segno">𝄋 Segno</option>
         </select>
         <label class="field-label" data-i18n="lblTempo">Texto libre / Tempo</label>
         <input type="text" id="tempoText" class="field-input" placeholder="Andante ♩ = 92">
@@ -223,7 +216,6 @@
   <p data-i18n="footerText">Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales; usa solo material de dominio público o con permiso.</p>
 </footer>
 
-<!-- NUEVO CDN PARA VEXFLOW (Evita bloqueadores) -->
 <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
 <script src="app.js"></script>
 </body>
