@@ -3,7 +3,7 @@
 # <a name="english"></a> 🎹 Ebony & Ivory
 
 > **The art of preserving music**
-> A standardized digital canvas to transcribe, classify, and immortalize your sheet music with unmatched elegance.
+> A serverless digital canvas to transcribe, classify, and immortalize your sheet music with unmatched elegance.
 
 🌍 **Read this in other languages:** [English](#english) | [Español](#español)
 
@@ -21,29 +21,24 @@ So, like anyone with their priorities "straight", I decided to postpone my music
 
 ---
 
-## ✨ Features
+## ✨ Technical Features
 
-* 📝 **Visual Engraving Desk:** A step-by-step measure editor to build your scores. Easily add notes, rests, specific durations (including strict dotted note math support), accidentals, dynamics, and structural directives (Fine, D.C., Coda, repeats).
-* 🎹 **Grand Staff Support:** Native support for piano scores, allowing input for both Treble and Bass clefs simultaneously.
-* 🗂️ **Local Library Catalog:** Your scores are automatically saved to your browser's `localStorage` instantly on every keystroke via our Auto-save system.
-* 🔍 **Advanced Filtering & Sorting:** Easily search your catalog by title, composer, or score number. A dedicated toolbar allows sorting (by E&I number, Title, Last Edited) and filtering by Time Signature, Key Signature (US/EU notation), and instrumentation.
-* 🔗 **Internal Routing:** Hash-based URL routing allows you to natively use your browser's back and forward buttons across the interactive Landing Page, your Catalog, and the Editor.
-* 🖨️ **Print to PDF:** Export your scores to beautifully formatted A4 PDFs via the browser's native print dialogue. The UI automatically hides itself, drawing exactly 4 measures per line, with custom page numbering and headers.
-* 💾 **JSON Import & Export:** Download your individual scores as `.json` files to back them up, share them, or move them between devices.
-* 🌍 **Bilingual Interface:** Auto-detects your browser language on load and seamlessly toggles between English and Spanish UI.
+Built entirely without frameworks, this project demonstrates strong web fundamentals, focusing on performance, state management, and complex DOM manipulation.
+
+* 🎵 **Algorithmic Engraving (VexFlow):** Deep integration with the VexFlow engine to dynamically calculate and render complex musical notation, including strict dotted math, Grand Staff support, and automatic beaming.
+* ☁️ **Serverless Architecture:** Completely database-free. It uses browser `localStorage` for instant auto-saving and JSON file serialization for data export/import, ensuring maximum privacy and zero latency.
+* 🖨️ **Custom Print Engine:** Uses advanced `@media print` CSS to hijack the browser's native print dialogue. It strips the UI, formats the SVG canvas into exact A4 pages (4 measures per line), and injects custom headers/footers for a flawless PDF export.
+* 🌍 **Native i18n Implementation:** A custom bilingual system (EN/ES) that auto-detects the user's `navigator.language` on load and toggles the entire UI state instantly without page reloads.
+* 🧠 **Vanilla State Management:** Custom hash-based URL routing (`#catalog`, `#editor/id`) and real-time DOM filtering/sorting, simulating a Single Page Application (SPA) experience using only Vanilla JS.
 
 ## 🚀 Live Demo
 
-You can access the live version of this tool hosted on GitHub Pages:
+Access the live tool hosted on GitHub Pages:
 **https://manusantos-dev.github.io/ebony-and-ivory/**
-
-## 🛠️ Local Development
-
-Since this project uses vanilla HTML, CSS, and JS, there is no build process or package manager required. Just clone the repository and open `index.html` in your favorite web browser.
 
 ## ⚖️ Disclaimer & Copyright
 
-Ebony & Ivory is a personal tool meant for transcribing and archiving sheet music. The tool itself is open-source, but the musical works you transcribe remain the property of their respective original authors. 
+Ebony & Ivory is an open-source personal tool. The musical works you transcribe remain the property of their respective original authors. Please transcribe responsibly.
 
 ---
 <br><br><br>
@@ -71,29 +66,24 @@ Así que, como cualquier persona con sus prioridades "claras", decidí posponer 
 
 ---
 
-## ✨ Características Principales
+## ✨ Características Técnicas
 
-* 📝 **Mesa de Grabado Visual:** Un editor paso a paso para construir tus compases. Añade notas, silencios, duraciones específicas (con matemáticas de puntillos estrictas), alteraciones, dinámicas y directivas de estructura (Fine, D.C., Coda, repeticiones).
-* 🎹 **Soporte para Piano (Grand Staff):** Soporte nativo para partituras de piano, permitiendo la entrada en clave de Sol y clave de Fa de forma simultánea.
-* 🗂️ **Catálogo Local:** Tus partituras se guardan automáticamente en el `localStorage` de tu navegador al instante tras cada clic gracias al sistema de Auto-guardado. 
-* 🔍 **Búsqueda y Filtros:** Encuentra fácilmente tus obras por título, compositor o número de serie (E&I). Utiliza la barra de herramientas para ordenar y filtrar por compás, tonalidad (notación americana/europea) y uso de manos.
-* 🔗 **Navegación Fluida:** El enrutamiento interno por Hash (URLs) te permite usar los botones de "Atrás" y "Adelante" de tu navegador de forma natural entre la Landing Page, el Catálogo y el Editor.
-* 🖨️ **Impresión a PDF perfecta:** Exporta tus partituras a PDFs con un formato inmaculado en A4. La interfaz web se oculta y el motor genera hojas perfectas a 4 compases por línea con su propio encabezado y pie de página numerado.
-* 💾 **Importar/Exportar JSON:** Descarga tus partituras como archivos `.json` para tener copias de seguridad, compartirlas o moverlas.
-* 🌍 **Interfaz Bilingüe Autodetectable:** Detecta automáticamente el idioma de tu navegador al entrar y permite cambiar en tiempo real entre Español e Inglés.
+Construido completamente sin *frameworks*, este proyecto demuestra fundamentos sólidos de desarrollo web, enfocándose en el rendimiento, la gestión del estado y la manipulación compleja del DOM.
+
+* 🎵 **Renderizado Algorítmico (VexFlow):** Integración profunda con el motor VexFlow para calcular y dibujar dinámicamente notación musical compleja, incluyendo sistemas de piano completos e inserción matemática de puntillos y alteraciones.
+* ☁️ **Arquitectura Serverless:** Completamente libre de bases de datos. Utiliza el `localStorage` del navegador para un auto-guardado instantáneo, y serialización en archivos JSON para exportar/importar datos sin latencia.
+* 🖨️ **Motor de Impresión Custom:** Emplea CSS avanzado (`@media print`) para transformar el lienzo web en hojas A4 perfectas. Elimina la interfaz interactiva, fuerza una maquetación de 4 compases por línea e inyecta encabezados y paginación personalizados para exportar a PDF.
+* 🌍 **Implementación i18n Nativa:** Un sistema bilingüe (EN/ES) construido desde cero que autodetecta el `navigator.language` del usuario al entrar y permite cambiar el idioma de toda la interfaz en tiempo real sin recargar.
+* 🧠 **Gestión de Estado Vanilla:** Enrutamiento de URLs mediante Hash (`#catalogo`, `#editor/id`) y algoritmos de filtrado/búsqueda en el DOM, simulando la fluidez de una Single Page Application (SPA) usando únicamente Javascript puro.
 
 ## 🚀 Live Demo
 
-Puedes acceder a la versión en vivo de esta herramienta alojada en GitHub Pages:
+Accede a la herramienta en vivo alojada en GitHub Pages:
 **https://manusantos-dev.github.io/ebony-and-ivory/**
-
-## 🛠️ Desarrollo Local
-
-Dado que este proyecto utiliza HTML, CSS y JS puros (*vanilla*), no se requiere ningún proceso de *build*. Simplemente clona el repositorio y abre el archivo `index.html` en tu navegador.
 
 ## ⚖️ Aviso Legal y Copyright
 
-Ebony & Ivory es una herramienta personal pensada para transcribir y archivar partituras. La herramienta en sí es de código abierto, pero las obras musicales que transcribas siguen siendo propiedad de sus respectivos autores originales.
+Ebony & Ivory es una herramienta de código abierto. Las obras musicales que transcribas siguen siendo propiedad de sus respectivos autores originales. Por favor, transcribe con responsabilidad.
 
 ---
 <div align="center">
