@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/logotipo.png" alt="Ebony & Ivory Logo" width="400">
+<img src="assets/logotipo-w.png" alt="Ebony & Ivory Logo" width="400">
 
 <br>
 
