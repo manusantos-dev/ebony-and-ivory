@@ -31,7 +31,7 @@ a{ color: var(--accent); }
 body.is-home .topbar { background: transparent; border: none; box-shadow: none; position: absolute; width: 100%; }
 body.is-home .brand { opacity: 0; pointer-events: none; visibility: hidden; }
 
-/* ESPACIADO MILIMÉTRICO DE LOS BOTONES SUPERIORES */
+/* ESPACIADO DE LOS BOTONES SUPERIORES */
 .topbar-right { display:flex; align-items:center; gap: 14px; margin-left: auto; justify-content: flex-end; }
 .topbar-actions { display:flex; gap: 10px; align-items:center; }
 .lang-switch { display: flex; gap: 4px; border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 2px; background: var(--paper);}
@@ -120,7 +120,6 @@ body.is-viewer .engrave-desk { display: none !important; }
 body.is-viewer .editor-layout { border: none; }
 body.is-viewer .paper-wrap { margin: 0 auto; padding-top: 20px; }
 
-/* En modo visor, las cajas interactivas desaparecen por completo */
 body.is-viewer .measure-hit rect { stroke: none !important; fill: transparent !important; }
 body.is-viewer .measure-hit { pointer-events: none; cursor: default; }
 
@@ -156,7 +155,7 @@ body.is-viewer .measure-hit { pointer-events: none; cursor: default; }
 .sitefooter{ max-width: 1180px; margin: 0 auto; padding: 24px 28px 40px; color: var(--ink-soft); font-size: 12px; border-top: 1px solid var(--line); text-align: center; margin-top: auto;}
 
 /* =========================================================
-   REPRODUCTOR DE PIANO (Píldora Flotante Elegante)
+   REPRODUCTOR DE PIANO
    ========================================================= */
 .player-bar { 
   display: flex; align-items: center; gap: 16px; margin: -10px auto 30px; padding: 10px 24px; 
@@ -213,7 +212,7 @@ body.is-example-score .editor-subnav { background: var(--gold-wash); }
 .profile-danger-zone { margin-top: 32px; padding-top: 24px; border-top: 1px dashed var(--danger); }
 
 /* =========================================================
-   PRINT CSS (PDF EXACTO)
+   PRINT CSS
    ========================================================= */
 @media print{
   .topbar, .engrave-desk, .editor-subnav, .sitefooter, .paper-hint, .player-bar, .modal-overlay { display:none !important; }
