@@ -5,7 +5,7 @@
    ========================================================= */
 
 /* --- EDITOR & VIEWER --- */
-#viewEditor { max-width: 1600px; width: 100%; }
+#viewEditor { max-width: 100%; width: 100%; padding-left: 48px; padding-right: 48px; }
 .editor-subnav { max-width: 1400px; margin: 0 auto; padding: 12px 28px; display: flex; align-items: center; }
 .editor-layout{ display:flex; align-items:flex-start; max-width: 100%; margin: 0 auto; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--paper-edge);}
 
