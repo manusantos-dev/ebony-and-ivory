@@ -8,16 +8,24 @@ function measure(treble, bass, extra) {
 
 export function getExampleScore(lang) {
   const isEs = lang === "es";
-  const bassRoot = (l, o, d) => [note(l, o, d || "w")];
+  const bassNote = (l, o, d) => [note(l, o, d || "w")]; // Por defecto usa redondas (w)
 
   const m1 = () => [note("E", 4, "q"), note("E", 4, "q"), note("F", 4, "q"), note("G", 4, "q")];
   const m2 = () => [note("G", 4, "q"), note("F", 4, "q"), note("E", 4, "q"), note("D", 4, "q")];
   const m3 = () => [note("C", 4, "q"), note("C", 4, "q"), note("D", 4, "q"), note("E", 4, "q")];
   const m4 = () => [note("E", 4, "q", true), note("D", 4, "8"), note("D", 4, "h")];
+  
   const m8 = () => [note("D", 4, "q", true), note("C", 4, "8"), note("C", 4, "h")];
-  const m9 = () => [note("D", 4, "q"), note("D", 4, "q"), note("E", 4, "q"), note("C", 4, "q")];
+  
+  const m9 = () => [note("D", 4, "h"), note("E", 4, "q"), note("C", 4, "q")];
   const m10 = () => [note("D", 4, "q"), note("E", 4, "8"), note("F", 4, "8"), note("E", 4, "q"), note("C", 4, "q")];
-  const m11 = () => [note("D", 4, "q"), note("E", 4, "8"), note("F", 4, "8"), note("E", 4, "q"), note("D", 4, "q")];
+  
+  const m11 = () => {
+    const fSharp = note("F", 4, "8");
+    fSharp.accidental = "#";
+    return [note("D", 4, "q"), note("E", 4, "8"), fSharp, note("E", 4, "q"), note("D", 4, "q")];
+  };
+  
   const m12 = () => [note("C", 4, "q"), note("D", 4, "q"), note("G", 3, "h")];
 
   return {
@@ -25,12 +33,20 @@ export function getExampleScore(lang) {
     title: isEs ? "Oda a la Alegría" : "Ode to Joy",
     composer: "Ludwig van Beethoven", timeSig: "4/4", keySig: "C", bpm: 100,
     measures: [
-      measure(m1(), bassRoot("C", 3), { repeatStart: true }), measure(m2(), bassRoot("G", 2)),
-      measure(m3(), bassRoot("C", 3)), measure(m4(), bassRoot("G", 2)),
-      measure(m1(), bassRoot("C", 3)), measure(m2(), bassRoot("G", 2)),
-      measure(m3(), bassRoot("C", 3)), measure(m8(), [note("G", 2, "h"), note("C", 3, "h")], { directive: "Fine" }),
-      measure(m9(), bassRoot("G", 2)), measure(m10(), bassRoot("C", 3)),
-      measure(m11(), bassRoot("G", 2)), measure(m12(), [note("C", 3, "h"), note("G", 2, "h")], { directive: "D.C. al Fine" })
+      measure(m1(), bassNote("C", 3)),
+      measure(m2(), bassNote("G", 2)),
+      measure(m3(), bassNote("C", 3)),
+      measure(m4(), bassNote("G", 2)),
+      
+      measure(m1(), bassNote("C", 3)),
+      measure(m2(), bassNote("G", 2)),
+      measure(m3(), bassNote("C", 3)),
+      measure(m8(), bassNote("C", 3), { directive: "Fine" }),
+      
+      measure(m9(), bassNote("G", 2)),
+      measure(m10(), bassNote("C", 3)),
+      measure(m11(), bassNote("G", 2)),
+      measure(m12(), bassNote("G", 2), { directive: "D.C. al Fine" })
     ],
     createdAt: 0, updatedAt: 0
   };
