@@ -53,7 +53,7 @@ body.is-viewer .measure-hit { pointer-events: none; cursor: default; }
 .player-bar {
   display: flex; align-items: center; gap: 16px; margin: -10px auto 30px; padding: 10px 24px;
   background: var(--paper); border-radius: 50px; border: 1px solid var(--line-strong);
-  box-shadow: var(--shadow-card); max-width: fit-content; position: relative; z-index: 10;
+  box-shadow: var(--shadow-card); max-width: 100%; width: 100%; position: relative; z-index: 10;
   flex-wrap: wrap; justify-content: center;
 }
 .pl-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line-strong); background: #fff; color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s ease; flex-shrink: 0; padding: 0; }
