@@ -55,7 +55,7 @@ export function renderScore() {
         head.className = "score-letterhead";
         head.innerHTML = `<h2>${escapeHtml(score.title || t("untitled"))}</h2><p>${escapeHtml(score.composer || "")}</p>`;
         pageDiv.appendChild(head);
-        startY += 60;
+        startY += 85;
       }
 
       const svgWrap = document.createElement("div");
