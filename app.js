@@ -1,10 +1,10 @@
 /* =========================================================================
-   EBONY & IVORY — app.js (Master Script - Flat Structure)
+   EBONY & IVORY — app.js (Master Script - Flat Structure & Bulletproof)
    ========================================================================= */
 (function () {
   "use strict";
 
-  /* ----------------------------- Textos e Idiomas (Recuperados) ----------------------------- */
+  /* ----------------------------- Textos e Idiomas ----------------------------- */
   const translations = {
     es: {
       importBtn: "Importar .json", newScoreBtn: "+ Nueva partitura", backBtn: "← Volver al Catálogo",
@@ -25,8 +25,7 @@
       lblPitch: "Nota", lblAccidental: "Alteración", lblOctave: "Octava", lblDuration: "Duración",
       lblDotted: "Con puntillo", lblDynamics: "Dinámica", btnAddNote: "Añadir al compás", btnUndoNote: "Deshacer última nota",
       lblMeasureDetails: "Compás · Detalles", lblRepStart: "Inicio repetición ‖:", lblRepEnd: "Fin repetición :‖</",
-      lblDirective: "Indicación (Fine, D.C.)", lblTempo: "Tempo (BPM)",
-      footerText: "Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales.",
+      lblDirective: "Indicación (Fine, D.C.)", footerText: "Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales.",
       untitled: "Sin título", unknownAuthor: "Autor desconocido", measuresTxt: "compases",
       editBtn: "✎ Editar", viewBtn: "👁 Ver", copyBtn: "⎘ Copiar", deleteBtn: "🗑️ Borrar",
       delConfirm: "¿Eliminar partitura? No se puede deshacer.", delMeasureConfirm: "¿Eliminar este compás?",
@@ -34,7 +33,7 @@
       toggleViewBtn: "Alternar Visor", optKeyAll: "Cualquiera", account: 'Cuenta', login: 'Iniciar sesión', register: 'Crear cuenta',
       subtitleLogin: 'Guarda tus partituras en la nube y ábrelas desde cualquier dispositivo.',
       subtitleRegister: 'Crea una cuenta gratuita para sincronizar tus partituras.',
-      logout: 'Cerrar sesión', google: 'Continuar con Google', genericError: 'Algo falló'
+      logout: 'Cerrar sesión', google: 'Continuar con Google', genericError: 'Algo falló. Revisa tus datos e inténtalo de nuevo.'
     },
     en: {
       importBtn: "Import .json", newScoreBtn: "+ New Score", backBtn: "← Back to Catalog",
@@ -55,8 +54,7 @@
       lblPitch: "Pitch", lblAccidental: "Accidental", lblOctave: "Octave", lblDuration: "Duration",
       lblDotted: "Dotted", lblDynamics: "Dynamics", btnAddNote: "Add to measure", btnUndoNote: "Undo last note",
       lblMeasureDetails: "Measure · Details", lblRepStart: "Start repeat ‖:", lblRepEnd: "End repeat :‖</",
-      lblDirective: "Directive (Fine, D.C.)", lblTempo: "Tempo (BPM)",
-      footerText: "Ebony & Ivory is a personal tool for transcribing and archiving sheet music. Rewritten works still belong to their original authors.",
+      lblDirective: "Directive (Fine, D.C.)", footerText: "Ebony & Ivory is a personal tool for transcribing and archiving sheet music. Rewritten works still belong to their original authors.",
       untitled: "Untitled", unknownAuthor: "Unknown author", measuresTxt: "measures",
       editBtn: "✎ Edit", viewBtn: "👁 View", copyBtn: "⎘ Copy", deleteBtn: "🗑️ Delete",
       delConfirm: "Delete this score? This cannot be undone.", delMeasureConfirm: "Delete this measure?",
@@ -64,7 +62,7 @@
       toggleViewBtn: "Toggle Viewer", optKeyAll: "Any", account: 'Account', login: 'Sign in', register: 'Create account',
       subtitleLogin: 'Save your scores to the cloud and open them on any device.',
       subtitleRegister: 'Create a free account to sync your scores.',
-      logout: 'Sign out', google: 'Continue with Google', genericError: 'Error occurred'
+      logout: 'Sign out', google: 'Continue with Google', genericError: 'Something went wrong. Check your details and try again.'
     }
   };
 
@@ -93,8 +91,8 @@
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { const key = el.getAttribute('data-i18n-placeholder'); if (translations[lang][key]) el.setAttribute('placeholder', translations[lang][key]); });
     
     refreshLangTexts(); renderCustomSelects(); 
-    if (!document.getElementById("viewLibrary").hidden) renderLibrary();
-    if (!document.getElementById("viewEditor").hidden) renderScore();
+    if (document.getElementById("viewLibrary") && !document.getElementById("viewLibrary").hidden) renderLibrary();
+    if (document.getElementById("viewEditor") && !document.getElementById("viewEditor").hidden) renderScore();
   };
 
   function t(key) { return translations[currentLang][key] || key; }
@@ -105,7 +103,7 @@
     if(document.getElementById('authSubtitle')) document.getElementById('authSubtitle').textContent = tabLogin.classList.contains('is-active') ? t('subtitleLogin') : t('subtitleRegister');
     if(document.getElementById('authSubmitBtn')) document.getElementById('authSubmitBtn').textContent = tabLogin.classList.contains('is-active') ? t('login') : t('register');
     tabLogin.textContent = t('login'); document.getElementById('authTabRegister').textContent = t('register');
-    document.getElementById('authGoogleBtn').lastChild.textContent = ' ' + t('google');
+    if(document.getElementById('authGoogleBtn') && document.getElementById('authGoogleBtn').lastChild) document.getElementById('authGoogleBtn').lastChild.textContent = ' ' + t('google');
     if(document.getElementById('btnAccountLogout')) document.getElementById('btnAccountLogout').title = t('logout');
   }
 
@@ -172,7 +170,10 @@
 
   if (window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey && !window.FIREBASE_CONFIG.apiKey.startsWith('PEGA_')) {
     try {
-      firebase.initializeApp(window.FIREBASE_CONFIG); auth = firebase.auth(); db = firebase.firestore();
+      if (!firebase.apps.length) { firebase.initializeApp(window.FIREBASE_CONFIG); }
+      auth = firebase.auth(); 
+      db = firebase.firestore();
+      
       auth.onAuthStateChanged((user) => {
         currentUser = user; updateAccountUI(); refreshLangTexts();
         if (user) {
@@ -181,7 +182,7 @@
             const cloudMap = {}; snap.forEach((doc) => { cloudMap[doc.id] = doc.data(); });
             const localAll = loadAll(); let changed = false;
             Object.keys(cloudMap).forEach((id) => { if (!localAll[id] || (cloudMap[id].updatedAt || 0) > (localAll[id].updatedAt || 0)) { localAll[id] = cloudMap[id]; changed = true; } });
-            if (changed) { saveAll(localAll); lastSnapshotMap = snapshotOf(localAll); if (!document.getElementById("viewLibrary").hidden) renderLibrary(); }
+            if (changed) { saveAll(localAll); lastSnapshotMap = snapshotOf(localAll); if (document.getElementById("viewLibrary") && !document.getElementById("viewLibrary").hidden) renderLibrary(); }
           });
           pollTimer = setInterval(() => {
             const all = loadAll(); const batch = db.batch(); let writes = 0;
@@ -194,7 +195,7 @@
           if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
         }
       });
-    } catch (e) { console.warn('Firebase init error:', e); }
+    } catch (e) { console.warn('Firebase init error (Protegido):', e); }
   }
 
   function snapshotOf(map) { const out = {}; Object.keys(map).forEach((id) => { out[id] = map[id].updatedAt || 0; }); return out; }
@@ -206,42 +207,50 @@
     } else { loginBtn.hidden = false; loggedBox.hidden = true; }
   }
 
+  function translateFirebaseError(err) {
+    const code = err && err.code;
+    const map = {
+      'auth/invalid-email': currentLang === 'es' ? 'Email no válido.' : 'Invalid email.',
+      'auth/user-not-found': currentLang === 'es' ? 'No existe ninguna cuenta con este email.' : 'No account found.',
+      'auth/wrong-password': currentLang === 'es' ? 'Contraseña incorrecta.' : 'Wrong password.',
+      'auth/email-already-in-use': currentLang === 'es' ? 'Ya existe una cuenta con este email.' : 'Email already in use.',
+      'auth/weak-password': currentLang === 'es' ? 'La contraseña debe tener 6 caracteres.' : 'Password must be 6 characters.',
+      'auth/popup-closed-by-user': currentLang === 'es' ? 'Ventana cerrada antes de terminar.' : 'Popup closed.'
+    }; return map[code] || t('genericError');
+  }
+
   const authOverlay = document.getElementById('authModalOverlay');
   if(authOverlay) {
-    document.getElementById('btnAccountLogin').addEventListener('click', () => { authOverlay.hidden = false; document.getElementById('authError').hidden = true; setTimeout(()=>document.getElementById('authEmail').focus(),50);});
-    document.getElementById('authModalClose').addEventListener('click', () => authOverlay.hidden = true);
-    document.getElementById('btnAccountLogout').addEventListener('click', () => { if (auth) auth.signOut(); });
+    const btnLogin = document.getElementById('btnAccountLogin');
+    if(btnLogin) btnLogin.addEventListener('click', () => { authOverlay.hidden = false; document.getElementById('authError').hidden = true; setTimeout(()=>document.getElementById('authEmail').focus(),50);});
+    
+    const btnClose = document.getElementById('authModalClose');
+    if(btnClose) btnClose.addEventListener('click', () => authOverlay.hidden = true);
+    
+    const btnLogout = document.getElementById('btnAccountLogout');
+    if(btnLogout) btnLogout.addEventListener('click', () => { if (auth) auth.signOut(); });
     
     ['authTabLogin', 'authTabRegister'].forEach(id => {
-        document.getElementById(id).addEventListener('click', (e) => {
-            document.getElementById('authTabLogin').classList.remove('is-active'); document.getElementById('authTabRegister').classList.remove('is-active');
-            e.target.classList.add('is-active'); refreshLangTexts(); document.getElementById('authError').hidden = true;
-        });
+      const el = document.getElementById(id);
+      if(el) el.addEventListener('click', (e) => {
+        document.getElementById('authTabLogin').classList.remove('is-active'); document.getElementById('authTabRegister').classList.remove('is-active');
+        e.target.classList.add('is-active'); refreshLangTexts(); document.getElementById('authError').hidden = true;
+      });
     });
 
-    function translateFirebaseError(err) {
-      const code = err && err.code;
-      const map = {
-        'auth/invalid-email': currentLang === 'es' ? 'Email no válido.' : 'Invalid email.',
-        'auth/user-not-found': currentLang === 'es' ? 'No existe ninguna cuenta con ese email.' : 'No account found with that email.',
-        'auth/wrong-password': currentLang === 'es' ? 'Contraseña incorrecta.' : 'Wrong password.',
-        'auth/email-already-in-use': currentLang === 'es' ? 'Ya existe una cuenta con ese email.' : 'An account already exists with that email.',
-        'auth/weak-password': currentLang === 'es' ? 'La contraseña debe tener al menos 6 caracteres.' : 'Password must be at least 6 characters.',
-        'auth/popup-closed-by-user': currentLang === 'es' ? 'Ventana de Google cerrada antes de terminar.' : 'Google popup closed before finishing.'
-      }; return map[code] || `${t('genericError')} (${code || 'Unknown'})`;
-    }
-
-    document.getElementById('authForm').addEventListener('submit', (e) => {
+    const form = document.getElementById('authForm');
+    if(form) form.addEventListener('submit', (e) => {
       e.preventDefault(); const errBox = document.getElementById('authError'); errBox.hidden = true;
-      if(!auth) { errBox.hidden = false; errBox.textContent = "Firebase no está configurado correctamente."; return; }
+      if(!auth) { errBox.hidden = false; errBox.textContent = "Firebase no está configurado (Revisa tus dominios autorizados)."; return; }
       const isReg = document.getElementById('authTabRegister').classList.contains('is-active');
       const p = isReg ? auth.createUserWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPassword').value) : auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPassword').value);
       p.then(() => authOverlay.hidden = true).catch(err => { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); });
     });
     
-    document.getElementById('authGoogleBtn').addEventListener('click', () => {
+    const btnGoogle = document.getElementById('authGoogleBtn');
+    if(btnGoogle) btnGoogle.addEventListener('click', () => {
       const errBox = document.getElementById('authError'); errBox.hidden = true;
-      if(!auth) { errBox.hidden = false; errBox.textContent = "Firebase no está configurado correctamente."; return; }
+      if(!auth) { errBox.hidden = false; errBox.textContent = "Firebase no está configurado (Revisa tus dominios autorizados)."; return; }
       auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => authOverlay.hidden = true).catch(err => { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); });
     });
   }
@@ -270,8 +279,13 @@
   /* ----------------------------- Routing & Catalog ----------------------------- */
   function handleNavigation() {
     const hash = window.location.hash; document.body.classList.remove('is-home', 'is-viewer');
-    document.getElementById("viewHome").hidden = true; document.getElementById("viewLibrary").hidden = true; document.getElementById("viewEditor").hidden = true;
-    document.getElementById("libraryActions").hidden = true; document.getElementById("editorActions").hidden = true;
+    
+    const vHome = document.getElementById("viewHome"); if(vHome) vHome.hidden = true; 
+    const vLib = document.getElementById("viewLibrary"); if(vLib) vLib.hidden = true; 
+    const vEdit = document.getElementById("viewEditor"); if(vEdit) vEdit.hidden = true;
+    const lAct = document.getElementById("libraryActions"); if(lAct) lAct.hidden = true; 
+    const eAct = document.getElementById("editorActions"); if(eAct) eAct.hidden = true;
+    
     if(typeof stopPlayback === 'function') stopPlayback(false);
 
     if (hash.startsWith("#editor/")) {
@@ -282,20 +296,24 @@
       currentScore = getExampleScore(currentLang); document.body.classList.add('is-viewer', 'is-example-score'); initEditor();
       if(document.getElementById('btnToggleViewer')) document.getElementById('btnToggleViewer').hidden = true;
     } else if (hash === "#catalogo") {
-      currentScore = null; document.getElementById("viewLibrary").hidden = false; document.getElementById("libraryActions").hidden = false;
+      currentScore = null; if(vLib) vLib.hidden = false; if(lAct) lAct.hidden = false;
       document.title = t('catalogTitle') + " — Ebony & Ivory"; renderLibrary(); window.scrollTo(0,0);
     } else {
-      currentScore = null; document.getElementById("viewHome").hidden = false; document.body.classList.add('is-home'); document.title = "Ebony & Ivory"; window.scrollTo(0,0);
+      currentScore = null; if(vHome) vHome.hidden = false; document.body.classList.add('is-home'); document.title = "Ebony & Ivory"; window.scrollTo(0,0);
     }
   }
 
   function initEditor() {
     editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
-    document.getElementById("viewEditor").hidden = false; document.getElementById("editorActions").hidden = false;
+    const vEdit = document.getElementById("viewEditor"); if(vEdit) vEdit.hidden = false; 
+    const eAct = document.getElementById("editorActions"); if(eAct) eAct.hidden = false;
     document.title = (currentScore.title || t('untitled')) + " — Ebony & Ivory";
-    document.getElementById("scoreTitle").value = currentScore.title || ""; document.getElementById("scoreComposer").value = currentScore.composer || ""; 
-    document.getElementById("timeSig").value = currentScore.timeSig || "4/4"; updateCustomSelectUI('customKeySig', currentScore.keySig || "C"); 
-    if(document.getElementById("scoreBpm")) document.getElementById("scoreBpm").value = currentScore.bpm || 100;
+    
+    if(document.getElementById("scoreTitle")) document.getElementById("scoreTitle").value = currentScore.title || ""; 
+    if(document.getElementById("scoreComposer")) document.getElementById("scoreComposer").value = currentScore.composer || ""; 
+    if(document.getElementById("timeSig")) document.getElementById("timeSig").value = currentScore.timeSig || "4/4"; 
+    updateCustomSelectUI('customKeySig', currentScore.keySig || "C"); 
+    if(document.getElementById("plBpm")) document.getElementById("plBpm").value = currentScore.bpm || 100;
     syncMeasureControls(); renderScore(); window.scrollTo(0,0);
   }
 
@@ -318,9 +336,14 @@
         if (libraryState.sortBy === "titleAsc") return (a.title || "").localeCompare(b.title || ""); if (libraryState.sortBy === "authorAsc") return (a.composer || "").localeCompare(b.composer || ""); return 0;
     });
 
-    const grid = document.getElementById("libraryGrid"); grid.innerHTML = "";
-    if (scores.length === 0) { document.getElementById("libraryEmpty").hidden = false; grid.hidden = true; } else {
-        document.getElementById("libraryEmpty").hidden = true; grid.hidden = false;
+    const grid = document.getElementById("libraryGrid"); if(!grid) return;
+    grid.innerHTML = "";
+    if (scores.length === 0) { 
+      if(document.getElementById("libraryEmpty")) document.getElementById("libraryEmpty").hidden = false; 
+      grid.hidden = true; 
+    } else {
+        if(document.getElementById("libraryEmpty")) document.getElementById("libraryEmpty").hidden = true; 
+        grid.hidden = false;
         scores.forEach((score) => {
           const card = document.createElement("div"); card.className = "score-card";
           card.innerHTML = `<span class="card-eyebrow">${plateLabel(score.plate)} · ${score.timeSig}</span><h3>${escapeHtml(score.title || t('untitled'))}</h3><p class="composer">${escapeHtml(score.composer || t('unknownAuthor'))}</p><div class="meta"><span>${score.measures.length} ${t('measuresTxt')}</span><span>${formatDate(score.updatedAt)}</span></div>
@@ -349,7 +372,6 @@
     document.getElementById("scoreTitle").addEventListener("input", (e) => { currentScore.title = e.target.value; renderScore(); });
     document.getElementById("scoreComposer").addEventListener("input", (e) => { currentScore.composer = e.target.value; renderScore(); });
     document.getElementById("timeSig").addEventListener("change", (e) => { currentScore.timeSig = e.target.value; renderScore(); });
-    if(document.getElementById("scoreBpm")) document.getElementById("scoreBpm").addEventListener("change", (e) => { currentScore.bpm = parseInt(e.target.value, 10) || 100; renderScore(); updateAudioBPM(); });
     
     document.getElementById("btnPrevMeasure").addEventListener("click", () => { editorState.activeMeasure--; syncMeasureControls(); renderScore(); });
     document.getElementById("btnNextMeasure").addEventListener("click", () => { editorState.activeMeasure++; syncMeasureControls(); renderScore(); });
@@ -380,8 +402,10 @@
 
   function syncMeasureControls() {
     editorState.activeMeasure = Math.max(0, Math.min(editorState.activeMeasure, currentScore.measures.length - 1)); const m = currentScore.measures[editorState.activeMeasure];
-    document.getElementById("activeMeasureLabel").textContent = `${editorState.activeMeasure + 1} / ${currentScore.measures.length}`;
-    document.getElementById("repeatStart").checked = !!m.repeatStart; document.getElementById("repeatEnd").checked = !!m.repeatEnd; document.getElementById("directiveSelect").value = m.directive || "";
+    const lbl = document.getElementById("activeMeasureLabel"); if(lbl) lbl.textContent = `${editorState.activeMeasure + 1} / ${currentScore.measures.length}`;
+    const rs = document.getElementById("repeatStart"); if(rs) rs.checked = !!m.repeatStart; 
+    const re = document.getElementById("repeatEnd"); if(re) re.checked = !!m.repeatEnd; 
+    const ds = document.getElementById("directiveSelect"); if(ds) ds.value = m.directive || "";
   }
 
   /* ----------------------------- VexFlow Renderer ----------------------------- */
@@ -393,7 +417,7 @@
   function noteToVexKey(n) { return n.letter.toLowerCase() + (n.accidental === "#" || n.accidental === "b" ? n.accidental : "") + "/" + n.octave; }
 
   function renderScore() {
-    if (!currentScore) return; persistScore(currentScore); const container = document.getElementById("vexPagesContainer"); container.innerHTML = "";
+    if (!currentScore) return; persistScore(currentScore); const container = document.getElementById("vexPagesContainer"); if(!container) return; container.innerHTML = "";
     if (typeof Vex === "undefined") { container.innerHTML = '<p style="padding:40px;color:#8C2F39;font-weight:bold;">No se ha podido cargar VexFlow.</p>'; return; }
 
     try {
@@ -512,7 +536,8 @@
           }
       }
       const needed = measureNeededQuarters(currentScore.timeSig); const m = currentScore.measures[editorState.activeMeasure];
-      document.getElementById("activeMeasureLabel").textContent = `${editorState.activeMeasure + 1}/${currentScore.measures.length} · ♩ Sol ${trim(quartersUsed(m.treble))}/${trim(needed)} · Fa ${trim(quartersUsed(m.bass))}/${trim(needed)}`;
+      const lbl = document.getElementById("activeMeasureLabel");
+      if(lbl) lbl.textContent = `${editorState.activeMeasure + 1}/${currentScore.measures.length} · ♩ Sol ${trim(quartersUsed(m.treble))}/${trim(needed)} · Fa ${trim(quartersUsed(m.bass))}/${trim(needed)}`;
     } catch (err) { console.error(err); container.innerHTML = `<p style="padding:40px;color:#8C2F39;font-weight:bold;">Error matemático crítico al renderizar.</p>`; }
   }
 
@@ -564,40 +589,46 @@
     });
   }
   function pauseAudio() { Tone.Transport.pause(); isPlaying = false; updatePlayerUI(); cancelAnimationFrame(rafId); }
-  window.stopPlayback = function(reachedEnd) { Tone.Transport.stop(); isPlaying = false; updatePlayerUI(); cancelAnimationFrame(rafId); clearHighlight(); if(document.getElementById('plProgressFill')) document.getElementById('plProgressFill').style.width = '0%'; }
+  window.stopPlayback = function(reachedEnd) { Tone.Transport.stop(); isPlaying = false; updatePlayerUI(); cancelAnimationFrame(rafId); clearHighlight(); const prog = document.getElementById('plProgressFill'); if(prog) prog.style.width = '0%'; }
 
-  function updatePlayerUI() { const btn = document.getElementById('plBtnPlay'); if(!btn) return; btn.textContent = isPlaying ? '⏸' : '▶'; document.getElementById('playerBar').classList.toggle('is-playing', isPlaying); }
+  function updatePlayerUI() { const btn = document.getElementById('plBtnPlay'); if(!btn) return; btn.textContent = isPlaying ? '⏸' : '▶'; const bar = document.getElementById('playerBar'); if(bar) bar.classList.toggle('is-playing', isPlaying); }
   function tickProgress() {
     if (!isPlaying) return;
     const elapsedQ = Tone.Transport.seconds * (Tone.Transport.bpm.value / 60); const frac = totalQuarters > 0 ? Math.min(1, elapsedQ / totalQuarters) : 0;
-    document.getElementById('plProgressFill').style.width = (frac * 100).toFixed(2) + '%';
-    const secPerQ = 60 / Tone.Transport.bpm.value; document.getElementById('plTimeLabel').textContent = formatTime(frac * totalQuarters * secPerQ) + ' / ' + formatTime(totalQuarters * secPerQ);
+    const prog = document.getElementById('plProgressFill'); if(prog) prog.style.width = (frac * 100).toFixed(2) + '%';
+    const secPerQ = 60 / Tone.Transport.bpm.value; 
+    const lbl = document.getElementById('plTimeLabel'); if(lbl) lbl.textContent = formatTime(frac * totalQuarters * secPerQ) + ' / ' + formatTime(totalQuarters * secPerQ);
     rafId = requestAnimationFrame(tickProgress);
   }
   function formatTime(sec) { if (!isFinite(sec) || sec < 0) sec = 0; return Math.floor(sec / 60) + ':' + String(Math.floor(sec % 60)).padStart(2, '0'); }
 
-  if(document.getElementById('plBtnPlay')) {
-    document.getElementById('plBtnPlay').addEventListener('click', () => isPlaying ? pauseAudio() : playAudio());
+  const btnPlay = document.getElementById('plBtnPlay');
+  if(btnPlay) {
+    btnPlay.addEventListener('click', () => isPlaying ? pauseAudio() : playAudio());
     document.getElementById('plBtnRewind').addEventListener('click', () => stopPlayback(false));
     document.querySelectorAll('.pl-speed-btn').forEach((b) => b.addEventListener('click', () => { 
       speedFactor = parseFloat(b.dataset.speed); updateAudioBPM(); 
       document.querySelectorAll('.pl-speed-btn').forEach(btn => btn.classList.toggle('is-active', parseFloat(btn.dataset.speed) === speedFactor));
     }));
-    document.getElementById('plBpm').addEventListener('change', (e) => {
-        const val = Math.max(20, Math.min(300, parseInt(e.target.value, 10) || 100));
-        if (currentScore) { currentScore.bpm = val; renderScore(); } updateAudioBPM(); e.target.value = val;
-    });
+    const elBpm = document.getElementById('plBpm');
+    if(elBpm) {
+        elBpm.addEventListener('change', (e) => {
+            const val = Math.max(20, Math.min(300, parseInt(e.target.value, 10) || 100));
+            if (currentScore) { currentScore.bpm = val; renderScore(); } updateAudioBPM(); e.target.value = val;
+        });
+    }
     document.addEventListener('click', (e) => { if (isPlaying && (e.target.closest('#engraveDesk') || e.target.closest('.measure-hit'))) pauseAudio(); });
   }
 
   /* ----------------------------- Export & Events ----------------------------- */
-  document.getElementById("btnExportJson").addEventListener("click", () => { downloadBlob(slugify(currentScore.title) + ".json", JSON.stringify(currentScore, null, 2)); });
-  document.getElementById("btnExportPdf").addEventListener("click", () => { 
+  const btnExpJson = document.getElementById("btnExportJson"); if(btnExpJson) btnExpJson.addEventListener("click", () => { downloadBlob(slugify(currentScore.title) + ".json", JSON.stringify(currentScore, null, 2)); });
+  const btnExpPdf = document.getElementById("btnExportPdf"); if(btnExpPdf) btnExpPdf.addEventListener("click", () => { 
       const oTitle = document.title; document.title = `${(currentScore.title || t('untitled')).trim()} — ${(currentScore.composer || t('unknownAuthor')).trim()}`;
       window.print(); setTimeout(() => { document.title = oTitle; }, 500);
   });
-  document.getElementById("btnImport").addEventListener("click", () => document.getElementById("fileImport").click());
-  document.getElementById("fileImport").addEventListener("change", (e) => {
+  
+  const btnImport = document.getElementById("btnImport"); if(btnImport) btnImport.addEventListener("click", () => document.getElementById("fileImport").click());
+  const fileImport = document.getElementById("fileImport"); if(fileImport) fileImport.addEventListener("change", (e) => {
     const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
     reader.onload = () => {
       try { const data = JSON.parse(reader.result); if (!data.measures) throw new Error("Format error");
@@ -607,13 +638,12 @@
     }; reader.readAsText(file);
   });
 
-  document.getElementById("btnNewScore").addEventListener("click", () => { const score = newScore(); persistScore(score); window.location.hash = "#editor/" + score.id; });
-  document.getElementById("btnBackLibrary").addEventListener("click", () => { window.location.hash = "#catalogo"; });
-  document.getElementById("brandHome").addEventListener("click", () => { window.location.hash = "#inicio"; });
-  document.getElementById("btnGoCatalog").addEventListener("click", () => { window.location.hash = "#catalogo"; });
-  
-  const btnGoExample = document.getElementById("btnGoExample");
-  if (btnGoExample) btnGoExample.addEventListener("click", () => { window.location.hash = "#ejemplo"; });
+  const btnNewScore = document.getElementById("btnNewScore"); if(btnNewScore) btnNewScore.addEventListener("click", () => { const score = newScore(); persistScore(score); window.location.hash = "#editor/" + score.id; });
+  const btnBackLib = document.getElementById("btnBackLibrary"); if(btnBackLib) btnBackLib.addEventListener("click", () => { window.location.hash = "#catalogo"; });
+  const brandHome = document.getElementById("brandHome"); if(brandHome) brandHome.addEventListener("click", () => { window.location.hash = "#inicio"; });
+  const btnGoCat = document.getElementById("btnGoCatalog"); if(btnGoCat) btnGoCat.addEventListener("click", () => { window.location.hash = "#catalogo"; });
+  const btnGoEx = document.getElementById("btnGoExample"); if(btnGoEx) btnGoEx.addEventListener("click", () => { window.location.hash = "#ejemplo"; });
+  const btnToggleV = document.getElementById("btnToggleViewer"); if(btnToggleV) btnToggleV.addEventListener("click", () => { window.location.hash = (document.body.classList.contains('is-viewer') ? "#editor/" : "#viewer/") + currentScore.id; });
 
   /* ----------------------------- Arranque ----------------------------- */
   const userLang = navigator.language || navigator.userLanguage;
