@@ -120,6 +120,7 @@ body.is-viewer .engrave-desk { display: none !important; }
 body.is-viewer .editor-layout { border: none; }
 body.is-viewer .paper-wrap { margin: 0 auto; padding-top: 20px; }
 
+/* En modo visor, las cajas interactivas desaparecen por completo */
 body.is-viewer .measure-hit rect { stroke: none !important; fill: transparent !important; }
 body.is-viewer .measure-hit { pointer-events: none; cursor: default; }
 
@@ -155,7 +156,7 @@ body.is-viewer .measure-hit { pointer-events: none; cursor: default; }
 .sitefooter{ max-width: 1180px; margin: 0 auto; padding: 24px 28px 40px; color: var(--ink-soft); font-size: 12px; border-top: 1px solid var(--line); text-align: center; margin-top: auto;}
 
 /* =========================================================
-   REPRODUCTOR DE PIANO
+   REPRODUCTOR DE PIANO 
    ========================================================= */
 .player-bar { 
   display: flex; align-items: center; gap: 16px; margin: -10px auto 30px; padding: 10px 24px; 
