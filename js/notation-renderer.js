@@ -112,7 +112,7 @@ export function renderScore() {
             staveTreble.setTempo({ duration: "q", dots: 0, bpm: score.bpm || 100 }, 0);
           }
 
-          const noteStartOffset = isFirstOfLine ? 140 : 15;
+          const noteStartOffset = isFirstOfLine ? 120 : 15;
           staveTreble.setNoteStartX(x + noteStartOffset);
           staveBass.setNoteStartX(x + noteStartOffset);
 
@@ -179,7 +179,7 @@ export function renderScore() {
           }
           
           if (trebleNotes.length > 0) {
-            try { VF.Beam.generateBeams(trebleNotes, { groups: beamGroups, beam_rests: false }).forEach((b) => b.setContext(ctx).draw()); } catch (e) {}
+            VF.Beam.generateBeams(trebleNotes, { groups: beamGroups }).forEach(b => b.setContext(ctx).draw());
             vTreble.draw(ctx, staveTreble);
           }
           
@@ -189,16 +189,10 @@ export function renderScore() {
           }
           
           if (measure.directive) {
-            const targetArr = trebleNotes.length ? trebleNotes : bassNotes;
-            if (targetArr.length) {
-              targetArr[targetArr.length - 1].addModifier(
-                new VF.Annotation(measure.directive)
-                 .setFont("Inter", 13, "bold")
-                 .setVerticalJustification(VF.Annotation.VerticalJustify.TOP)
-                 .setXShift(30), 
-                0
-              );
-            }
+            const note = trebleNotes.length ? trebleNotes[0] : bassNotes[0];
+            note.addModifier(new VF.Annotation(measure.directive)
+              .setFont("Cormorant Garamond", 14, "italic")
+              .setVerticalJustification(VF.Annotation.VerticalJustify.TOP), 0);
           }
           
           hitRects.push({
