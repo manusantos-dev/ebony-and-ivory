@@ -117,4 +117,5 @@ body.is-example-score .editor-subnav { background: var(--gold-wash); }
   .editor-layout { flex-direction: column; }
   .player-bar { padding: 10px 16px; max-width: 90%; }
   .pl-speeds { order: 5; width: 100%; justify-content: center; }
-}
+
+} 
