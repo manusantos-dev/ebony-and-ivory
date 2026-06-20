@@ -236,12 +236,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Catálogo: importar / exportar / nueva partitura
   const btnExpJson = document.getElementById("btnExportJson");
-  if (btnExpJson) btnExpJson.addEventListener("click", () => {
+  if (btnExpJson) btnExpJson.addEventListener("click", (e) => {
+    e.preventDefault();
+    if(!state.currentScore) return;
     downloadBlob(slugify(state.currentScore.title) + ".json", JSON.stringify(state.currentScore, null, 2));
   });
-
+  
   const btnExpPdf = document.getElementById("btnExportPdf");
-  if (btnExpPdf) btnExpPdf.addEventListener("click", () => {
+  if (btnExpPdf) btnExpPdf.addEventListener("click", (e) => {
+    e.preventDefault();
+    if(!state.currentScore) return;
     const oTitle = document.title;
     document.title = `${(state.currentScore.title || t("untitled")).trim()} — ${(state.currentScore.composer || t("unknownAuthor")).trim()}`;
     window.print();
@@ -414,9 +418,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const elBpm = document.getElementById("plBpm");
     if (elBpm) elBpm.addEventListener("change", (e) => {
       const val = Math.max(20, Math.min(300, parseInt(e.target.value, 10) || 100));
-      if (state.currentScore) { state.currentScore.bpm = val; renderScore(); }
-      refreshAudioBPM();
       e.target.value = val;
+      refreshAudioBPM(); 
     });
 
     document.addEventListener("click", (e) => {
