@@ -2,9 +2,13 @@
    EBONY & IVORY — print.css
    ========================================================= */
 @media print{
-  .topbar, .engrave-desk, .editor-subnav, .sitefooter, .paper-hint, .player-bar, .modal-overlay, .editor-top-controls, .back-pill { display:none !important; }
+  /* Ocultamos toda la UI interactiva y las vistas que no son el editor */
+  .topbar, .engrave-desk, .editor-subnav, .sitefooter, .paper-hint, .player-bar, .modal-overlay, .editor-top-controls, .back-pill, #viewHome, #viewLibrary { 
+    display: none !important; 
+  }
   
-  html, body, .view, .editor-layout, .paper-wrap { 
+  /* Forzamos el flujo natural SOLO en el editor y la hoja */
+  html, body, #viewEditor, .editor-layout, .paper-wrap { 
     background: #fff !important; 
     padding: 0 !important; 
     margin: 0 !important; 
@@ -39,9 +43,8 @@
     max-height: 275mm !important; 
   }
   
-  .print-header-content { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); text-transform: uppercase; border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 10px; }
+  /* Estilos para el nuevo pie de página limpio */
   .print-footer-content { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); border-top: 1px solid var(--line); padding-top: 8px; margin-top: 10px; }
   
-  .paper-page:first-child .print-header-content { display: none; }
   .print-logo-isotipo { height: 16px; width: auto; object-fit: contain; filter: grayscale(100%); opacity: 0.6; }
 }
