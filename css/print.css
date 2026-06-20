@@ -8,15 +8,13 @@
   body, .paper-wrap{ background: #fff !important; padding:0 !important; margin:0 !important; display: block; }
   .editor-layout { border: none; max-width: none; display: block; margin: 0; }
   @page { size: A4 portrait; margin: 15mm 10mm 20mm 10mm; }
-  .paper-page { box-shadow: none !important; max-width: none !important; min-width: auto !important; padding: 0 !important; margin: 0 !important; page-break-after: always; break-after: page; position: relative; }
-  /* Antes: height:100vh. El alto del viewport de impresión no coincide
-     necesariamente con el alto imprimible real de la hoja A4 (varía según
-     navegador, zoom y DPI), así que el contenido (que en notation-renderer.js
-     ya está calculado para encajar en una A4 gracias a LINES_PER_PAGE=4)
-     podía quedar más alto que ese 100vh y se recortaba al exportar a PDF.
-     Dejamos que la página crezca según su propio contenido: cada .paper-page
-     ya representa una hoja completa gracias a page-break-after, sin
-     necesidad de forzar una altura que puede no coincidir con la real. */
+  .paper-wrap{ overflow: visible !important; width: 100% !important; max-width: 100% !important; }
+  .paper-page { box-shadow: none !important; max-width: none !important; min-width: auto !important; width: 100% !important; padding: 0 !important; margin: 0 !important; page-break-after: always; break-after: page; position: relative; overflow: hidden; }
+  .paper-page > div { width: 100% !important; }
+  .paper-page svg { width: 100% !important; height: auto !important; max-width: 100% !important; display: block !important; }
+  .measure-hit rect { fill: transparent !important; stroke: none !important; }
+  .measure-hit { pointer-events: none !important; cursor: default !important; }
+  .playback-line-svg { display: none !important; }
   .paper-page:last-child { page-break-after: auto; }
   .print-header-content { display: flex; position: absolute; top: 0; left: 0; right: 0; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); text-transform: uppercase; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
   .print-footer-content { display: flex; position: absolute; bottom: 0; left: 0; right: 0; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); border-top: 1px solid var(--line); padding-top: 8px; }
