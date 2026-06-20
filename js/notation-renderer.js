@@ -168,11 +168,11 @@ export function renderScore() {
           if (voices.length > 0) {
             const formatter = new VF.Formatter();
             try {
-              formatter.joinVoices(voices).format(voices, width - noteStartOffset - 30);
+              formatter.joinVoices(voices).formatToStave(voices, staveTreble);
             } catch (e) {
               voices.forEach((v) => {
                 const f = new VF.Formatter();
-                f.joinVoices([v]).format([v], width - noteStartOffset - 30);
+                f.joinVoices([v]).formatToStave([v], staveTreble);
               });
             }
           }
