@@ -29,6 +29,9 @@ I just wanted to learn how to play the piano. But instead of actually practicing
 
 So, like anyone with their priorities "straight", I decided to postpone my musical journey to code my own browser-based sheet music editor and catalog from scratch. Maybe I should close my code editor, sit at the keyboard, and finally start practicing... but hey, at least my sheet music looks incredible now.
 
+> **🤖 Transparency Note (or "How I built this without being a Frontend Guru")**
+> If you inspect the codebase and think: *"wow, this guy breathes JavaScript"*, let me stop you right there. My natural habitats are math and cybersecurity. This project is the result of a lot of *vibe coding*: I designed the modular architecture, provided the mathematical logic so the measures wouldn't explode, and made the core product decisions; my AI assistant took care of typing out most of the syntax. It turns out that if you have a clear logic of what you want to build and know *how* to ask for it, you can create a full-fledged sheet music editor without having to search StackOverflow on how to center a div for the millionth time.
+
 ---
 
 ## <img src="assets/isotipo-w.png" width="20" align="center"> Technical Features
@@ -85,6 +88,9 @@ Ebony & Ivory is an open-source personal tool. The musical works you transcribe 
 Yo solo quería aprender a tocar el piano. Pero en lugar de ponerme a practicar, me frustré buscando partituras feas, mal escaneadas y con estéticas completamente distintas por todo internet.
 
 Así que, como cualquier persona con sus prioridades "claras", decidí posponer mi aprendizaje musical para programar mi propio editor y gestor de partituras en el navegador desde cero. Quizás debería cerrar el editor de código, sentarme frente al teclado y ponerme a practicar de una vez por todas... pero oye, al menos ahora mis partituras lucen increíbles.
+
+> **🤖 Nota de transparencia (o "Cómo construí esto sin ser un gurú del Frontend")**
+> Si inspeccionas el código y piensas: *"wow, este chico respira JavaScript"*, te detengo ahí mismo. Mi hábitat natural son las matemáticas y la ciberseguridad. Este proyecto es el resultado de mucho *vibe coding*: yo diseñé la arquitectura modular, aporté la lógica matemática para que los compases no exploten y tomé las decisiones de producto; mi asistente de Inteligencia Artificial se encargó de teclear la mayor parte de la sintaxis. Resulta que si tienes clara la lógica de lo que quieres construir y sabes *cómo* pedirlo, puedes crear un editor musical completo sin tener que buscar en StackOverflow cómo centrar un div por enésima vez.
 
 ---
 
