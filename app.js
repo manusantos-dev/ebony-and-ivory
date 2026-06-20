@@ -1,5 +1,5 @@
 /* =========================================================================
-   EBONY & IVORY — app.js (Código Maestro Definitivo con Sincronía Perfecta)
+   EBONY & IVORY — app.js 
    ========================================================================= */
 (function () {
   "use strict";
@@ -145,8 +145,8 @@
       const option = wrapper.querySelector(`.select-items div[data-val="${val}"]`);
       if (option) { wrapper.querySelector('.select-selected').innerHTML = option.innerHTML; document.getElementById(wrapperId === 'customKeySig' ? 'keySig' : 'filterKeySig').value = val; }
   }
-
-  /* ----------------------------- Partitura de Ejemplo (Exacta al PDF) ----------------------------- */
+   
+  /* ----------------------------- Partitura de Ejemplo ----------------------------- */
   function getExampleScore(lang) {
     const isEs = lang === 'es';
     const note = (l, o, d, dot) => ({ rest: false, letter: l, accidental: '', octave: o, duration: d, dotted: !!dot, dynamic: '' });
@@ -163,7 +163,7 @@
     const m11 = () => [note('D',4,'q'), note('E',4,'8'), note('F',4,'8'), note('E',4,'q'), note('D',4,'q')];
     const m12 = () => [note('C',4,'q'), note('D',4,'q'), note('G',3,'h')];
     
-    // Bass (Clave de Fa) ajustado al PDF
+    // Bass (Clave de Fa) 
     const bR = (l, o, d) => [note(l, o, d || 'w')];
 
     return {
@@ -655,8 +655,7 @@
                   if (isFirstOfLine) {
                     staveTreble.addClef("treble"); staveBass.addClef("bass");
                     if (currentScore.keySig && currentScore.keySig !== "C") { staveTreble.addKeySignature(currentScore.keySig); staveBass.addKeySignature(currentScore.keySig); }
-                    
-                    // ALINEACIÓN PERFECTA: Forzamos matemáticamente que las notas empiecen en la misma X en todos los primeros compases
+                  
                     const startXOffset = LEFT_MARGIN + 110;
                     staveTreble.setNoteStartX(startXOffset); staveBass.setNoteStartX(startXOffset);
                   }
@@ -801,7 +800,6 @@
     const g = document.querySelector(`.measure-hit[data-measure-idx="${idx}"]`);
     if(!g) return;
     
-    // Extracción de coordenadas matemáticas exactas ignorando Claves y Armaduras
     const startX = parseFloat(g.getAttribute('data-start-x'));
     const endX = parseFloat(g.getAttribute('data-end-x'));
     const y = parseFloat(g.getAttribute('data-y'));
