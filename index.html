@@ -117,26 +117,29 @@
 </main>
 
 <main id="viewEditor" class="view" hidden>
-  <div class="player-bar" id="playerBar">
-    <button class="btn-ghost-small back-link" id="btnBackLibrary" data-i18n="backBtn" hidden style="margin-right: auto; padding-left: 0;">← Volver al Catálogo</button>
-    <button class="pl-btn" id="plBtnRewind" title="Volver al inicio" aria-label="Volver al inicio">
-      <svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
+  <div class="editor-top-controls">
+    <button class="back-pill" id="btnBackLibrary" data-i18n="backBtn" hidden>← Volver al Catálogo</button>
+  
+    <div class="player-bar" id="playerBar">
+      <button class="pl-btn" id="plBtnRewind" title="Volver al inicio" aria-label="Volver al inicio">
+        <svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
     </button>
-    <button class="pl-btn pl-btn--play" id="plBtnPlay" title="Reproducir / Pausar" aria-label="Reproducir">
-      <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-    </button>
-    <div class="pl-progress" id="plProgressWrap" role="slider" aria-label="Progreso de reproducción" tabindex="0"><div class="pl-progress-fill" id="plProgressFill"></div></div>
-    <span class="pl-time" id="plTimeLabel">0:00 / 0:00</span>
-    <span class="pl-divider"></span>
-    <div class="pl-speeds" id="plSpeeds">
-      <button class="pl-speed-btn" data-speed="0.5">0.5×</button>
-      <button class="pl-speed-btn" data-speed="0.75">0.75×</button>
-      <button class="pl-speed-btn is-active" data-speed="1">1×</button>
-      <button class="pl-speed-btn" data-speed="1.5">1.5×</button>
-      <button class="pl-speed-btn" data-speed="2">2×</button>
+      <button class="pl-btn pl-btn--play" id="plBtnPlay" title="Reproducir / Pausar" aria-label="Reproducir">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <div class="pl-progress" id="plProgressWrap" role="slider" aria-label="Progreso de reproducción" tabindex="0"><div class="pl-progress-fill" id="plProgressFill"></div></div>
+      <span class="pl-time" id="plTimeLabel">0:00 / 0:00</span>
+      <span class="pl-divider"></span>
+      <div class="pl-speeds" id="plSpeeds">
+        <button class="pl-speed-btn" data-speed="0.5">0.5×</button>
+        <button class="pl-speed-btn" data-speed="0.75">0.75×</button>
+        <button class="pl-speed-btn is-active" data-speed="1">1×</button>
+        <button class="pl-speed-btn" data-speed="1.5">1.5×</button>
+        <button class="pl-speed-btn" data-speed="2">2×</button>
+      </div>
+      <span class="pl-divider"></span>
+      <label class="pl-bpm-label" title="Tempo en negras por minuto"><span class="pl-bpm-symbol">♩</span><span class="pl-bpm-eq">=</span><input type="number" id="plBpm" class="pl-bpm-input" min="20" max="300" value="100"></label>
     </div>
-    <span class="pl-divider"></span>
-    <label class="pl-bpm-label" title="Tempo en negras por minuto"><span class="pl-bpm-symbol">♩</span><span class="pl-bpm-eq">=</span><input type="number" id="plBpm" class="pl-bpm-input" min="20" max="300" value="100"></label>
   </div>
 
   <div class="editor-layout" id="editorLayout">
