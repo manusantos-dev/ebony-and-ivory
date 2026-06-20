@@ -1,17 +1,71 @@
 /* =========================================================================
-   EBONY & IVORY — app.js (Unified Logic Module)
+   EBONY & IVORY — app.js (Unified Master Script)
    ========================================================================= */
 (function () {
   "use strict";
 
-  const CONFIG = window.EI_CONFIG;
-  let currentLang = "en";
-  let currentScore = null;     
-  let editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
-  let libraryState = { query: "", sortBy: "numAsc", filterTime: "all", filterKey: "all", filterHands: "all" };
-  let saveTimeout = null;
+  /* ----------------------------- i18n & Static Data ----------------------------- */
+  const translations = {
+    es: {
+      importBtn: "Importar .json", newScoreBtn: "+ Nueva partitura", backBtn: "← Volver al Catálogo",
+      exportJsonBtn: "Descargar .json", exportPdfBtn: "Exportar PDF", savedIndicator: "Guardado ✓",
+      heroTitle: "El arte de preservar la música",
+      heroSub: "Un lienzo digital estandarizado para transcribir, reproducir, clasificar y eternizar tus partituras con una elegancia inigualable.",
+      goToCatalog: "Abrir mi Catálogo", viewExample: "Ver partitura de ejemplo", catalogTitle: "Catálogo de Partituras",
+      searchPlaceholder: "Buscar por título, autor o E&I...", filterBtn: "Filtros ⧨",
+      sortNumAsc: "Número (E&I asc.)", sortNumDesc: "Número (E&I desc.)", sortDateDesc: "Última edición (Reciente)", 
+      sortDateAsc: "Última edición (Antigua)", sortTitleAsc: "Título (A-Z)", sortAuthorAsc: "Autor (A-Z)",
+      lblHands: "Manos / Pentagramas", optAll: "Cualquiera", optBothHands: "Ambas manos", optTrebleOnly: "Solo mano derecha", optBassOnly: "Solo mano izquierda",
+      emptyLibraryTitle: "Tu catálogo está vacío (o sin resultados)",
+      emptyLibrary: "Pulsa «Nueva partitura» en la esquina superior derecha o cambia los filtros de búsqueda.",
+      lblTitle: "Título", lblComposer: "Compositor / origen", lblTimeSig: "Compás", lblKeySig: "Tonalidad",
+      lblActiveMeasure: "Compás activo", btnPrev: "‹ anterior", btnNext: "siguiente ›",
+      btnAddMeasure: "+ añadir compás", btnDelMeasure: "eliminar compás", lblInputStaff: "Pentagrama de entrada",
+      lblTreble: "Clave de Sol", lblBass: "Clave de Fa", lblNote: "Nota", lblRest: "Silencio",
+      lblPitch: "Nota", lblAccidental: "Alteración", lblOctave: "Octava", lblDuration: "Duración",
+      lblDotted: "Con puntillo", lblDynamics: "Dinámica", btnAddNote: "Añadir al compás", btnUndoNote: "Deshacer última nota",
+      lblMeasureDetails: "Compás · Detalles", lblRepStart: "Inicio repetición ‖:", lblRepEnd: "Fin repetición :‖</",
+      lblDirective: "Indicación (Fine, D.C.)", footerText: "Ebony & Ivory es una herramienta personal para transcribir y archivar partituras.",
+      untitled: "Sin título", unknownAuthor: "Autor desconocido", measuresTxt: "compases",
+      editBtn: "✎ Editar", viewBtn: "👁 Ver", copyBtn: "⎘ Copiar", deleteBtn: "🗑️ Borrar",
+      delConfirm: "¿Eliminar partitura? No se puede deshacer.", delMeasureConfirm: "¿Eliminar este compás?",
+      copySuffix: "(copia)", minMeasureAlert: "La partitura necesita al menos un compás.",
+      toggleViewBtn: "Alternar Visor", optKeyAll: "Cualquiera", account: 'Cuenta', login: 'Iniciar sesión', register: 'Crear cuenta',
+      subtitleLogin: 'Guarda tus partituras en la nube y ábrelas desde cualquier dispositivo.',
+      subtitleRegister: 'Crea una cuenta gratuita para sincronizar tus partituras.',
+      logout: 'Cerrar sesión', google: 'Continuar con Google', genericError: 'Algo falló'
+    },
+    en: {
+      importBtn: "Import .json", newScoreBtn: "+ New Score", backBtn: "← Back to Catalog",
+      exportJsonBtn: "Download .json", exportPdfBtn: "Export PDF", savedIndicator: "Saved ✓",
+      heroTitle: "The art of preserving music",
+      heroSub: "A standardized digital canvas to transcribe, play, classify, and immortalize your sheet music with unmatched elegance.",
+      goToCatalog: "Open my Catalog", viewExample: "View example score", catalogTitle: "Sheet Music Catalog",
+      searchPlaceholder: "Search by title, author or E&I...", filterBtn: "Filters ⧨",
+      sortNumAsc: "Number (E&I asc.)", sortNumDesc: "Number (E&I desc.)", sortDateDesc: "Last edited (Newest)", 
+      sortDateAsc: "Last edited (Oldest)", sortTitleAsc: "Title (A-Z)", sortAuthorAsc: "Author (A-Z)",
+      lblHands: "Hands / Staves", optAll: "Any", optBothHands: "Both hands", optTrebleOnly: "Right hand only", optBassOnly: "Left hand only",
+      emptyLibraryTitle: "Your catalog is empty (or no results)",
+      emptyLibrary: "Click «New Score» in the top right corner or change your search filters.",
+      lblTitle: "Title", lblComposer: "Composer / origin", lblTimeSig: "Time Sig.", lblKeySig: "Key Sig.",
+      lblActiveMeasure: "Active Measure", btnPrev: "‹ previous", btnNext: "next ›",
+      btnAddMeasure: "+ add measure", btnDelMeasure: "delete measure", lblInputStaff: "Input Staff",
+      lblTreble: "Treble Clef", lblBass: "Bass Clef", lblNote: "Note", lblRest: "Rest",
+      lblPitch: "Pitch", lblAccidental: "Accidental", lblOctave: "Octave", lblDuration: "Duration",
+      lblDotted: "Dotted", lblDynamics: "Dynamics", btnAddNote: "Add to measure", btnUndoNote: "Undo last note",
+      lblMeasureDetails: "Measure · Details", lblRepStart: "Start repeat ‖:", lblRepEnd: "End repeat :‖</",
+      lblDirective: "Directive (Fine, D.C.)", footerText: "Ebony & Ivory is a personal tool for transcribing and archiving sheet music.",
+      untitled: "Untitled", unknownAuthor: "Unknown author", measuresTxt: "measures",
+      editBtn: "✎ Edit", viewBtn: "👁 View", copyBtn: "⎘ Copy", deleteBtn: "🗑️ Delete",
+      delConfirm: "Delete this score? This cannot be undone.", delMeasureConfirm: "Delete this measure?",
+      copySuffix: "(copy)", minMeasureAlert: "The score needs at least one measure.",
+      toggleViewBtn: "Toggle Viewer", optKeyAll: "Any", account: 'Account', login: 'Sign in', register: 'Create account',
+      subtitleLogin: 'Save your scores to the cloud and open them on any device.',
+      subtitleRegister: 'Create a free account to sync your scores.',
+      logout: 'Sign out', google: 'Continue with Google', genericError: 'Error occurred'
+    }
+  };
 
-  /* ----------------------------- i18n ----------------------------- */
   const keysDB = [
     { val: "C", us: "C / Am", eu: "Do / La m" }, { val: "G", us: "G / Em", eu: "Sol / Mi m" },
     { val: "D", us: "D / Bm", eu: "Re / Si m" }, { val: "A", us: "A / F#m", eu: "La / Fa# m" },
@@ -20,71 +74,99 @@
     { val: "Eb", us: "Eb / Cm", eu: "Mib / Do m" }, { val: "Ab", us: "Ab / Fm", eu: "Lab / Fa m" }
   ];
 
-  window.EI = {
-    setLang: function(lang) {
-      currentLang = lang;
-      document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-      const activeBtn = Array.from(document.querySelectorAll('.lang-btn')).find(btn => btn.textContent.toLowerCase() === lang);
-      if(activeBtn) activeBtn.classList.add('active');
-      
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n'); if (CONFIG.i18n[lang][key]) el.innerHTML = CONFIG.i18n[lang][key];
-      });
-      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-        const key = el.getAttribute('data-i18n-placeholder'); if (CONFIG.i18n[lang][key]) el.setAttribute('placeholder', CONFIG.i18n[lang][key]);
-      });
-      
-      renderCustomSelects(); 
-      if (document.getElementById("viewLibrary") && !document.getElementById("viewLibrary").hidden) renderLibrary();
-      if (document.getElementById("viewEditor") && !document.getElementById("viewEditor").hidden) renderScore();
-    }
+  function getExampleScore(lang) {
+    const isEs = lang === 'es';
+    const note = (l, o, d, dot) => ({ rest: false, letter: l, accidental: '', octave: o, duration: d, dotted: !!dot, dynamic: '' });
+    const measure = (t, b, e) => Object.assign({ treble: t, bass: b, repeatStart: false, repeatEnd: false, directive: '' }, e || {});
+    
+    const m1 = () => [note('E',4,'q'), note('E',4,'q'), note('F',4,'q'), note('G',4,'q')];
+    const m2 = () => [note('G',4,'q'), note('F',4,'q'), note('E',4,'q'), note('D',4,'q')];
+    const m3 = () => [note('C',4,'q'), note('C',4,'q'), note('D',4,'q'), note('E',4,'q')];
+    const m4 = () => [note('E',4,'q',true), note('D',4,'8'), note('D',4,'h')];
+    const m8 = () => [note('D',4,'q',true), note('C',4,'8'), note('C',4,'h')];
+    const bR = (l) => [note(l,3,'w')];
+
+    return {
+      id: 'example-ode-to-joy', isExample: true, plate: 0,
+      title: isEs ? 'Sinfonía N.º 9 - Himno a la Alegría' : 'Symphony No. 9 - Ode to Joy',
+      composer: 'Ludwig van Beethoven', timeSig: '4/4', keySig: 'C', bpm: 100,
+      measures: [ measure(m1(), bR('C'), {repeatStart:true}), measure(m2(), bR('G')), measure(m3(), bR('C')), measure(m4(), bR('G')), measure(m1(), bR('C')), measure(m2(), bR('G')), measure(m3(), bR('C')), measure(m8(), bR('G'), {repeatEnd:true, directive:'Fine'}) ],
+      createdAt: 0, updatedAt: 0
+    };
+  }
+
+  let currentLang = "en", currentScore = null;     
+  let editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
+  let libraryState = { query: "", sortBy: "numAsc", filterTime: "all", filterKey: "all", filterHands: "all" };
+  let saveTimeout = null;
+
+  /* ----------------------------- i18n & UI Init ----------------------------- */
+  window.setLang = function(lang) {
+    currentLang = lang;
+    document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = Array.from(document.querySelectorAll('.lang-btn')).find(btn => btn.textContent.toLowerCase() === lang);
+    if(activeBtn) activeBtn.classList.add('active');
+    
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n'); if (translations[lang][key]) el.innerHTML = translations[lang][key];
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder'); if (translations[lang][key]) el.setAttribute('placeholder', translations[lang][key]);
+    });
+    
+    refreshLangTexts(); renderCustomSelects(); 
+    if (!document.getElementById("viewLibrary").hidden) renderLibrary();
+    if (!document.getElementById("viewEditor").hidden) renderScore();
   };
 
-  function t(key) { return CONFIG.i18n[currentLang][key] || key; }
+  function t(key) { return translations[currentLang][key] || key; }
+
+  function refreshLangTexts() {
+    const tabLogin = document.getElementById('authTabLogin');
+    if(document.getElementById('acctLoginLabel') && !currentUser) document.getElementById('acctLoginLabel').textContent = t('account');
+    if(document.getElementById('authSubtitle')) document.getElementById('authSubtitle').textContent = tabLogin.classList.contains('is-active') ? t('subtitleLogin') : t('subtitleRegister');
+    if(document.getElementById('authSubmitBtn')) document.getElementById('authSubmitBtn').textContent = tabLogin.classList.contains('is-active') ? t('login') : t('register');
+    tabLogin.textContent = t('login'); document.getElementById('authTabRegister').textContent = t('register');
+    document.getElementById('authGoogleBtn').lastChild.textContent = ' ' + t('google');
+    if(document.getElementById('btnAccountLogout')) document.getElementById('btnAccountLogout').title = t('logout');
+  }
 
   function renderCustomSelects() {
     const buildOptions = (isFilter) => {
         let html = isFilter ? `<div data-val="all"><span>${t('optKeyAll')}</span></div>` : '';
-        keysDB.forEach(k => {
-            const left = currentLang === 'es' ? k.eu : k.us;
-            const right = currentLang === 'es' ? k.us : k.eu;
-            html += `<div data-val="${k.val}"><span>${left}</span><span class="translucent">${right}</span></div>`;
-        }); return html;
+        keysDB.forEach(k => { html += `<div data-val="${k.val}"><span>${currentLang === 'es' ? k.eu : k.us}</span><span class="translucent">${currentLang === 'es' ? k.us : k.eu}</span></div>`; }); 
+        return html;
     };
     if(document.getElementById('customKeySigOptions')) {
-      document.getElementById('customKeySigOptions').innerHTML = buildOptions(false);
-      updateCustomSelectUI('customKeySig', document.getElementById('keySig').value, false);
-      document.getElementById('customFilterKeyOptions').innerHTML = buildOptions(true);
-      updateCustomSelectUI('customFilterKeySig', document.getElementById('filterKeySig').value, true);
+      document.getElementById('customKeySigOptions').innerHTML = buildOptions(false); updateCustomSelectUI('customKeySig', document.getElementById('keySig').value);
+      document.getElementById('customFilterKeyOptions').innerHTML = buildOptions(true); updateCustomSelectUI('customFilterKeySig', document.getElementById('filterKeySig').value);
     }
   }
 
   function setupCustomSelect(wrapperId, inputId, isFilter) {
       const wrapper = document.getElementById(wrapperId); if(!wrapper) return;
-      const selected = wrapper.querySelector('.select-selected');
-      const options = wrapper.querySelector('.select-items'); const hiddenInput = document.getElementById(inputId);
-      selected.addEventListener('click', function(e) { e.stopPropagation(); wrapper.classList.toggle('active'); });
-      options.addEventListener('click', function(e) {
+      const selected = wrapper.querySelector('.select-selected'); const options = wrapper.querySelector('.select-items'); const hiddenInput = document.getElementById(inputId);
+      selected.addEventListener('click', (e) => { e.stopPropagation(); wrapper.classList.toggle('active'); });
+      options.addEventListener('click', (e) => {
           const item = e.target.closest('div');
           if (item && item.hasAttribute('data-val')) {
-              const val = item.getAttribute('data-val'); hiddenInput.value = val; updateCustomSelectUI(wrapperId, val, isFilter);
-              wrapper.classList.remove('active');
+              const val = item.getAttribute('data-val'); hiddenInput.value = val; updateCustomSelectUI(wrapperId, val); wrapper.classList.remove('active');
               if (isFilter) { libraryState.filterKey = val; renderLibrary(); } else if (currentScore) { currentScore.keySig = val; renderScore(); }
           }
       });
   }
 
-  function updateCustomSelectUI(wrapperId, val, isFilter) {
+  function updateCustomSelectUI(wrapperId, val) {
       const wrapper = document.getElementById(wrapperId); if(!wrapper) return;
-      const selected = wrapper.querySelector('.select-selected');
       const option = wrapper.querySelector(`.select-items div[data-val="${val}"]`);
-      if (option) { selected.innerHTML = option.innerHTML; document.getElementById(wrapperId === 'customKeySig' ? 'keySig' : 'filterKeySig').value = val; }
+      if (option) { wrapper.querySelector('.select-selected').innerHTML = option.innerHTML; document.getElementById(wrapperId === 'customKeySig' ? 'keySig' : 'filterKeySig').value = val; }
   }
 
-  /* ----------------------------- Database & Utils ----------------------------- */
-  const STORAGE_KEY = "ebony_ivory:scores";
-  const DURATION_QUARTERS = { w: 4, h: 2, q: 1, "8": 0.5, "16": 0.25, "32": 0.125 };
-  
+  setupCustomSelect('customKeySig', 'keySig', false); setupCustomSelect('customFilterKeySig', 'filterKeySig', true);
+  document.addEventListener('click', () => document.querySelectorAll('.custom-select').forEach(el => el.classList.remove('active')));
+
+  /* ----------------------------- Database Local ----------------------------- */
+  const STORAGE_KEY = "ebony_ivory:scores"; const DUR_Q = { w: 4, h: 2, q: 1, "8": 0.5, "16": 0.25, "32": 0.125 };
   function uid() { return "s_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
   function loadAll() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch (e) { return {}; } }
   function saveAll(map) { localStorage.setItem(STORAGE_KEY, JSON.stringify(map)); }
@@ -93,42 +175,35 @@
   function slugify(str) { return (str || "score").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "score"; }
   function formatDate(ts) { try { return new Date(ts).toLocaleDateString(currentLang === 'es' ? "es-ES" : "en-US", { day: "2-digit", month: "short", year: "numeric" }); } catch (e) { return ""; } }
   function escapeHtml(str) { const d = document.createElement("div"); d.textContent = str; return d.innerHTML; }
-  
+  function measureNeededQuarters(timeSig) { const [num, den] = timeSig.split("/").map(Number); return num * (4 / den); }
   function newMeasure() { return { treble: [], bass: [], repeatStart: false, repeatEnd: false, directive: "" }; }
   function newScore() { return { id: uid(), plate: nextPlateNumber(), title: "", composer: "", timeSig: "4/4", keySig: "C", bpm: 100, measures: [newMeasure()], createdAt: Date.now(), updatedAt: Date.now() }; }
   
   function persistScore(score) { 
-    if (score.isExample) return; 
-    score.updatedAt = Date.now(); 
-    const all = loadAll(); all[score.id] = score; saveAll(all); 
-    const ind = document.getElementById('saveIndicator'); 
-    if(ind) { ind.classList.add('show'); clearTimeout(saveTimeout); saveTimeout = setTimeout(() => ind.classList.remove('show'), 1500); }
+    if (score.isExample) return; score.updatedAt = Date.now(); const all = loadAll(); all[score.id] = score; saveAll(all); 
+    const ind = document.getElementById('saveIndicator'); if(ind) { ind.classList.add('show'); clearTimeout(saveTimeout); saveTimeout = setTimeout(() => ind.classList.remove('show'), 1500); }
   }
 
   function deleteScoreById(id) { 
-    const all = loadAll(); delete all[id]; 
-    const scores = Object.values(all).sort((a, b) => a.plate - b.plate);
-    const newAll = {}; scores.forEach((s, index) => { s.plate = index + 1; newAll[s.id] = s; });
-    saveAll(newAll); 
+    const all = loadAll(); delete all[id]; const scores = Object.values(all).sort((a, b) => a.plate - b.plate);
+    const newAll = {}; scores.forEach((s, index) => { s.plate = index + 1; newAll[s.id] = s; }); saveAll(newAll); 
   }
 
-  /* ----------------------------- Cloud Sync (Firebase) ----------------------------- */
+  /* ----------------------------- Firebase Auth & Sync ----------------------------- */
   let auth = null, db = null, currentUser = null, unsubscribeSnapshot = null, pollTimer = null, lastSnapshotMap = {};
 
-  function initFirebase() {
+  if (window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey && !window.FIREBASE_CONFIG.apiKey.startsWith('PEGA_')) {
     try {
-      firebase.initializeApp(CONFIG.firebase); auth = firebase.auth(); db = firebase.firestore();
+      firebase.initializeApp(window.FIREBASE_CONFIG); auth = firebase.auth(); db = firebase.firestore();
       auth.onAuthStateChanged((user) => {
-        currentUser = user; updateAccountUI();
+        currentUser = user; updateAccountUI(); refreshLangTexts();
         if (user) {
           lastSnapshotMap = {}; const coll = db.collection('users').doc(user.uid).collection('scores');
           unsubscribeSnapshot = coll.onSnapshot((snap) => {
             const cloudMap = {}; snap.forEach((doc) => { cloudMap[doc.id] = doc.data(); });
             const localAll = loadAll(); let changed = false;
-            Object.keys(cloudMap).forEach((id) => {
-              if (!localAll[id] || (cloudMap[id].updatedAt || 0) > (localAll[id].updatedAt || 0)) { localAll[id] = cloudMap[id]; changed = true; }
-            });
-            if (changed) { saveAll(localAll); lastSnapshotMap = snapshotOf(localAll); if (document.getElementById("viewLibrary") && !document.getElementById("viewLibrary").hidden) renderLibrary(); }
+            Object.keys(cloudMap).forEach((id) => { if (!localAll[id] || (cloudMap[id].updatedAt || 0) > (localAll[id].updatedAt || 0)) { localAll[id] = cloudMap[id]; changed = true; } });
+            if (changed) { saveAll(localAll); lastSnapshotMap = snapshotOf(localAll); if (!document.getElementById("viewLibrary").hidden) renderLibrary(); }
           });
           pollTimer = setInterval(() => {
             const all = loadAll(); const batch = db.batch(); let writes = 0;
@@ -141,54 +216,59 @@
           if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
         }
       });
-    } catch (e) { console.warn('Firebase error:', e); }
+    } catch (e) { console.warn('Firebase init error:', e); }
   }
 
   function snapshotOf(map) { const out = {}; Object.keys(map).forEach((id) => { out[id] = map[id].updatedAt || 0; }); return out; }
   
   function updateAccountUI() {
-    const loginBtn = document.getElementById('btnAccountLogin'); const loggedBox = document.getElementById('accountLogged');
-    if(!loginBtn) return;
+    const loginBtn = document.getElementById('btnAccountLogin'); const loggedBox = document.getElementById('accountLogged'); if(!loginBtn) return;
     if (currentUser) {
-      loginBtn.hidden = true; loggedBox.hidden = false;
-      document.getElementById('acctEmail').textContent = currentUser.email || '';
-      document.getElementById('acctAvatar').textContent = (currentUser.email || '?').charAt(0).toUpperCase();
+      loginBtn.hidden = true; loggedBox.hidden = false; document.getElementById('acctEmail').textContent = currentUser.email || ''; document.getElementById('acctAvatar').textContent = (currentUser.email || '?').charAt(0).toUpperCase();
     } else { loginBtn.hidden = false; loggedBox.hidden = true; }
   }
 
   const authOverlay = document.getElementById('authModalOverlay');
   if(authOverlay) {
-    document.getElementById('btnAccountLogin').addEventListener('click', () => { authOverlay.hidden = false; document.getElementById('authError').hidden = true; });
+    document.getElementById('btnAccountLogin').addEventListener('click', () => { authOverlay.hidden = false; document.getElementById('authError').hidden = true; setTimeout(()=>document.getElementById('authEmail').focus(),50);});
     document.getElementById('authModalClose').addEventListener('click', () => authOverlay.hidden = true);
     document.getElementById('btnAccountLogout').addEventListener('click', () => { if (auth) auth.signOut(); });
     
+    ['authTabLogin', 'authTabRegister'].forEach(id => {
+        document.getElementById(id).addEventListener('click', (e) => {
+            document.getElementById('authTabLogin').classList.remove('is-active'); document.getElementById('authTabRegister').classList.remove('is-active');
+            e.target.classList.add('is-active'); refreshLangTexts(); document.getElementById('authError').hidden = true;
+        });
+    });
+
     document.getElementById('authForm').addEventListener('submit', (e) => {
       e.preventDefault(); const errBox = document.getElementById('authError'); errBox.hidden = true;
+      if(!auth) { errBox.hidden = false; errBox.textContent = "Firebase no está configurado correctamente."; return; }
       const isReg = document.getElementById('authTabRegister').classList.contains('is-active');
       const p = isReg ? auth.createUserWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPassword').value) : auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPassword').value);
       p.then(() => authOverlay.hidden = true).catch(err => { errBox.hidden = false; errBox.textContent = `${t('genericError')} (Detalle: ${err.message || err.code})`; });
     });
     document.getElementById('authGoogleBtn').addEventListener('click', () => {
       const errBox = document.getElementById('authError'); errBox.hidden = true;
+      if(!auth) { errBox.hidden = false; errBox.textContent = "Firebase no está configurado correctamente."; return; }
       auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => authOverlay.hidden = true).catch(err => { errBox.hidden = false; errBox.textContent = `${t('genericError')} (Detalle: ${err.message || err.code})`; });
     });
   }
 
-  /* ----------------------------- Navigation & Library ----------------------------- */
+  /* ----------------------------- Routing & Catalog ----------------------------- */
   function handleNavigation() {
     const hash = window.location.hash; document.body.classList.remove('is-home', 'is-viewer');
     document.getElementById("viewHome").hidden = true; document.getElementById("viewLibrary").hidden = true; document.getElementById("viewEditor").hidden = true;
     document.getElementById("libraryActions").hidden = true; document.getElementById("editorActions").hidden = true;
-    stopAudio();
+    if(typeof stopPlayback === 'function') stopPlayback(false);
 
     if (hash.startsWith("#editor/")) {
-      currentScore = loadAll()[hash.split("/")[1]];
-      if (currentScore) { document.body.classList.remove('is-viewer'); initEditor(); } else { window.location.hash = "#catalogo"; }
+      currentScore = loadAll()[hash.split("/")[1]]; if (currentScore) { document.body.classList.remove('is-viewer'); initEditor(); } else window.location.hash = "#catalogo";
     } else if (hash.startsWith("#viewer/")) {
-      currentScore = loadAll()[hash.split("/")[1]];
-      if (currentScore) { document.body.classList.add('is-viewer'); initEditor(); } else { window.location.hash = "#catalogo"; }
-    } else if (hash === "#ejemplo") {
-      currentScore = CONFIG.getExampleScore(currentLang); document.body.classList.add('is-viewer', 'is-example-score'); initEditor();
+      currentScore = loadAll()[hash.split("/")[1]]; if (currentScore) { document.body.classList.add('is-viewer'); initEditor(); } else window.location.hash = "#catalogo";
+    } else if (hash === "#ejemplo" || hash === "#example") {
+      currentScore = getExampleScore(currentLang); document.body.classList.add('is-viewer', 'is-example-score'); initEditor();
+      if(document.getElementById('btnToggleViewer')) document.getElementById('btnToggleViewer').hidden = true;
     } else if (hash === "#catalogo") {
       currentScore = null; document.getElementById("viewLibrary").hidden = false; document.getElementById("libraryActions").hidden = false;
       document.title = t('catalogTitle') + " — Ebony & Ivory"; renderLibrary(); window.scrollTo(0,0);
@@ -201,11 +281,9 @@
     editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
     document.getElementById("viewEditor").hidden = false; document.getElementById("editorActions").hidden = false;
     document.title = (currentScore.title || t('untitled')) + " — Ebony & Ivory";
-    document.getElementById("scoreTitle").value = currentScore.title || ""; 
-    document.getElementById("scoreComposer").value = currentScore.composer || ""; 
-    document.getElementById("timeSig").value = currentScore.timeSig || "4/4"; 
-    updateCustomSelectUI('customKeySig', currentScore.keySig || "C", false); 
-    document.getElementById("scoreBpm").value = currentScore.bpm || 100;
+    document.getElementById("scoreTitle").value = currentScore.title || ""; document.getElementById("scoreComposer").value = currentScore.composer || ""; 
+    document.getElementById("timeSig").value = currentScore.timeSig || "4/4"; updateCustomSelectUI('customKeySig', currentScore.keySig || "C"); 
+    if(document.getElementById("scoreBpm")) document.getElementById("scoreBpm").value = currentScore.bpm || 100;
     syncMeasureControls(); renderScore(); window.scrollTo(0,0);
   }
 
@@ -254,12 +332,12 @@
     }
   }
 
-  /* ----------------------------- Editor Logic ----------------------------- */
+  /* ----------------------------- Editor Interactions ----------------------------- */
   if(document.getElementById("scoreTitle")) {
     document.getElementById("scoreTitle").addEventListener("input", (e) => { currentScore.title = e.target.value; renderScore(); });
     document.getElementById("scoreComposer").addEventListener("input", (e) => { currentScore.composer = e.target.value; renderScore(); });
     document.getElementById("timeSig").addEventListener("change", (e) => { currentScore.timeSig = e.target.value; renderScore(); });
-    document.getElementById("scoreBpm").addEventListener("change", (e) => { currentScore.bpm = parseInt(e.target.value, 10) || 100; renderScore(); updateAudioBPM(); });
+    if(document.getElementById("scoreBpm")) document.getElementById("scoreBpm").addEventListener("change", (e) => { currentScore.bpm = parseInt(e.target.value, 10) || 100; renderScore(); updateAudioBPM(); });
     
     document.getElementById("btnPrevMeasure").addEventListener("click", () => { editorState.activeMeasure--; syncMeasureControls(); renderScore(); });
     document.getElementById("btnNextMeasure").addEventListener("click", () => { editorState.activeMeasure++; syncMeasureControls(); renderScore(); });
@@ -274,22 +352,10 @@
     document.getElementById("repeatEnd").addEventListener("change", (e) => { currentScore.measures[editorState.activeMeasure].repeatEnd = e.target.checked; renderScore(); });
     document.getElementById("directiveSelect").addEventListener("change", (e) => { currentScore.measures[editorState.activeMeasure].directive = e.target.value; renderScore(); });
 
-    ['Treble', 'Bass'].forEach(clef => {
-      document.getElementById("btnStaff" + clef).addEventListener("click", (e) => { 
-        editorState.activeStaff = clef.toLowerCase(); 
-        document.getElementById("btnStaffTreble").classList.toggle("is-active", clef === 'Treble'); 
-        document.getElementById("btnStaffBass").classList.toggle("is-active", clef === 'Bass'); 
-      });
-    });
+    ['Treble', 'Bass'].forEach(clef => { document.getElementById("btnStaff" + clef).addEventListener("click", () => { editorState.activeStaff = clef.toLowerCase(); document.getElementById("btnStaffTreble").classList.toggle("is-active", clef === 'Treble'); document.getElementById("btnStaffBass").classList.toggle("is-active", clef === 'Bass'); }); });
 
-    document.getElementById("isRest").addEventListener("change", (e) => { 
-      document.getElementById("pitchFields").style.opacity = e.target.checked ? 0.4 : 1; 
-      document.getElementById("pitchFields").querySelectorAll("select").forEach(s => s.disabled = e.target.checked); 
-    });
-    document.getElementById("durationGrid").addEventListener("click", (e) => { 
-      const btn = e.target.closest(".dur-btn"); if (!btn) return; editorState.duration = btn.dataset.dur; 
-      document.getElementById("durationGrid").querySelectorAll(".dur-btn").forEach(b => b.classList.toggle("is-active", b === btn)); 
-    });
+    document.getElementById("isRest").addEventListener("change", (e) => { document.getElementById("pitchFields").style.opacity = e.target.checked ? 0.4 : 1; document.getElementById("pitchFields").querySelectorAll("select").forEach(s => s.disabled = e.target.checked); });
+    document.getElementById("durationGrid").addEventListener("click", (e) => { const btn = e.target.closest(".dur-btn"); if (!btn) return; editorState.duration = btn.dataset.dur; document.getElementById("durationGrid").querySelectorAll(".dur-btn").forEach(b => b.classList.toggle("is-active", b === btn)); });
 
     document.getElementById("btnAddNote").addEventListener("click", () => {
       currentScore.measures[editorState.activeMeasure][editorState.activeStaff].push({
@@ -297,43 +363,30 @@
         octave: parseInt(document.getElementById("pitchOctave").value, 10), duration: editorState.duration, dotted: document.getElementById("isDotted").checked, dynamic: document.getElementById("dynamicSelect").value
       }); document.getElementById("dynamicSelect").value = ""; renderScore();
     });
-    document.getElementById("btnUndoNote").addEventListener("click", () => {
-      if (currentScore.measures[editorState.activeMeasure][editorState.activeStaff].length > 0) { currentScore.measures[editorState.activeMeasure][editorState.activeStaff].pop(); renderScore(); }
-    });
+    document.getElementById("btnUndoNote").addEventListener("click", () => { if (currentScore.measures[editorState.activeMeasure][editorState.activeStaff].length > 0) { currentScore.measures[editorState.activeMeasure][editorState.activeStaff].pop(); renderScore(); } });
   }
 
   function syncMeasureControls() {
-    editorState.activeMeasure = Math.max(0, Math.min(editorState.activeMeasure, currentScore.measures.length - 1));
-    const m = currentScore.measures[editorState.activeMeasure];
+    editorState.activeMeasure = Math.max(0, Math.min(editorState.activeMeasure, currentScore.measures.length - 1)); const m = currentScore.measures[editorState.activeMeasure];
     document.getElementById("activeMeasureLabel").textContent = `${editorState.activeMeasure + 1} / ${currentScore.measures.length}`;
-    document.getElementById("repeatStart").checked = !!m.repeatStart; document.getElementById("repeatEnd").checked = !!m.repeatEnd; 
-    document.getElementById("directiveSelect").value = m.directive || "";
+    document.getElementById("repeatStart").checked = !!m.repeatStart; document.getElementById("repeatEnd").checked = !!m.repeatEnd; document.getElementById("directiveSelect").value = m.directive || "";
   }
 
   /* ----------------------------- VexFlow Renderer ----------------------------- */
-  const MEASURES_PER_LINE = 4;
-  const LINES_PER_PAGE = 5;
-  const TOTAL_WIDTH = 1050; // Lienzo expandido para matemáticas perfectas
-  const LEFT_MARGIN = 50; 
-  const RIGHT_MARGIN = 50;
-  const FIRST_OF_LINE_WIDTH = 250; 
+  const MEASURES_PER_LINE = 4; const LINES_PER_PAGE = 5; const TOTAL_WIDTH = 1050; 
+  const LEFT_MARGIN = 50; const RIGHT_MARGIN = 50; const FIRST_OF_LINE_WIDTH = 250; 
   const REST_OF_LINE_WIDTH = (TOTAL_WIDTH - LEFT_MARGIN - RIGHT_MARGIN - FIRST_OF_LINE_WIDTH) / (MEASURES_PER_LINE - 1); 
   const STAVE_GAP = 92; const LINE_GAP = 180; const TOP_MARGIN = 20;
 
   function noteToVexKey(n) { return n.letter.toLowerCase() + (n.accidental === "#" || n.accidental === "b" ? n.accidental : "") + "/" + n.octave; }
-  function measureNeededQuarters(timeSig) { const [num, den] = timeSig.split("/").map(Number); return num * (4 / den); }
-  function quartersUsed(staffNotes) { return staffNotes.reduce((sum, n) => sum + (DURATION_QUARTERS[n.duration] || 0) * (n.dotted ? 1.5 : 1), 0); }
 
   function renderScore() {
-    if (!currentScore) return; persistScore(currentScore); 
-    const container = document.getElementById("vexPagesContainer"); container.innerHTML = "";
-
+    if (!currentScore) return; persistScore(currentScore); const container = document.getElementById("vexPagesContainer"); container.innerHTML = "";
     if (typeof Vex === "undefined") { container.innerHTML = '<p style="padding:40px;color:#8C2F39;font-weight:bold;">No se ha podido cargar VexFlow.</p>'; return; }
 
     try {
       const VF = Vex.Flow; const measures = currentScore.measures; const [num, den] = currentScore.timeSig.split("/").map(Number);
-      const totalLines = Math.ceil(measures.length / MEASURES_PER_LINE);
-      const totalPages = Math.ceil(totalLines / LINES_PER_PAGE) || 1;
+      const totalLines = Math.ceil(measures.length / MEASURES_PER_LINE); const totalPages = Math.ceil(totalLines / LINES_PER_PAGE) || 1;
       
       for (let p = 0; p < totalPages; p++) {
           const pageDiv = document.createElement('div'); pageDiv.className = 'paper-page';
@@ -379,7 +432,7 @@
                   }
                   if (idx === 0) { 
                     staveTreble.addTimeSignature(currentScore.timeSig); staveBass.addTimeSignature(currentScore.timeSig); 
-                    staveTreble.setTempo({ duration: 'q', dots: 0, bpm: currentScore.bpm || 100 }, 0); // Tempo nativo alineado a la izquierda
+                    staveTreble.setTempo({ duration: 'q', dots: 0, bpm: currentScore.bpm || 100 }, 0); 
                   }
 
                   staveTreble.setBegBarType(measure.repeatStart ? VF.Barline.type.REPEAT_BEGIN : VF.Barline.type.SINGLE);
@@ -428,11 +481,7 @@
                     if (targetArr.length) targetArr[targetArr.length - 1].addModifier(new VF.Annotation(measure.directive).setFont("Cormorant Garamond", 15, "italic").setVerticalJustification(VF.Annotation.VerticalJustify.TOP), 0);
                   }
                   
-                  // Caja de selección encajada matemáticamente con las líneas del pentagrama
-                  hitRects.push({ 
-                    x: staveTreble.getX(), y: staveTreble.getYForLine(0) - 25, 
-                    width: staveTreble.getWidth(), height: staveBass.getYForLine(4) - staveTreble.getYForLine(0) + 50, idx 
-                  });
+                  hitRects.push({ x: staveTreble.getX(), y: staveTreble.getYForLine(0) - 25, width: staveTreble.getWidth(), height: staveBass.getYForLine(4) - staveTreble.getYForLine(0) + 50, idx });
               }
           }
 
@@ -458,17 +507,11 @@
   function trim(n) { return Number.isInteger(n) ? n : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, ""); }
 
   /* ----------------------------- Audio Player (Tone.js Acoustic Piano) ----------------------------- */
-  let acousticPiano = null;
-  let isPlaying = false, rafId = null, part = null, measurePart = null, builtForScoreKey = null, totalQuarters = 0, speedFactor = 1;
+  let acousticPiano = null, isPlaying = false, rafId = null, part = null, measurePart = null, builtForScoreKey = null, totalQuarters = 0, speedFactor = 1;
 
   function ensureAcousticPiano() {
     if (acousticPiano) return;
-    acousticPiano = new Tone.Sampler({
-        urls: { A0: "A0.mp3", C2: "C2.mp3", C4: "C4.mp3", C6: "C6.mp3" },
-        release: 1.2,
-        baseUrl: "https://tonejs.github.io/audio/salamander/"
-    }).toDestination();
-    acousticPiano.volume.value = -2;
+    acousticPiano = new Tone.Sampler({ urls: { A0: "A0.mp3", C2: "C2.mp3", C4: "C4.mp3", C6: "C6.mp3" }, release: 1.2, baseUrl: "https://tonejs.github.io/audio/salamander/" }).toDestination(); acousticPiano.volume.value = -2;
   }
 
   function quarterToBBS(q) { const bars = Math.floor(q / 4); const beatsFloat = q - bars * 4; const beat = Math.floor(beatsFloat); return bars + ':' + beat + ':' + ((beatsFloat - beat) * 4).toFixed(3); }
@@ -482,28 +525,23 @@
       ['treble', 'bass'].forEach((staffName) => {
         let cursor = pos;
         (measure[staffName] || []).forEach((n) => {
-          const durQ = (DURATION_QUARTERS[n.duration] || 0) * (n.dotted ? 1.5 : 1);
+          const durQ = (DUR_Q[n.duration] || 0) * (n.dotted ? 1.5 : 1);
           if (!n.rest && durQ > 0) events.push({ time: quarterToBBS(cursor), note: n.letter.toUpperCase() + (n.accidental.replace('b', 'b') || "") + n.octave, durQ: durQ });
           cursor += durQ;
         });
-      });
-      pos += measureNeededQuarters(currentScore.timeSig);
+      }); pos += measureNeededQuarters(currentScore.timeSig);
     });
 
     totalQuarters = pos; updateAudioBPM();
     part = new Tone.Part((time, ev) => { acousticPiano.triggerAttackRelease(ev.note, Math.max(0.05, ev.durQ * (60 / Tone.Transport.bpm.value) * 0.92), time); }, events).start(0);
     measurePart = new Tone.Part((time, ev) => { Tone.Draw.schedule(() => highlightMeasure(ev.idx), time); }, measureEvents).start(0);
-    Tone.Transport.scheduleOnce(() => { Tone.Draw.schedule(() => stopAudio(true), Tone.now()); }, quarterToBBS(totalQuarters));
+    Tone.Transport.scheduleOnce(() => { Tone.Draw.schedule(() => stopPlayback(true), Tone.now()); }, quarterToBBS(totalQuarters));
     builtForScoreKey = currentScore.id + ':' + currentScore.measures.length + ':' + currentScore.timeSig; return true;
   }
 
   function teardownAudio() { if (part) { part.dispose(); part = null; } if (measurePart) { measurePart.dispose(); measurePart = null; } }
-  
   let lastHighlighted = null;
-  function highlightMeasure(idx) {
-    if (lastHighlighted !== null) document.querySelectorAll('[data-measure-idx="' + lastHighlighted + '"]').forEach((el) => el.classList.remove('playing'));
-    document.querySelectorAll('[data-measure-idx="' + idx + '"]').forEach((el) => el.classList.add('playing')); lastHighlighted = idx;
-  }
+  function highlightMeasure(idx) { if (lastHighlighted !== null) document.querySelectorAll('[data-measure-idx="' + lastHighlighted + '"]').forEach((el) => el.classList.remove('playing')); document.querySelectorAll('[data-measure-idx="' + idx + '"]').forEach((el) => el.classList.add('playing')); lastHighlighted = idx; }
   function clearHighlight() { if (lastHighlighted !== null) document.querySelectorAll('[data-measure-idx="' + lastHighlighted + '"]').forEach((el) => el.classList.remove('playing')); lastHighlighted = null; }
 
   function playAudio() {
@@ -514,34 +552,33 @@
     });
   }
   function pauseAudio() { Tone.Transport.pause(); isPlaying = false; updatePlayerUI(); cancelAnimationFrame(rafId); }
-  function stopAudio(reachedEnd) { Tone.Transport.stop(); isPlaying = false; updatePlayerUI(); cancelAnimationFrame(rafId); clearHighlight(); if(document.getElementById('plProgressFill')) document.getElementById('plProgressFill').style.width = '0%'; }
+  window.stopPlayback = function(reachedEnd) { Tone.Transport.stop(); isPlaying = false; updatePlayerUI(); cancelAnimationFrame(rafId); clearHighlight(); if(document.getElementById('plProgressFill')) document.getElementById('plProgressFill').style.width = '0%'; }
 
-  function updatePlayerUI() {
-    const btn = document.getElementById('plBtnPlay'); if(!btn) return;
-    btn.textContent = isPlaying ? '⏸' : '▶'; document.getElementById('playerBar').classList.toggle('is-playing', isPlaying);
-  }
-
+  function updatePlayerUI() { const btn = document.getElementById('plBtnPlay'); if(!btn) return; btn.textContent = isPlaying ? '⏸' : '▶'; document.getElementById('playerBar').classList.toggle('is-playing', isPlaying); }
   function tickProgress() {
     if (!isPlaying) return;
     const elapsedQ = Tone.Transport.seconds * (Tone.Transport.bpm.value / 60); const frac = totalQuarters > 0 ? Math.min(1, elapsedQ / totalQuarters) : 0;
     document.getElementById('plProgressFill').style.width = (frac * 100).toFixed(2) + '%';
-    const secPerQ = 60 / Tone.Transport.bpm.value;
-    document.getElementById('plTimeLabel').textContent = formatTime(frac * totalQuarters * secPerQ) + ' / ' + formatTime(totalQuarters * secPerQ);
+    const secPerQ = 60 / Tone.Transport.bpm.value; document.getElementById('plTimeLabel').textContent = formatTime(frac * totalQuarters * secPerQ) + ' / ' + formatTime(totalQuarters * secPerQ);
     rafId = requestAnimationFrame(tickProgress);
   }
   function formatTime(sec) { if (!isFinite(sec) || sec < 0) sec = 0; return Math.floor(sec / 60) + ':' + String(Math.floor(sec % 60)).padStart(2, '0'); }
 
   if(document.getElementById('plBtnPlay')) {
     document.getElementById('plBtnPlay').addEventListener('click', () => isPlaying ? pauseAudio() : playAudio());
-    document.getElementById('plBtnRewind').addEventListener('click', () => stopAudio(false));
+    document.getElementById('plBtnRewind').addEventListener('click', () => stopPlayback(false));
     document.querySelectorAll('.pl-speed-btn').forEach((b) => b.addEventListener('click', () => { 
       speedFactor = parseFloat(b.dataset.speed); updateAudioBPM(); 
       document.querySelectorAll('.pl-speed-btn').forEach(btn => btn.classList.toggle('is-active', parseFloat(btn.dataset.speed) === speedFactor));
     }));
+    document.getElementById('plBpm').addEventListener('change', (e) => {
+        const val = Math.max(20, Math.min(300, parseInt(e.target.value, 10) || 100));
+        if (currentScore) { currentScore.bpm = val; renderScore(); } updateAudioBPM(); e.target.value = val;
+    });
     document.addEventListener('click', (e) => { if (isPlaying && (e.target.closest('#engraveDesk') || e.target.closest('.measure-hit'))) pauseAudio(); });
   }
 
-  /* ----------------------------- Export & Init ----------------------------- */
+  /* ----------------------------- Export & Events ----------------------------- */
   document.getElementById("btnExportJson").addEventListener("click", () => { downloadBlob(slugify(currentScore.title) + ".json", JSON.stringify(currentScore, null, 2)); });
   document.getElementById("btnExportPdf").addEventListener("click", () => { 
       const oTitle = document.title; document.title = `${(currentScore.title || t('untitled')).trim()} — ${(currentScore.composer || t('unknownAuthor')).trim()}`;
@@ -553,7 +590,7 @@
     reader.onload = () => {
       try { const data = JSON.parse(reader.result); if (!data.measures) throw new Error("Format error");
         data.id = uid(); data.plate = nextPlateNumber(); data.updatedAt = Date.now(); persistScore(data); 
-        if (window.location.hash === "#catalogo") { renderLibrary(); } else { window.location.hash = "#catalogo"; }
+        if (window.location.hash === "#catalogo") renderLibrary(); else window.location.hash = "#catalogo";
       } catch (err) { alert("Error: " + err.message); } e.target.value = ""; 
     }; reader.readAsText(file);
   });
@@ -561,11 +598,15 @@
   document.getElementById("btnNewScore").addEventListener("click", () => { const score = newScore(); persistScore(score); window.location.hash = "#editor/" + score.id; });
   document.getElementById("btnBackLibrary").addEventListener("click", () => { window.location.hash = "#catalogo"; });
   document.getElementById("brandHome").addEventListener("click", () => { window.location.hash = "#inicio"; });
-  document.getElementById("btnToggleViewer").addEventListener("click", () => { window.location.hash = (document.body.classList.contains('is-viewer') ? "#editor/" : "#viewer/") + currentScore.id; });
+  document.getElementById("btnGoCatalog").addEventListener("click", () => { window.location.hash = "#catalogo"; });
+  
+  const btnGoExample = document.getElementById("btnGoExample");
+  if (btnGoExample) btnGoExample.addEventListener("click", () => { window.location.hash = "#ejemplo"; });
 
+  /* ----------------------------- Arranque ----------------------------- */
   const userLang = navigator.language || navigator.userLanguage;
-  EI.setLang((userLang && userLang.toLowerCase().startsWith('es')) ? 'es' : 'en');
-  initFirebase();
+  window.setLang((userLang && userLang.toLowerCase().startsWith('es')) ? 'es' : 'en');
+  window.addEventListener("hashchange", handleNavigation);
   if(!window.location.hash || window.location.hash === "#" || window.location.hash === "") { window.location.hash = "#inicio"; } else { handleNavigation(); }
 
 })();
