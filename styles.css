@@ -31,9 +31,9 @@ a{ color: var(--accent); }
 body.is-home .topbar { background: transparent; border: none; box-shadow: none; position: absolute; width: 100%; }
 body.is-home .brand { opacity: 0; pointer-events: none; visibility: hidden; }
 
-/* Espaciado del Topbar Corregido */
-.topbar-right { display:flex; align-items:center; gap: 14px; margin-left: auto; }
-.topbar-actions{ display:flex; gap: 8px; align-items:center; }
+/* Corrección Definitiva del Espaciado del Topbar */
+.topbar-right { display:flex; align-items:center; gap: 16px; margin-left: auto; justify-content: flex-end; }
+.topbar-actions { display:flex; gap: 8px; align-items:center; }
 .lang-switch { display: flex; gap: 4px; border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 2px; background: var(--paper);}
 .lang-btn { background: transparent; border: none; font-size: 11px; font-weight: 600; cursor: pointer; padding: 4px 8px; border-radius: 4px; color: var(--ink-soft); }
 .lang-btn.active { background: var(--gold-wash); color: var(--ink); }
@@ -41,7 +41,7 @@ body.is-home .brand { opacity: 0; pointer-events: none; visibility: hidden; }
 .save-indicator.show { opacity: 1; }
 
 /* --- BUTTONS & INPUTS --- */
-.btn{ font-family: var(--font-body); font-size: 13px; font-weight: 600; padding: 9px 16px; border-radius: var(--radius); border: 1px solid var(--line-strong); background: var(--paper); color: var(--ink); cursor: pointer; transition: all .15s ease; }
+.btn{ font-family: var(--font-body); font-size: 13px; font-weight: 600; padding: 9px 16px; border-radius: var(--radius); border: 1px solid var(--line-strong); background: var(--paper); color: var(--ink); cursor: pointer; transition: all .15s ease; white-space: nowrap; }
 .btn:hover{ border-color: var(--brass); background: #fff; }
 .btn-primary{ background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn-primary:hover{ background: #333; border-color:#333; }
@@ -139,16 +139,16 @@ body.is-viewer .measure-hit { pointer-events: none; cursor: default; }
 .dur-btn.is-active{ background: var(--accent); border-color: var(--accent); color:#fff; }
 
 .paper-wrap{ flex:1; padding: 0px 40px 100px; display:flex; flex-direction:column; align-items:center; overflow-x: auto;}
-.paper-page { background: var(--paper); width: 100%; max-width: 1050px; box-shadow: var(--shadow-paper); padding: 50px 30px; position:relative; margin-bottom: 30px; }
+.paper-page { background: var(--paper); width: 100%; max-width: 1060px; box-shadow: var(--shadow-paper); padding: 50px 30px; position:relative; margin-bottom: 30px; }
 .paper-page svg { width: 100%; height: auto; display: block; }
 .measure-hit{ cursor:pointer; }
 .measure-hit.active rect{ fill: rgba(179, 142, 80, 0.15); stroke: var(--brass); stroke-width: 1px; }
 
-/* --- EFECTOS VISUALES DE REPRODUCCIÓN (Línea y Notas) --- */
+/* --- EFECTOS VISUALES DE REPRODUCCIÓN --- */
 .playback-line-svg { pointer-events: none; will-change: transform; stroke-linecap: round; }
 .note-playing path { fill: var(--brass) !important; stroke: var(--brass) !important; transition: fill 0.05s ease, stroke 0.05s ease; }
 
-.score-letterhead{ text-align:center; margin-bottom: 30px; }
+.score-letterhead{ text-align:center; margin-bottom: 20px; }
 .score-letterhead h2{ font-family: var(--font-display); font-weight:700; font-size: 38px; margin:0; }
 .score-letterhead p{ font-family: var(--font-display); font-style: italic; font-size: 18px; margin: 4px 0 0; color: var(--ink-soft); }
 .print-header-content, .print-footer-content { display: none; }
@@ -177,17 +177,18 @@ body.is-example-score .editor-subnav { background: var(--gold-wash); }
 .measure-hit.playing rect { fill: rgba(45, 90, 56, 0.16) !important; stroke: #2D5A38; stroke-width: 1.5; }
 
 /* =========================================================
-   MODAL DE AUTENTICACIÓN
+   MODAL DE AUTENTICACIÓN & PERFIL
    ========================================================= */
-.account-widget { display: flex; align-items: center; }
-.account-logged { display: flex; align-items: center; gap: 8px; background: var(--paper); border: 1px solid var(--line-strong); border-radius: 999px; padding: 4px 6px 4px 4px; }
+.account-logged { display: flex; align-items: center; gap: 8px; background: var(--paper); border: 1px solid var(--line-strong); border-radius: 999px; padding: 4px; cursor: pointer; transition: background 0.15s; }
+.account-logged:hover { background: var(--gold-wash); border-color: var(--brass); }
 .account-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--brass); color: #fff; font-family: var(--font-mono); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; background-size: cover; background-position: center; flex-shrink: 0; }
-.account-email { font-size: 12px; color: var(--ink-soft); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.account-logout { padding: 4px 6px !important; font-size: 14px; }
+.account-email { font-size: 12px; font-weight: 600; color: var(--ink); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 6px;}
+
 .modal-overlay { position: fixed; inset: 0; background: rgba(18,18,18,.45); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
 .modal-card { position: relative; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-paper); width: 100%; max-width: 380px; padding: 32px 28px 28px; }
 .modal-close { position: absolute; top: 14px; right: 14px; background: transparent; border: none; font-size: 20px; line-height: 1; cursor: pointer; color: var(--ink-soft); padding: 4px 8px; border-radius: 4px; }
 .modal-close:hover { background: var(--gold-wash); color: var(--ink); }
+
 .auth-tabs { display: flex; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
 .auth-tab { flex: 1; background: transparent; border: none; padding: 10px 4px; font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--ink-soft); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .auth-tab.is-active { color: var(--ink); border-bottom-color: var(--brass); }
@@ -197,6 +198,13 @@ body.is-example-score .editor-subnav { background: var(--gold-wash); }
 .auth-divider::before, .auth-divider::after { content: ""; flex: 1; border-bottom: 1px solid var(--line); }
 .auth-divider span { padding: 0 10px; }
 .auth-google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; }
+
+/* Perfil Modal */
+.profile-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+.profile-avatar-large { width: 56px; height: 56px; border-radius: 50%; background: var(--brass); color: #fff; font-size: 24px; font-weight: 700; display: flex; align-items: center; justify-content: center; background-size: cover; background-position: center; }
+.profile-info h3 { margin: 0; font-family: var(--font-display); font-size: 22px; color: var(--ink); }
+.profile-info p { margin: 0; font-size: 13px; color: var(--ink-soft); font-family: var(--font-mono); }
+.profile-danger-zone { margin-top: 32px; padding-top: 24px; border-top: 1px dashed var(--danger); }
 
 /* =========================================================
    PRINT CSS (PDF EXACTO)
@@ -212,4 +220,13 @@ body.is-example-score .editor-subnav { background: var(--gold-wash); }
   .print-footer-content { display: flex; position: absolute; bottom: 0; left: 0; right: 0; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); border-top: 1px solid var(--line); padding-top: 8px; }
   .paper-page:first-child .print-header-content { display: none; }
   .print-logo-isotipo { height: 16px; width: auto; object-fit: contain; filter: grayscale(100%); opacity: 0.6; }
+}
+
+@media (max-width: 720px) {
+  .engrave-desk { position: static; height: auto; width: 100%; min-width: 0; }
+  .editor-layout { flex-direction: column; }
+  .player-bar { gap: 8px; padding: 8px 12px; }
+  .pl-speeds { order: 5; width: 100%; justify-content: center; }
+  .topbar { padding: 12px 14px; flex-wrap: wrap; gap: 10px; }
+  .topbar-right { gap: 12px; flex-wrap: wrap; }
 }
