@@ -4,7 +4,7 @@
    a PDF de las partituras.
    ========================================================= */
 @media print{
-  .topbar, .engrave-desk, .editor-subnav, .sitefooter, .paper-hint, .player-bar, .modal-overlay { display:none !important; }
+  .topbar, .engrave-desk, .editor-subnav, .sitefooter, .paper-hint, .player-bar, .modal-overlay, .editor-top-controls, .back-pill { display:none !important; }
   body, .paper-wrap{ background: #fff !important; padding:0 !important; margin:0 !important; display: block; }
   .editor-layout { border: none; max-width: none; display: block; margin: 0; }
   @page { size: A4 portrait; margin: 15mm 10mm 20mm 10mm; }
