@@ -1,5 +1,5 @@
 /* =========================================================================
-   EBONY & IVORY — app.js (Núcleo Maestro Seguro)
+   EBONY & IVORY — app.js (Código Maestro Definitivo con Sincronía Perfecta)
    ========================================================================= */
 (function () {
   "use strict";
@@ -25,7 +25,8 @@
       lblPitch: "Nota", lblAccidental: "Alteración", lblOctave: "Octava", lblDuration: "Duración",
       lblDotted: "Con puntillo", lblDynamics: "Dinámica", btnAddNote: "Añadir al compás", btnUndoNote: "Deshacer última nota",
       lblMeasureDetails: "Compás · Detalles", lblRepStart: "Inicio repetición ‖:", lblRepEnd: "Fin repetición :‖</",
-      lblDirective: "Indicación (Fine, D.C.)", footerText: "Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales.",
+      lblDirective: "Indicación (Fine, D.C.)", lblTempo: "Tempo (BPM)",
+      footerText: "Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales.",
       untitled: "Sin título", unknownAuthor: "Autor desconocido", measuresTxt: "compases",
       editBtn: "✎ Editar", viewBtn: "👁 Ver", copyBtn: "⎘ Copiar", deleteBtn: "🗑️ Borrar",
       delConfirm: "¿Eliminar partitura? No se puede deshacer.", delMeasureConfirm: "¿Eliminar este compás?",
@@ -33,7 +34,10 @@
       toggleViewBtn: "Alternar Visor", optKeyAll: "Cualquiera", account: 'Cuenta', login: 'Iniciar sesión', register: 'Crear cuenta',
       subtitleLogin: 'Guarda tus partituras en la nube y ábrelas desde cualquier dispositivo.',
       subtitleRegister: 'Crea una cuenta gratuita para sincronizar tus partituras.',
-      logout: 'Cerrar sesión', google: 'Continuar con Google', genericError: 'Algo falló. Revisa tus datos e inténtalo de nuevo.'
+      logout: 'Cerrar sesión', google: 'Continuar con Google', genericError: 'Algo falló. Revisa tus datos e inténtalo de nuevo.',
+      lblPassword: 'Contraseña', displayName: 'Nombre / Nickname', photoUrl: 'URL de la foto (Opcional)', saveProfile: 'Guardar Cambios',
+      deleteAccount: 'Eliminar mi cuenta', deleteWarning: 'Esta acción borrará todas tus partituras de la nube permanentemente. ¿Estás seguro?',
+      reauthNeeded: 'Por seguridad, cierra sesión y vuelve a entrar con Google o tu contraseña antes de eliminar tu cuenta.'
     },
     en: {
       importBtn: "Import .json", newScoreBtn: "+ New Score", backBtn: "← Back to Catalog",
@@ -54,7 +58,8 @@
       lblPitch: "Pitch", lblAccidental: "Accidental", lblOctave: "Octave", lblDuration: "Duration",
       lblDotted: "Dotted", lblDynamics: "Dynamics", btnAddNote: "Add to measure", btnUndoNote: "Undo last note",
       lblMeasureDetails: "Measure · Details", lblRepStart: "Start repeat ‖:", lblRepEnd: "End repeat :‖</",
-      lblDirective: "Directive (Fine, D.C.)", footerText: "Ebony & Ivory is a personal tool for transcribing and archiving sheet music. Rewritten works still belong to their original authors.",
+      lblDirective: "Directive (Fine, D.C.)", lblTempo: "Tempo (BPM)",
+      footerText: "Ebony & Ivory is a personal tool for transcribing and archiving sheet music. Rewritten works still belong to their original authors.",
       untitled: "Untitled", unknownAuthor: "Unknown author", measuresTxt: "measures",
       editBtn: "✎ Edit", viewBtn: "👁 View", copyBtn: "⎘ Copy", deleteBtn: "🗑️ Delete",
       delConfirm: "Delete this score? This cannot be undone.", delMeasureConfirm: "Delete this measure?",
@@ -62,7 +67,10 @@
       toggleViewBtn: "Toggle Viewer", optKeyAll: "Any", account: 'Account', login: 'Sign in', register: 'Create account',
       subtitleLogin: 'Save your scores to the cloud and open them on any device.',
       subtitleRegister: 'Create a free account to sync your scores.',
-      logout: 'Sign out', google: 'Continue with Google', genericError: 'Something went wrong. Check your details and try again.'
+      logout: 'Sign out', google: 'Continue with Google', genericError: 'Something went wrong. Check your details and try again.',
+      lblPassword: 'Password', displayName: 'Display Name', photoUrl: 'Photo URL (Optional)', saveProfile: 'Save Changes',
+      deleteAccount: 'Delete my account', deleteWarning: 'This will permanently delete all your scores from the cloud. Are you sure?',
+      reauthNeeded: 'For security, please sign out and sign in again before deleting your account.'
     }
   };
 
@@ -74,7 +82,7 @@
     { val: "Eb", us: "Eb / Cm", eu: "Mib / Do m" }, { val: "Ab", us: "Ab / Fm", eu: "Lab / Fa m" }
   ];
 
-  /* ----------------------------- Configuración Principal ----------------------------- */
+  /* ----------------------------- Motor Principal & i18n ----------------------------- */
   let currentLang = "en", currentScore = null;     
   let editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
   let libraryState = { query: "", sortBy: "numAsc", filterTime: "all", filterKey: "all", filterHands: "all" };
@@ -138,23 +146,37 @@
       if (option) { wrapper.querySelector('.select-selected').innerHTML = option.innerHTML; document.getElementById(wrapperId === 'customKeySig' ? 'keySig' : 'filterKeySig').value = val; }
   }
 
-  /* ----------------------------- Partitura de Ejemplo (Bilingüe) ----------------------------- */
+  setupCustomSelect('customKeySig', 'keySig', false); setupCustomSelect('customFilterKeySig', 'filterKeySig', true);
+  document.addEventListener('click', () => document.querySelectorAll('.custom-select').forEach(el => el.classList.remove('active')));
+
+  /* ----------------------------- Partitura de Ejemplo (Beethoven N.º 9 EXACTA) ----------------------------- */
   function getExampleScore(lang) {
     const isEs = lang === 'es';
     const note = (l, o, d, dot) => ({ rest: false, letter: l, accidental: '', octave: o, duration: d, dotted: !!dot, dynamic: '' });
     const measure = (t, b, e) => Object.assign({ treble: t, bass: b, repeatStart: false, repeatEnd: false, directive: '' }, e || {});
+    
     const m1 = () => [note('E',4,'q'), note('E',4,'q'), note('F',4,'q'), note('G',4,'q')];
     const m2 = () => [note('G',4,'q'), note('F',4,'q'), note('E',4,'q'), note('D',4,'q')];
     const m3 = () => [note('C',4,'q'), note('C',4,'q'), note('D',4,'q'), note('E',4,'q')];
     const m4 = () => [note('E',4,'q',true), note('D',4,'8'), note('D',4,'h')];
     const m8 = () => [note('D',4,'q',true), note('C',4,'8'), note('C',4,'h')];
-    const bR = (l) => [note(l,3,'w')];
+    
+    const m9 = () => [note('D',4,'q'), note('D',4,'q'), note('E',4,'q'), note('C',4,'q')];
+    const m10 = () => [note('D',4,'q'), note('E',4,'8'), note('F',4,'8'), note('E',4,'q'), note('C',4,'q')];
+    const m11 = () => [note('D',4,'q'), note('E',4,'8'), note('F',4,'8'), note('E',4,'q'), note('D',4,'q')];
+    const m12 = () => [note('C',4,'q'), note('D',4,'q'), note('G',3,'h')];
+    
+    const bR = (l, o) => [note(l, o, 'w')];
 
     return {
       id: 'example-ode-to-joy', isExample: true, plate: 0,
       title: isEs ? 'Oda a la Alegría' : 'Ode to Joy',
       composer: 'Ludwig van Beethoven', timeSig: '4/4', keySig: 'C', bpm: 100,
-      measures: [ measure(m1(), bR('C'), {repeatStart:true}), measure(m2(), bR('G')), measure(m3(), bR('C')), measure(m4(), bR('G')), measure(m1(), bR('C')), measure(m2(), bR('G')), measure(m3(), bR('C')), measure(m8(), bR('G'), {repeatEnd:true, directive:'Fine'}) ],
+      measures: [ 
+        measure(m1(), bR('C',3), {repeatStart:true}), measure(m2(), bR('G',2)), measure(m3(), bR('C',3)), measure(m4(), bR('G',2)), 
+        measure(m1(), bR('C',3)), measure(m2(), bR('G',2)), measure(m3(), bR('C',3)), measure(m8(), bR('G',2), {directive:'Fine'}),
+        measure(m9(), bR('G',2)), measure(m10(), bR('G',2)), measure(m11(), bR('G',2)), measure(m12(), bR('G',2), {directive:'D.C. al Fine'}) 
+      ],
       createdAt: 0, updatedAt: 0
     };
   }
@@ -187,22 +209,15 @@
     const newAll = {}; scores.forEach((s, index) => { s.plate = index + 1; newAll[s.id] = s; }); saveAll(newAll); 
   }
 
-  /* ----------------------------- Firebase Auth & Sync (Super Blindado) ----------------------------- */
+  /* ----------------------------- Firebase Auth, Sync & Profile ----------------------------- */
   let auth = null, db = null, currentUser = null, unsubscribeSnapshot = null, pollTimer = null, lastSnapshotMap = {};
   let firebaseInitError = null;
 
   function initFirebase() {
     try {
-      if (typeof firebase === 'undefined') {
-        console.warn("Firebase bloqueado por el navegador (AdBlock o Escudos).");
-        return "El navegador ha bloqueado la conexión. Desactiva tu AdBlocker para iniciar sesión.";
-      }
-      // Busca la configuración tanto si el usuario la puso en FIREBASE_CONFIG como en EI_CONFIG.firebase
+      if (typeof firebase === 'undefined') return "El navegador está bloqueando la conexión. Desactiva tu AdBlocker para iniciar sesión.";
       const fbConfig = window.FIREBASE_CONFIG || (window.EI_CONFIG && window.EI_CONFIG.firebase);
-      
-      if (!fbConfig || !fbConfig.apiKey || fbConfig.apiKey.startsWith('PEGA_')) {
-        return "La nube no está configurada. Faltan las claves en firebase-config.js.";
-      }
+      if (!fbConfig || !fbConfig.apiKey || fbConfig.apiKey.startsWith('PEGA_')) return "La nube no está configurada. Faltan las claves en firebase-config.js.";
       
       if (!firebase.apps.length) firebase.initializeApp(fbConfig);
       auth = firebase.auth(); 
@@ -230,9 +245,7 @@
         }
       });
       return null;
-    } catch (e) { 
-      return "Error crítico de Firebase: " + e.message;
-    }
+    } catch (e) { return "Error crítico de Firebase: " + e.message; }
   }
 
   function snapshotOf(map) { const out = {}; Object.keys(map).forEach((id) => { out[id] = map[id].updatedAt || 0; }); return out; }
@@ -240,7 +253,15 @@
   function updateAccountUI() {
     const loginBtn = document.getElementById('btnAccountLogin'); const loggedBox = document.getElementById('accountLogged'); if(!loginBtn) return;
     if (currentUser) {
-      loginBtn.hidden = true; loggedBox.hidden = false; document.getElementById('acctEmail').textContent = currentUser.email || ''; document.getElementById('acctAvatar').textContent = (currentUser.email || '?').charAt(0).toUpperCase();
+      loginBtn.hidden = true; loggedBox.hidden = false; 
+      document.getElementById('acctEmail').textContent = currentUser.displayName || currentUser.email || ''; 
+      if(currentUser.photoURL) {
+          document.getElementById('acctAvatar').style.backgroundImage = `url(${currentUser.photoURL})`;
+          document.getElementById('acctAvatar').textContent = "";
+      } else {
+          document.getElementById('acctAvatar').style.backgroundImage = "none";
+          document.getElementById('acctAvatar').textContent = (currentUser.displayName || currentUser.email || '?').charAt(0).toUpperCase();
+      }
     } else { loginBtn.hidden = false; loggedBox.hidden = true; }
   }
 
@@ -253,14 +274,13 @@
       'auth/email-already-in-use': currentLang === 'es' ? 'Ya existe una cuenta con este email.' : 'Email already in use.',
       'auth/weak-password': currentLang === 'es' ? 'La contraseña debe tener al menos 6 caracteres.' : 'Password must be 6 characters.',
       'auth/popup-closed-by-user': currentLang === 'es' ? 'Ventana de Google cerrada antes de terminar.' : 'Popup closed.',
-      'auth/unauthorized-domain': currentLang === 'es' ? 'Dominio no autorizado en la consola de Firebase.' : 'Unauthorized domain in Firebase.'
+      'auth/requires-recent-login': t('reauthNeeded')
     }; return map[code] || t('genericError');
   }
 
   /* ----------------------------- DOM Loaded Events (Anti-Crashes) ----------------------------- */
   document.addEventListener('DOMContentLoaded', () => {
     
-    // Iniciar Firebase de forma segura
     firebaseInitError = initFirebase();
 
     // Eventos del Modal de Auth
@@ -271,9 +291,6 @@
       
       const btnClose = document.getElementById('authModalClose');
       if(btnClose) btnClose.addEventListener('click', () => authOverlay.hidden = true);
-      
-      const btnLogout = document.getElementById('btnAccountLogout');
-      if(btnLogout) btnLogout.addEventListener('click', () => { if (auth) auth.signOut(); });
       
       ['authTabLogin', 'authTabRegister'].forEach(id => {
         const el = document.getElementById(id);
@@ -298,6 +315,52 @@
         if(!auth) { errBox.hidden = false; errBox.textContent = firebaseInitError || "Error crítico."; return; }
         auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => authOverlay.hidden = true).catch(err => { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); });
       });
+    }
+
+    // Eventos del Modal de Perfil
+    const profOverlay = document.getElementById('profileModalOverlay');
+    if(profOverlay) {
+        document.getElementById('accountLogged').addEventListener('click', () => {
+            profOverlay.hidden = false;
+            document.getElementById('profNameTitle').textContent = currentUser.displayName || t('account');
+            document.getElementById('profEmailText').textContent = currentUser.email || '';
+            document.getElementById('profDisplayName').value = currentUser.displayName || '';
+            document.getElementById('profPhotoUrl').value = currentUser.photoURL || '';
+            if(currentUser.photoURL) {
+                document.getElementById('profAvatarLg').style.backgroundImage = `url(${currentUser.photoURL})`;
+                document.getElementById('profAvatarLg').textContent = "";
+            } else {
+                document.getElementById('profAvatarLg').style.backgroundImage = "none";
+                document.getElementById('profAvatarLg').textContent = (currentUser.displayName || currentUser.email || '?').charAt(0).toUpperCase();
+            }
+        });
+        document.getElementById('profileModalClose').addEventListener('click', () => profOverlay.hidden = true);
+        
+        document.getElementById('profileForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            currentUser.updateProfile({
+                displayName: document.getElementById('profDisplayName').value,
+                photoURL: document.getElementById('profPhotoUrl').value
+            }).then(() => { updateAccountUI(); profOverlay.hidden = true; }).catch(err => alert(translateFirebaseError(err)));
+        });
+
+        document.getElementById('btnDeleteAccount').addEventListener('click', async () => {
+            if(!confirm(t('deleteWarning'))) return;
+            try {
+                // Borrar Partituras de la nube
+                if(db) {
+                    const docs = await db.collection('users').doc(currentUser.uid).collection('scores').get();
+                    const batch = db.batch(); docs.forEach(d => batch.delete(d.ref)); await batch.commit();
+                }
+                // Destruir cuenta
+                await currentUser.delete();
+                profOverlay.hidden = true;
+                localStorage.removeItem(STORAGE_KEY); // Limpiar local por seguridad
+                window.location.hash = "#inicio";
+            } catch(err) {
+                alert(translateFirebaseError(err));
+            }
+        });
     }
 
     // Configurar Selects Personalizados
@@ -365,7 +428,7 @@
         const durQ = (DUR_Q[editorState.duration] || 0) * (document.getElementById("isDotted").checked ? 1.5 : 1);
         const currentUsed = quartersUsed(currentScore.measures[editorState.activeMeasure][editorState.activeStaff]);
 
-        // DENEGACIÓN MATEMÁTICA SONORA (Evita que el compás se rompa por exceso de notas)
+        // DENEGACIÓN MATEMÁTICA SONORA (Evita colapso en el renderizado en bloque)
         if (currentUsed + durQ > needed) {
             if(Tone && Tone.Synth) {
                 const errorSynth = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
@@ -511,9 +574,9 @@
     const ds = document.getElementById("directiveSelect"); if(ds) ds.value = m.directive || "";
   }
 
-  /* ----------------------------- VexFlow Renderer (Safe Block Formatting) ----------------------------- */
-  const MEASURES_PER_LINE = 4; const LINES_PER_PAGE = 5; const TOTAL_WIDTH = 1050; 
-  const LEFT_MARGIN = 50; const RIGHT_MARGIN = 50; const FIRST_OF_LINE_WIDTH = 250; 
+  /* ----------------------------- VexFlow Renderer (Safe Block Formatting & Sync Data) ----------------------------- */
+  const MEASURES_PER_LINE = 4; const LINES_PER_PAGE = 5; const TOTAL_WIDTH = 1000; 
+  const LEFT_MARGIN = 40; const RIGHT_MARGIN = 40; const FIRST_OF_LINE_WIDTH = 260; 
   const REST_OF_LINE_WIDTH = (TOTAL_WIDTH - LEFT_MARGIN - RIGHT_MARGIN - FIRST_OF_LINE_WIDTH) / (MEASURES_PER_LINE - 1); 
   const STAVE_GAP = 92; const LINE_GAP = 180; const TOP_MARGIN = 20;
 
@@ -537,7 +600,7 @@
           if (p === 0) {
               const head = document.createElement("div"); head.className = "score-letterhead";
               head.innerHTML = `<h2>${escapeHtml(currentScore.title || t('untitled'))}</h2><p>${escapeHtml(currentScore.composer || "")}</p>`;
-              pageDiv.appendChild(head); startY += 100;
+              pageDiv.appendChild(head); startY += 60; // Margen reducido como se pedía
           }
 
           const printFooter = document.createElement('div'); printFooter.className = 'print-footer-content';
@@ -594,7 +657,7 @@
                       const durStr = n.duration + (n.dotted ? "d" : "") + (n.rest ? "r" : "");
                       const keys = n.rest ? [restKey] : [noteToVexKey(n)];
                       const sn = new VF.StaveNote({ clef: clef, keys: keys, duration: durStr });
-                      sn.setAttribute('id', `vf-${idx}-${staffName}-${nIdx}`);
+                      sn.addClass(`vf-note-${idx}-${staffName}-${nIdx}`);
                       if (n.dotted) VF.Dot.buildAndAttach([sn], { all: true });
                       if (!n.rest && n.accidental) sn.addModifier(new VF.Accidental(n.accidental), 0);
                       if (n.dynamic) { sn.addModifier(new VF.Annotation(n.dynamic).setFont("Times", 12, "italic bold").setVerticalJustification( clef === "bass" ? VF.Annotation.VerticalJustify.TOP : VF.Annotation.VerticalJustify.BOTTOM ), 0); }
@@ -610,14 +673,10 @@
                   if (trebleNotes.length > 0) { vTreble.addTickables(trebleNotes); voices.push(vTreble); }
                   if (bassNotes.length > 0) { vBass.addTickables(bassNotes); voices.push(vBass); }
 
-                  // FORMATEO SEGURO ANTI-COLAPSO: Trata de fusionar. Si el usuario ha desalineado las voces, las formatea separadas.
                   if(voices.length > 0) {
                       const formatter = new VF.Formatter();
-                      try {
-                          formatter.joinVoices(voices).format(voices, width - 40);
-                      } catch(e) {
-                          voices.forEach(v => { const f = new VF.Formatter(); f.joinVoices([v]).format([v], width - 40); });
-                      }
+                      try { formatter.joinVoices(voices).format(voices, width - 40); } 
+                      catch(e) { voices.forEach(v => { const f = new VF.Formatter(); f.joinVoices([v]).format([v], width - 40); }); }
                   }
 
                   if (trebleNotes.length > 0) { try { VF.Beam.generateBeams(trebleNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch(e) {} vTreble.draw(ctx, staveTreble); }
@@ -628,7 +687,12 @@
                     if (targetArr.length) targetArr[targetArr.length - 1].addModifier(new VF.Annotation(measure.directive).setFont("Cormorant Garamond", 15, "italic").setVerticalJustification(VF.Annotation.VerticalJustify.TOP), 0);
                   }
                   
-                  hitRects.push({ x: staveTreble.getX(), y: staveTreble.getYForLine(0) - 25, width: staveTreble.getWidth(), height: staveBass.getYForLine(4) - staveTreble.getYForLine(0) + 50, idx });
+                  // Extraemos las matemáticas precisas para la Línea Dorada de Barrido
+                  hitRects.push({ 
+                      x: staveTreble.getX(), y: staveTreble.getYForLine(0) - 25, 
+                      width: staveTreble.getWidth(), height: staveBass.getYForLine(4) - staveTreble.getYForLine(0) + 50, 
+                      startX: staveTreble.getNoteStartX(), endX: staveTreble.getNoteEndX(), idx: idx 
+                  });
               }
           }
 
@@ -637,7 +701,10 @@
             svg.setAttribute("viewBox", `0 0 ${TOTAL_WIDTH} ${pageHeight}`); svg.removeAttribute("width"); svg.removeAttribute("height");
             const ns = "http://www.w3.org/2000/svg";
             hitRects.forEach((hr) => {
-              const g = document.createElementNS(ns, "g"); g.setAttribute("class", "measure-hit" + (hr.idx === editorState.activeMeasure ? " active" : "")); g.setAttribute("data-measure-idx", hr.idx);
+              const g = document.createElementNS(ns, "g"); g.setAttribute("class", "measure-hit" + (hr.idx === editorState.activeMeasure ? " active" : "")); 
+              g.setAttribute("data-measure-idx", hr.idx); g.setAttribute("data-start-x", hr.startX); g.setAttribute("data-end-x", hr.endX); 
+              g.setAttribute("data-y", hr.y); g.setAttribute("data-h", hr.height);
+              
               const rect = document.createElementNS(ns, "rect");
               rect.setAttribute("x", hr.x); rect.setAttribute("y", hr.y); rect.setAttribute("width", hr.width); rect.setAttribute("height", hr.height);
               rect.setAttribute("fill", hr.idx === editorState.activeMeasure ? "rgba(179, 142, 80, 0.15)" : "transparent"); rect.setAttribute("rx", "4");
@@ -649,12 +716,12 @@
       const needed = measureNeededQuarters(currentScore.timeSig); const m = currentScore.measures[editorState.activeMeasure];
       const lbl = document.getElementById("activeMeasureLabel");
       if(lbl) lbl.textContent = `${editorState.activeMeasure + 1}/${currentScore.measures.length} · ♩ Sol ${trim(quartersUsed(m.treble))}/${trim(needed)} · Fa ${trim(quartersUsed(m.bass))}/${trim(needed)}`;
-    } catch (err) { console.error(err); container.innerHTML = `<p style="padding:40px;color:#8C2F39;font-weight:bold;">Error de renderizado VexFlow.</p>`; }
+    } catch (err) { console.error(err); container.innerHTML = `<p style="padding:40px;color:#8C2F39;font-weight:bold;">Error matemático crítico al renderizar.</p>`; }
   }
 
   function trim(n) { return Number.isInteger(n) ? n : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, ""); }
 
-  /* ----------------------------- Audio Player & Animaciones Visuales Magicas ----------------------------- */
+  /* ----------------------------- Audio Player & Animaciones Mágicas ----------------------------- */
   let acousticPiano = null, isPlaying = false, rafId = null, part = null, measurePart = null, builtForScoreKey = null, totalQuarters = 0, speedFactor = 1;
 
   function ensureAcousticPiano() {
@@ -675,7 +742,7 @@
         (measure[staffName] || []).forEach((n, nIdx) => {
           const durQ = (DUR_Q[n.duration] || 0) * (n.dotted ? 1.5 : 1);
           if (!n.rest && durQ > 0) {
-            events.push({ time: quarterToBBS(cursor), note: n.letter.toUpperCase() + (n.accidental.replace('b', 'b') || "") + n.octave, durQ: durQ, id: `vf-${idx}-${staffName}-${nIdx}` });
+            events.push({ time: quarterToBBS(cursor), note: n.letter.toUpperCase() + (n.accidental.replace('b', 'b') || "") + n.octave, durQ: durQ, id: `vf-note-${idx}-${staffName}-${nIdx}` });
           } cursor += durQ;
         });
       }); pos += measureNeededQuarters(currentScore.timeSig);
@@ -684,9 +751,12 @@
     totalQuarters = pos; updateAudioBPM();
     part = new Tone.Part((time, ev) => { 
         acousticPiano.triggerAttackRelease(ev.note, Math.max(0.05, ev.durQ * (60 / Tone.Transport.bpm.value) * 0.92), time); 
+        // Iluminación exacta de las notas dibujadas por VexFlow
         Tone.Draw.schedule(() => {
-            const el = document.getElementById(ev.id);
-            if(el) { el.classList.add('note-playing'); setTimeout(() => el.classList.remove('note-playing'), ev.durQ * (60 / Tone.Transport.bpm.value) * 1000); }
+            document.querySelectorAll('.' + ev.id).forEach(el => {
+                el.classList.add('note-playing');
+                setTimeout(() => el.classList.remove('note-playing'), ev.durQ * (60 / Tone.Transport.bpm.value) * 1000);
+            });
         }, time);
     }, events).start(0);
 
@@ -701,21 +771,24 @@
 
   function teardownAudio() { if (part) { part.dispose(); part = null; } if (measurePart) { measurePart.dispose(); measurePart = null; } }
   
+  // Línea dorada de sincronización perfecta calculada vía VexFlow
   function highlightMeasureSweep(idx, durationSec) { 
-    const rect = document.querySelector(`.measure-hit[data-measure-idx="${idx}"] rect`);
-    if(rect) {
-        const svg = rect.closest('svg'); let line = svg.querySelector('.playback-line-svg');
-        if(!line) { line = document.createElementNS("http://www.w3.org/2000/svg", "line"); line.setAttribute("class", "playback-line-svg"); line.setAttribute("stroke", "#B38E50"); line.setAttribute("stroke-width", "2"); svg.appendChild(line); }
-        document.querySelectorAll('.playback-line-svg').forEach(l => { if(l !== line) l.style.display = 'none'; }); line.style.display = 'block';
+    const g = document.querySelector(`.measure-hit[data-measure-idx="${idx}"]`);
+    if(!g) return;
+    
+    const startX = parseFloat(g.getAttribute('data-start-x'));
+    const endX = parseFloat(g.getAttribute('data-end-x'));
+    const y = parseFloat(g.getAttribute('data-y'));
+    const h = parseFloat(g.getAttribute('data-h'));
 
-        const x = parseFloat(rect.getAttribute('x')); const y = parseFloat(rect.getAttribute('y'));
-        const w = parseFloat(rect.getAttribute('width')); const h = parseFloat(rect.getAttribute('height'));
+    const svg = g.closest('svg'); let line = svg.querySelector('.playback-line-svg');
+    if(!line) { line = document.createElementNS("http://www.w3.org/2000/svg", "line"); line.setAttribute("class", "playback-line-svg"); line.setAttribute("stroke", "#B38E50"); line.setAttribute("stroke-width", "2"); svg.appendChild(line); }
+    document.querySelectorAll('.playback-line-svg').forEach(l => { if(l !== line) l.style.display = 'none'; }); line.style.display = 'block';
 
-        line.setAttribute('x1', x); line.setAttribute('y1', y); line.setAttribute('x2', x); line.setAttribute('y2', y + h);
-        line.style.transition = 'none'; line.style.transform = `translateX(0px)`;
-        line.getBoundingClientRect(); 
-        line.style.transition = `transform ${durationSec}s linear`; line.style.transform = `translateX(${w}px)`;
-    }
+    line.setAttribute('x1', startX); line.setAttribute('y1', y); line.setAttribute('x2', startX); line.setAttribute('y2', y + h);
+    line.style.transition = 'none'; line.style.transform = `translateX(0px)`;
+    line.getBoundingClientRect(); // Forzar renderizado
+    line.style.transition = `transform ${durationSec}s linear`; line.style.transform = `translateX(${endX - startX}px)`;
   }
   
   function clearHighlight() { document.querySelectorAll('.playback-line-svg').forEach(l => l.style.display = 'none'); document.querySelectorAll('.note-playing').forEach(n => n.classList.remove('note-playing')); }
