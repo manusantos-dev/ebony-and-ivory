@@ -267,6 +267,8 @@ document.addEventListener("DOMContentLoaded", () => {
         data.id = uid();
         data.plate = nextPlateNumber();
         data.updatedAt = Date.now();
+        data.createdAt = Date.now();
+        delete data.isExample; 
         persistScore(data);
         if (window.location.hash === "#catalogo") renderLibrary();
         else window.location.hash = "#catalogo";
