@@ -166,13 +166,14 @@ export function renderScore() {
           if (bassNotes.length > 0) { vBass.addTickables(bassNotes); voices.push(vBass); }
 
           if (voices.length > 0) {
+            const innerWidth = width - noteStartOffset - 25; 
             const formatter = new VF.Formatter();
             try {
-              formatter.joinVoices(voices).formatToStave(voices, staveTreble);
+              formatter.joinVoices(voices).format(voices, innerWidth);
             } catch (e) {
               voices.forEach((v) => {
                 const f = new VF.Formatter();
-                f.joinVoices([v]).formatToStave([v], staveTreble);
+                f.joinVoices([v]).format([v], innerWidth);
               });
             }
           }
