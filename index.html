@@ -28,7 +28,7 @@
       <div class="account-logged" id="accountLogged" hidden>
         <span class="account-avatar" id="acctAvatar">?</span>
         <span class="account-email" id="acctEmail"></span>
-        <button class="btn-ghost-small account-logout" id="btnAccountLogout" title="Cerrar sesión">⏻</button>
+        <button class="btn-ghost-small account-logout" id="btnAccountLogout" title="Cerrar sesión" aria-label="Cerrar sesión">⏻</button>
       </div>
     </div>
     
@@ -49,7 +49,9 @@
 <main id="viewHome" class="view">
   <div class="floating-notes" id="floatingNotes"></div>
   <div class="home-hero">
-    <div class="hero-logo"><img src="assets/logotipo.png" alt="Ebony & Ivory" class="hero-logo-img"></div>
+    <div class="hero-logo">
+      <img src="assets/logotipo.png" alt="Ebony & Ivory" class="hero-logo-img">
+    </div>
     <h1 data-i18n="heroTitle">El arte de preservar la música</h1>
     <p class="hero-sub" data-i18n="heroSub">Un lienzo digital estandarizado para transcribir, reproducir, clasificar y eternizar tus partituras con una elegancia inigualable.</p>
     <div class="hero-actions">
@@ -119,9 +121,9 @@
   </div>
 
   <div class="player-bar" id="playerBar">
-    <button class="pl-btn" id="plBtnRewind" title="Volver al inicio">⏮</button>
-    <button class="pl-btn pl-btn--play" id="plBtnPlay" title="Reproducir / Pausar">▶</button>
-    <div class="pl-progress" id="plProgressWrap"><div class="pl-progress-fill" id="plProgressFill"></div></div>
+    <button class="pl-btn" id="plBtnRewind" title="Volver al inicio" aria-label="Volver al inicio">⏮</button>
+    <button class="pl-btn pl-btn--play" id="plBtnPlay" title="Reproducir / Pausar" aria-label="Reproducir">▶</button>
+    <div class="pl-progress" id="plProgressWrap" role="slider" aria-label="Progreso de reproducción" tabindex="0"><div class="pl-progress-fill" id="plProgressFill"></div></div>
     <span class="pl-time" id="plTimeLabel">0:00 / 0:00</span>
     <div class="pl-speeds" id="plSpeeds">
       <button class="pl-speed-btn" data-speed="0.5">0.5×</button>
@@ -130,7 +132,7 @@
       <button class="pl-speed-btn" data-speed="1.5">1.5×</button>
       <button class="pl-speed-btn" data-speed="2">2×</button>
     </div>
-    <label class="pl-bpm-label" title="Tempo">♩= <input type="number" id="scoreBpm" class="pl-bpm-input" min="20" max="300" value="100"></label>
+    <label class="pl-bpm-label" title="Tempo en negras por minuto">♩= <input type="number" id="plBpm" class="pl-bpm-input" min="20" max="300" value="100"></label>
     <span class="pl-status" id="plStatus"></span>
   </div>
   
@@ -149,7 +151,8 @@
             <label class="field-label" data-i18n="lblTimeSig">Compás</label>
             <select id="timeSig" class="field-input">
               <option value="4/4">4/4</option><option value="3/4">3/4</option><option value="2/4">2/4</option>
-              <option value="6/8">6/8</option><option value="9/8">9/8</option><option value="12/8">12/8</option><option value="2/2">2/2</option>
+              <option value="6/8">6/8</option><option value="9/8">9/8</option><option value="12/8">12/8</option>
+              <option value="2/2">2/2</option>
             </select>
           </div>
           <div>
@@ -273,7 +276,7 @@
     </form>
     <div class="auth-divider"><span>o</span></div>
     <button class="btn btn-ghost btn-block auth-google-btn" id="authGoogleBtn">
-      <svg width="16" height="16" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.16.28-1.7V4.97H.95A9 9 0 0 0 0 9c0 1.45.35 2.83.95 4.03l3-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
+      <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.16.28-1.7V4.97H.95A9 9 0 0 0 0 9c0 1.45.35 2.83.95 4.03l3-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
       Continuar con Google
     </button>
   </div>
