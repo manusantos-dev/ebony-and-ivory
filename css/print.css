@@ -43,5 +43,5 @@
   
   .print-footer-content { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); border-top: 1px solid var(--line); padding-top: 8px; margin-top: 10px; }
   
-  .print-logo-isotipo { height: 16px; width: auto; object-fit: contain; filter: grayscale(100%); opacity: 0.6; }
+.print-logo-isotipo { height: 16px; width: auto; object-fit: contain; }
 }
