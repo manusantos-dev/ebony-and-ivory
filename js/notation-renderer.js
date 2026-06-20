@@ -164,72 +164,98 @@ export function renderScore() {
             return out;
           };
 
-          const trebleNotes = buildNotes(measure.treble, "treble", "treble");
-          const bassNotes = buildNotes(measure.bass, "bass", "bass");
-          const vTreble = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT);
-          const vBass = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT);
+          let trebleNotes = [];
+          let bassNotes = [];
+          try {
+            trebleNotes = buildNotes(measure.treble, "treble", "treble");
+            bassNotes = buildNotes(measure.bass, "bass", "bass");
 
-          const voices = [];
-          if (trebleNotes.length > 0) { vTreble.addTickables(trebleNotes); voices.push(vTreble); }
-          if (bassNotes.length > 0) { vBass.addTickables(bassNotes); voices.push(vBass); }
+            const vTreble = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT);
+            const vBass = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT);
 
-          if (voices.length > 0) {
-            const innerWidth = width - noteStartOffset - 15; 
-            const formatter = new VF.Formatter();
-            try {
-              formatter.joinVoices(voices).format(voices, innerWidth);
-            } catch (e) {
-              voices.forEach((v) => {
-                const f = new VF.Formatter();
-                f.joinVoices([v]).format([v], innerWidth);
-              });
+            const voices = [];
+            if (trebleNotes.length > 0) { vTreble.addTickables(trebleNotes); voices.push(vTreble); }
+            if (bassNotes.length > 0) { vBass.addTickables(bassNotes); voices.push(vBass); }
+
+            // Los modificadores (Annotation, Accidental, Dot...) deben
+            // añadirse ANTES de formatear/dibujar para que el Formatter
+            // reserve el espacio horizontal que ocupan. Una indicación de
+            // fin de sección (Fine, D.C. al Fine...) pertenece visualmente
+            // al FINAL del compás, así que se ancla a la última nota.
+            if (measure.directive) {
+              const targetNotes = trebleNotes.length ? trebleNotes : bassNotes;
+              const lastNote = targetNotes[targetNotes.length - 1];
+              if (lastNote) {
+                lastNote.addModifier(
+                  new VF.Annotation(measure.directive)
+                    .setFont("Times", 13, "italic bold")
+                    .setVerticalJustification(VF.Annotation.VerticalJustify.TOP),
+                  0
+                );
+              }
             }
-          }
-          
-          if (measure.directive) {
-            // IMPORTANTE: los modificadores (Annotation, Accidental, Dot...)
-            // sólo se pintan si se añaden ANTES de llamar a voice.draw().
-            // Antes este bloque se ejecutaba después de dibujar ambos
-            // pentagramas, por lo que la indicación (Fine, D.C. al Fine...)
-            // nunca llegaba a verse. Además, una indicación de fin de
-            // sección pertenece visualmente al FINAL del compás, así que
-            // se ancla a la última nota, no a la primera.
-            const targetNotes = trebleNotes.length ? trebleNotes : bassNotes;
-            const lastNote = targetNotes[targetNotes.length - 1];
-            if (lastNote) {
-              lastNote.addModifier(new VF.Annotation(measure.directive)
-                .setFont("Cormorant Garamond", 14, "italic")
-                .setVerticalJustification(VF.Annotation.VerticalJustify.TOP), 0);
+
+            if (voices.length > 0) {
+              const innerWidth = width - noteStartOffset - 15;
+              const formatter = new VF.Formatter();
+              try {
+                formatter.joinVoices(voices).format(voices, innerWidth);
+              } catch (e) {
+                voices.forEach((v) => {
+                  const f = new VF.Formatter();
+                  f.joinVoices([v]).format([v], innerWidth);
+                });
+              }
             }
+
+            // Orden estándar de VexFlow: las notas se dibujan PRIMERO (lo
+            // que crea sus plicas/Stem internamente); las ligaduras de
+            // corcheas se generan y dibujan DESPUÉS. Generarlas/dibujarlas
+            // antes de que las notas existieran en el contexto era la causa
+            // de que las corcheas consecutivas no se unieran visualmente.
+            if (trebleNotes.length > 0) vTreble.draw(ctx, staveTreble);
+            if (bassNotes.length > 0) vBass.draw(ctx, staveBass);
+
+            if (trebleNotes.length > 0) {
+              try {
+                VF.Beam.generateBeams(trebleNotes, { groups: beamGroupsFor(num, den, VF), beam_rests: false })
+                  .forEach((b) => b.setContext(ctx).draw());
+              } catch (e) { console.warn("Beam treble (measure " + (idx + 1) + ")", e); }
+            }
+
+            if (bassNotes.length > 0) {
+              try {
+                VF.Beam.generateBeams(bassNotes, { groups: beamGroupsFor(num, den, VF), beam_rests: false })
+                  .forEach((b) => b.setContext(ctx).draw());
+              } catch (e) { console.warn("Beam bass (measure " + (idx + 1) + ")", e); }
+            }
+          } catch (measureErr) {
+            // Un compás con datos inválidos ya no tira abajo toda la
+            // partitura: se señala visualmente y se continúa con el resto.
+            console.error("Error renderizando el compás " + (idx + 1), measureErr);
+            const ns = "http://www.w3.org/2000/svg";
+            const errText = document.createElementNS(ns, "text");
+            errText.setAttribute("x", x + 10);
+            errText.setAttribute("y", yTreble + 20);
+            errText.setAttribute("fill", "#8C2F39");
+            errText.setAttribute("font-size", "11");
+            errText.textContent = "⚠ compás " + (idx + 1);
+            ctx.svg.appendChild(errText);
           }
 
-          if (trebleNotes.length > 0) {
-            try {
-              VF.Beam.generateBeams(trebleNotes, { groups: beamGroupsFor(num, den, VF), beam_rests: false })
-                .forEach((b) => b.setContext(ctx).draw());
-            } catch (e) { console.warn("Beam treble", e); }
-            vTreble.draw(ctx, staveTreble);
-          }
-
-          if (bassNotes.length > 0) {
-            try {
-              VF.Beam.generateBeams(bassNotes, { groups: beamGroupsFor(num, den, VF), beam_rests: false })
-                .forEach((b) => b.setContext(ctx).draw());
-            } catch (e) { console.warn("Beam bass", e); }
-            vBass.draw(ctx, staveBass);
-          }
-          
           // El área interactiva del compás no debe incluir el ancho extra
           // que ocupan la clave/armadura/indicación de compás en el primer
           // compás de cada línea (FIRST_OF_LINE_WIDTH=322 vs 196 del resto).
-          // Si se usa el ancho físico completo del pentagrama, esos
-          // primeros compases salen mucho más anchos ("rectangulares") que
-          // los demás. Anclamos la caja al inicio real de las notas (con un
-          // pequeño margen) para que todas las cajas tengan una proporción
-          // uniforme y "cuadrada" como el resto.
+          // Para que TODAS las cajas (también los compases 1os de línea)
+          // tengan la misma proporción "cuadrada", se usa siempre el mismo
+          // ancho de referencia (el de un compás normal), anclado al inicio
+          // real de las notas, en vez del ancho físico completo del
+          // pentagrama (que varía según haya o no clave/armadura/compás).
           const hitPad = 10;
           const hitX = staveTreble.getNoteStartX() - hitPad;
-          const hitRight = staveTreble.getX() + staveTreble.getWidth();
+          const maxRight = staveTreble.getX() + staveTreble.getWidth() - hitPad;
+          const squareWidth = REST_OF_LINE_WIDTH - 15;
+          const hitRight = Math.min(maxRight, hitX + squareWidth);
           hitRects.push({
             x: hitX, y: staveTreble.getYForLine(0) - 25,
             width: hitRight - hitX, height: staveBass.getYForLine(4) - staveTreble.getYForLine(0) + 50,

@@ -30,7 +30,69 @@ function quarterToBBS(q) {
 }
 
 function scoreKeyOf(score) {
-  return score.id + ":" + score.measures.length + ":" + score.timeSig;
+  const sig = score.measures.map((m) =>
+    (m.treble ? m.treble.length : 0) + "," + (m.bass ? m.bass.length : 0) + "," +
+    (m.repeatStart ? 1 : 0) + (m.repeatEnd ? 1 : 0) + ":" + (m.directive || "")
+  ).join("|");
+  return score.id + ":" + score.timeSig + ":" + score.bpm + ":" + sig;
+}
+
+// Construye el ORDEN DE REPRODUCCIÓN real (una lista de índices de compás,
+// posiblemente repetidos) a partir de las repeticiones simples (‖: :‖) y
+// las indicaciones de Fine / D.C. / D.S. (con o sin "al Fine"/"al Coda").
+// Limitaciones asumidas, dada la sencillez del editor (un único símbolo de
+// Coda/Segno por partitura, sin secciones de coda separadas):
+//  - Las repeticiones simples ‖: :‖ se tocan exactamente dos veces.
+//  - "D.C." vuelve al compás 1; "D.S." vuelve al compás marcado con Segno
+//    (o al compás 1 si no hay ninguno marcado).
+//  - "Fine" sólo detiene la reproducción si aparece DESPUÉS de un D.C./D.S.
+//    (su uso normal); en una primera pasada se ignora.
+//  - "al Coda" se trata, por simplicidad, igual que el salto sin Coda (las
+//    partituras de este editor sólo admiten un compás de Coda, no dos
+//    secciones independientes que saltar entre sí).
+//  - Un guardia (maxIterations) evita bucles infinitos ante datos atípicos.
+function buildPlayOrder(measures) {
+  const order = [];
+  const n = measures.length;
+  if (n === 0) return order;
+
+  const repeatedEnds = new Set();
+  let jumped = false;
+  let lastRepeatStart = 0;
+  const segnoIdx = measures.findIndex((m) => /segno/i.test(m.directive || ""));
+
+  let i = 0;
+  let guard = 0;
+  const maxIterations = n * 4 + 20;
+
+  while (i < n && guard < maxIterations) {
+    guard++;
+    order.push(i);
+    const m = measures[i];
+    if (m.repeatStart) lastRepeatStart = i;
+
+    if (m.repeatEnd && !repeatedEnds.has(i) && !jumped) {
+      repeatedEnds.add(i);
+      i = lastRepeatStart;
+      continue;
+    }
+
+    const dir = m.directive || "";
+    const isFine = /fine/i.test(dir) && !/D\.C\.|D\.S\./i.test(dir);
+    const isDC = /^D\.C\./i.test(dir);
+    const isDS = /^D\.S\./i.test(dir);
+
+    if (jumped && isFine) break;
+
+    if (!jumped && (isDC || isDS)) {
+      jumped = true;
+      i = isDS && segnoIdx >= 0 ? segnoIdx : 0;
+      continue;
+    }
+
+    i++;
+  }
+  return order;
 }
 
 function updateAudioBPM() {
@@ -54,7 +116,10 @@ function buildTimeline() {
   const measureEvents = [];
   let pos = 0;
 
-  score.measures.forEach((measure, idx) => {
+  const playOrder = buildPlayOrder(score.measures);
+
+  playOrder.forEach((idx) => {
+    const measure = score.measures[idx];
     measureEvents.push({ time: quarterToBBS(pos), idx });
     ["treble", "bass"].forEach((staffName) => {
       let cursor = pos;
