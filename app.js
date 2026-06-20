@@ -1,5 +1,5 @@
 /* =========================================================================
-   EBONY & IVORY — app.js (Master Script - Flat Structure & Bulletproof)
+   EBONY & IVORY — app.js (Código Maestro - Blindado y Corregido)
    ========================================================================= */
 (function () {
   "use strict";
@@ -74,7 +74,7 @@
     { val: "Eb", us: "Eb / Cm", eu: "Mib / Do m" }, { val: "Ab", us: "Ab / Fm", eu: "Lab / Fa m" }
   ];
 
-  /* ----------------------------- Motor Principal ----------------------------- */
+  /* ----------------------------- Motor Principal & i18n ----------------------------- */
   let currentLang = "en", currentScore = null;     
   let editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
   let libraryState = { query: "", sortBy: "numAsc", filterTime: "all", filterKey: "all", filterHands: "all" };
@@ -141,8 +141,10 @@
   setupCustomSelect('customKeySig', 'keySig', false); setupCustomSelect('customFilterKeySig', 'filterKeySig', true);
   document.addEventListener('click', () => document.querySelectorAll('.custom-select').forEach(el => el.classList.remove('active')));
 
-  /* ----------------------------- Database Local ----------------------------- */
-  const STORAGE_KEY = "ebony_ivory:scores"; const DUR_Q = { w: 4, h: 2, q: 1, "8": 0.5, "16": 0.25, "32": 0.125 };
+  /* ----------------------------- Database Local & Utils ----------------------------- */
+  const STORAGE_KEY = "ebony_ivory:scores"; 
+  const DURATION_QUARTERS = { w: 4, h: 2, q: 1, "8": 0.5, "16": 0.25, "32": 0.125 };
+  
   function uid() { return "s_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
   function loadAll() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch (e) { return {}; } }
   function saveAll(map) { localStorage.setItem(STORAGE_KEY, JSON.stringify(map)); }
@@ -152,8 +154,10 @@
   function formatDate(ts) { try { return new Date(ts).toLocaleDateString(currentLang === 'es' ? "es-ES" : "en-US", { day: "2-digit", month: "short", year: "numeric" }); } catch (e) { return ""; } }
   function escapeHtml(str) { const d = document.createElement("div"); d.textContent = str; return d.innerHTML; }
   function measureNeededQuarters(timeSig) { const [num, den] = timeSig.split("/").map(Number); return num * (4 / den); }
+  function quartersUsed(staffNotes) { return staffNotes.reduce((sum, n) => sum + (DURATION_QUARTERS[n.duration] || 0) * (n.dotted ? 1.5 : 1), 0); }
   function newMeasure() { return { treble: [], bass: [], repeatStart: false, repeatEnd: false, directive: "" }; }
   function newScore() { return { id: uid(), plate: nextPlateNumber(), title: "", composer: "", timeSig: "4/4", keySig: "C", bpm: 100, measures: [newMeasure()], createdAt: Date.now(), updatedAt: Date.now() }; }
+  function downloadBlob(filename, text, type) { const blob = new Blob([text], { type: type || "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 2000); }
   
   function persistScore(score) { 
     if (score.isExample) return; score.updatedAt = Date.now(); const all = loadAll(); all[score.id] = score; saveAll(all); 
@@ -165,12 +169,20 @@
     const newAll = {}; scores.forEach((s, index) => { s.plate = index + 1; newAll[s.id] = s; }); saveAll(newAll); 
   }
 
-  /* ----------------------------- Firebase Auth & Sync ----------------------------- */
+  /* ----------------------------- Firebase Auth & Sync (Blindado) ----------------------------- */
   let auth = null, db = null, currentUser = null, unsubscribeSnapshot = null, pollTimer = null, lastSnapshotMap = {};
+  let firebaseInitError = null;
 
-  if (window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey && !window.FIREBASE_CONFIG.apiKey.startsWith('PEGA_')) {
+  function initFirebase() {
+    if (typeof firebase === 'undefined') {
+      console.warn("Firebase SDK bloqueado. Posible AdBlocker activo.");
+      return "El navegador está bloqueando Firebase (Revisa si tienes activado un AdBlocker o Brave Shields).";
+    }
+    if (!window.FIREBASE_CONFIG || !window.FIREBASE_CONFIG.apiKey || window.FIREBASE_CONFIG.apiKey.startsWith('PEGA_')) {
+      return "La nube no está configurada (Falta añadir tus claves en firebase-config.js).";
+    }
     try {
-      if (!firebase.apps.length) { firebase.initializeApp(window.FIREBASE_CONFIG); }
+      if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
       auth = firebase.auth(); 
       db = firebase.firestore();
       
@@ -195,8 +207,14 @@
           if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
         }
       });
-    } catch (e) { console.warn('Firebase init error (Protegido):', e); }
+      return null; // Todo Ok
+    } catch (e) { 
+      console.warn('Firebase init error:', e); 
+      return "Error de conexión con Firebase: " + e.message;
+    }
   }
+
+  firebaseInitError = initFirebase();
 
   function snapshotOf(map) { const out = {}; Object.keys(map).forEach((id) => { out[id] = map[id].updatedAt || 0; }); return out; }
   
@@ -214,7 +232,7 @@
       'auth/user-not-found': currentLang === 'es' ? 'No existe ninguna cuenta con este email.' : 'No account found.',
       'auth/wrong-password': currentLang === 'es' ? 'Contraseña incorrecta.' : 'Wrong password.',
       'auth/email-already-in-use': currentLang === 'es' ? 'Ya existe una cuenta con este email.' : 'Email already in use.',
-      'auth/weak-password': currentLang === 'es' ? 'La contraseña debe tener 6 caracteres.' : 'Password must be 6 characters.',
+      'auth/weak-password': currentLang === 'es' ? 'La contraseña debe tener al menos 6 caracteres.' : 'Password must be 6 characters.',
       'auth/popup-closed-by-user': currentLang === 'es' ? 'Ventana cerrada antes de terminar.' : 'Popup closed.'
     }; return map[code] || t('genericError');
   }
@@ -241,7 +259,7 @@
     const form = document.getElementById('authForm');
     if(form) form.addEventListener('submit', (e) => {
       e.preventDefault(); const errBox = document.getElementById('authError'); errBox.hidden = true;
-      if(!auth) { errBox.hidden = false; errBox.textContent = "Firebase no está configurado (Revisa tus dominios autorizados)."; return; }
+      if(!auth) { errBox.hidden = false; errBox.textContent = firebaseInitError || "Error crítico."; return; }
       const isReg = document.getElementById('authTabRegister').classList.contains('is-active');
       const p = isReg ? auth.createUserWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPassword').value) : auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPassword').value);
       p.then(() => authOverlay.hidden = true).catch(err => { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); });
@@ -250,7 +268,7 @@
     const btnGoogle = document.getElementById('authGoogleBtn');
     if(btnGoogle) btnGoogle.addEventListener('click', () => {
       const errBox = document.getElementById('authError'); errBox.hidden = true;
-      if(!auth) { errBox.hidden = false; errBox.textContent = "Firebase no está configurado (Revisa tus dominios autorizados)."; return; }
+      if(!auth) { errBox.hidden = false; errBox.textContent = firebaseInitError || "Error crítico."; return; }
       auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => authOverlay.hidden = true).catch(err => { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); });
     });
   }
@@ -367,7 +385,14 @@
     }
   }
 
-  /* ----------------------------- Editor Interactions ----------------------------- */
+  /* ----------------------------- FILTROS & Interacciones ----------------------------- */
+  const elSearch = document.getElementById("searchScores"); if(elSearch) elSearch.addEventListener("input", (e) => { libraryState.query = e.target.value.toLowerCase(); renderLibrary(); });
+  const elSort = document.getElementById("sortScores"); if(elSort) elSort.addEventListener("change", (e) => { libraryState.sortBy = e.target.value; renderLibrary(); });
+  const elBtnFilters = document.getElementById("btnToggleFilters"); const elFiltersPanel = document.getElementById("catalogFilters");
+  if(elBtnFilters && elFiltersPanel) elBtnFilters.addEventListener("click", () => { elFiltersPanel.hidden = !elFiltersPanel.hidden; });
+  const elFilterTime = document.getElementById("filterTimeSig"); if(elFilterTime) elFilterTime.addEventListener("change", (e) => { libraryState.filterTime = e.target.value; renderLibrary(); });
+  const elFilterHands = document.getElementById("filterHands"); if(elFilterHands) elFilterHands.addEventListener("change", (e) => { libraryState.filterHands = e.target.value; renderLibrary(); });
+
   if(document.getElementById("scoreTitle")) {
     document.getElementById("scoreTitle").addEventListener("input", (e) => { currentScore.title = e.target.value; renderScore(); });
     document.getElementById("scoreComposer").addEventListener("input", (e) => { currentScore.composer = e.target.value; renderScore(); });
@@ -562,7 +587,7 @@
       ['treble', 'bass'].forEach((staffName) => {
         let cursor = pos;
         (measure[staffName] || []).forEach((n) => {
-          const durQ = (DUR_Q[n.duration] || 0) * (n.dotted ? 1.5 : 1);
+          const durQ = (DURATION_QUARTERS[n.duration] || 0) * (n.dotted ? 1.5 : 1);
           if (!n.rest && durQ > 0) events.push({ time: quarterToBBS(cursor), note: n.letter.toUpperCase() + (n.accidental.replace('b', 'b') || "") + n.octave, durQ: durQ });
           cursor += durQ;
         });
