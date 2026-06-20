@@ -139,7 +139,7 @@ export function renderScore() {
             staffNotes.forEach((n, nIdx) => {
               const durStr = n.duration + (n.dotted ? "d" : "") + (n.rest ? "r" : "");
               const keys = n.rest ? [restKey] : [noteToVexKey(n)];
-              const sn = new VF.StaveNote({ clef, keys, duration: durStr, auto_stem: true });
+              const sn = new VF.StaveNote({ clef, keys, duration: durStr });
               sn.setAttribute("id", `vf-note-${idx}-${staffName}-${nIdx}`);
               if (n.dotted) VF.Dot.buildAndAttach([sn], { all: true });
               if (!n.rest && n.accidental) sn.addModifier(new VF.Accidental(n.accidental), 0);
@@ -166,7 +166,7 @@ export function renderScore() {
           if (bassNotes.length > 0) { vBass.addTickables(bassNotes); voices.push(vBass); }
 
           if (voices.length > 0) {
-            const innerWidth = width - noteStartOffset - 20; 
+            const innerWidth = staveTreble.getNoteEndX() - staveTreble.getNoteStartX() - 15; 
             const formatter = new VF.Formatter();
             try {
               formatter.joinVoices(voices).format(voices, innerWidth);
@@ -191,7 +191,10 @@ export function renderScore() {
             const targetArr = trebleNotes.length ? trebleNotes : bassNotes;
             if (targetArr.length) {
               targetArr[targetArr.length - 1].addModifier(
-                new VF.Annotation(measure.directive).setFont("Cormorant Garamond", 15, "italic").setVerticalJustification(VF.Annotation.VerticalJustify.TOP),
+                new VF.Annotation(measure.directive)
+                  .setFont("Inter", 12, "bold")
+                  .setVerticalJustification(VF.Annotation.VerticalJustify.TOP)
+                  .setJustification(VF.Annotation.Justify.RIGHT),
                 0
               );
             }
