@@ -241,7 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if(!state.currentScore) return;
     downloadBlob(slugify(state.currentScore.title) + ".json", JSON.stringify(state.currentScore, null, 2));
   });
-  
+
   const btnExpPdf = document.getElementById("btnExportPdf");
   if (btnExpPdf) btnExpPdf.addEventListener("click", (e) => {
     e.preventDefault();
