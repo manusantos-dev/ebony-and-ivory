@@ -1,73 +1,18 @@
 /* =========================================================
    EBONY & IVORY — print.css
-   Reglas @media print: maquetación en A4 para la exportación
-   a PDF de las partituras.
    ========================================================= */
-
 @media print{
   .topbar, .engrave-desk, .editor-subnav, .sitefooter, .paper-hint, .player-bar, .modal-overlay, .editor-top-controls, .back-pill { display:none !important; }
-
-  @page { size:A4 portrait; margin:15mm 10mm 20mm 10mm; }
-
-  body, .paper-wrap { background:#fff !important; padding:0 !important; margin:0 !important; display:block; }
-  .editor-layout { border:none; max-width:none; display:block; margin:0; }
-  .paper-wrap { overflow:visible !important; width:100% !important; max-width:100% !important; }
-
-  .paper-page {
-    position:relative;
-    overflow:hidden;
-    box-shadow:none !important;
-    width:100% !important;
-    max-width:none !important;
-    min-width:auto !important;
-    min-height:calc(297mm - 35mm);
-    box-sizing:border-box;
-    padding:24px 0 !important;
-    margin:0 !important;
-    page-break-after:always;
-    break-after:page;
-  }
-
-  .paper-page:last-child { page-break-after:auto; }
-  .paper-page > div { width:100% !important; }
-  .paper-page svg { display:block !important; width:100% !important; height:auto !important; max-width:100% !important; }
-
-  .measure-hit rect { fill:transparent !important; stroke:none !important; }
-  .measure-hit { pointer-events:none !important; cursor:default !important; }
-  .playback-line-svg { display:none !important; }
-
-  .print-header-content {
-    display:flex;
-    position:absolute;
-    top:0;
-    left:0;
-    right:0;
-    justify-content:space-between;
-    align-items:center;
-    font-family:var(--font-mono);
-    font-size:10px;
-    color:var(--ink-soft);
-    text-transform:uppercase;
-    border-bottom:1px solid var(--line);
-    padding-bottom:8px;
-  }
-
-  .paper-page:first-child .print-header-content { display:none; }
-
-  .print-footer-content {
-    display:flex;
-    position:absolute;
-    left:0;
-    right:0;
-    bottom:0;
-    justify-content:space-between;
-    align-items:center;
-    font-family:var(--font-mono);
-    font-size:10px;
-    color:var(--ink-soft);
-    border-top:1px solid var(--line);
-    padding-top:8px;
-  }
-
-  .print-logo-isotipo { height:16px; width:auto; object-fit:contain; filter:grayscale(100%); opacity:.6; }
+  body, .paper-wrap{ background: #fff !important; padding:0 !important; margin:0 !important; display: block; }
+  .editor-layout { border: none; max-width: none; display: block; margin: 0; }
+  @page { size: A4 portrait; margin: 15mm 10mm 20mm 10mm; }
+  .paper-page { box-shadow: none !important; max-width: none !important; min-width: auto !important; padding: 0 !important; margin: 0 !important; page-break-after: always; break-after: page; position: relative; }
+  
+  .paper-page:last-child { page-break-after: auto; }
+  
+  .print-header-content { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); text-transform: uppercase; border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 10px; }
+  .print-footer-content { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); border-top: 1px solid var(--line); padding-top: 8px; margin-top: 10px; }
+  
+  .paper-page:first-child .print-header-content { display: none; }
+  .print-logo-isotipo { height: 16px; width: auto; object-fit: contain; filter: grayscale(100%); opacity: 0.6; }
 }
