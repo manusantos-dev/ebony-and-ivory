@@ -186,7 +186,7 @@
   function newScore() { return { id: uid(), plate: nextPlateNumber(), title: "", composer: "", timeSig: "4/4", keySig: "C", tempoText: "", measures: [newMeasure()], createdAt: Date.now(), updatedAt: Date.now() }; }
   function loadAll() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch (e) { return {}; } }
   function saveAll(map) { localStorage.setItem(STORAGE_KEY, JSON.stringify(map)); }
-  function persistScore(score) { score.updatedAt = Date.now(); const all = loadAll(); all[score.id] = score; saveAll(all); showSaveIndicator(); }
+  function persistScore(score) { if (score.isExample) return; score.updatedAt = Date.now(); const all = loadAll(); all[score.id] = score; saveAll(all); showSaveIndicator(); }
   
   // Eliminación con REORDENACIÓN AUTOMÁTICA
   function deleteScoreById(id) { 
@@ -486,7 +486,7 @@
             svg.setAttribute("viewBox", `0 0 ${TOTAL_WIDTH} ${pageHeight}`); svg.removeAttribute("width"); svg.removeAttribute("height");
             const ns = "http://www.w3.org/2000/svg";
             hitRects.forEach((hr) => {
-              const g = document.createElementNS(ns, "g"); g.setAttribute("class", "measure-hit" + (hr.idx === editorState.activeMeasure ? " active" : ""));
+              const g = document.createElementNS(ns, "g"); g.setAttribute("class", "measure-hit" + (hr.idx === editorState.activeMeasure ? " active" : "")); g.setAttribute("data-measure-idx", hr.idx);
               const rect = document.createElementNS(ns, "rect");
               rect.setAttribute("x", hr.x - 4); rect.setAttribute("y", hr.y); rect.setAttribute("width", hr.width + 4); rect.setAttribute("height", hr.height);
               rect.setAttribute("fill", hr.idx === editorState.activeMeasure ? "rgba(179, 142, 80, 0.15)" : "transparent"); rect.setAttribute("rx", "4");
@@ -548,4 +548,34 @@
   
   if(!window.location.hash || window.location.hash === "#" || window.location.hash === "") { window.location.hash = "#inicio"; } 
   else { handleNavigation(); }
+
+  /* -----------------------------------------------------------------------
+     API pública mínima — usada por player.js, example-score.js y firebase-sync.js
+     No cambia ningún comportamiento existente; solo expone referencias.
+     ----------------------------------------------------------------------- */
+  window.EI = {
+    t,
+    getLang: () => currentLang,
+    getCurrentScore: () => currentScore,
+    getEditorState: () => editorState,
+    loadAllScores: loadAll,
+    saveAllScores: saveAll,
+    persistScore,
+    deleteScoreById,
+    newScore,
+    uid,
+    nextPlateNumber,
+    plateLabel,
+    escapeHtml,
+    formatDate,
+    measureNeededQuarters,
+    quartersUsed,
+    DURATION_QUARTERS,
+    renderLibrary: () => { if (viewLibrary && !viewLibrary.hidden) renderLibrary(); },
+    renderScore: () => renderScore(),
+    showEditorUI,
+    isLibraryVisible: () => viewLibrary && !viewLibrary.hidden,
+    isEditorVisible: () => viewEditor && !viewEditor.hidden,
+  };
+  window.dispatchEvent(new Event('ei:ready'));
 })();
