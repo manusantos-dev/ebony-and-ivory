@@ -22,6 +22,15 @@
       <button class="lang-btn active" onclick="setLang('es')">ES</button>
       <button class="lang-btn" onclick="setLang('en')">EN</button>
     </div>
+
+    <div class="account-widget" id="accountWidget">
+      <button class="btn btn-ghost" id="btnAccountLogin">👤 <span id="acctLoginLabel">Cuenta</span></button>
+      <div class="account-logged" id="accountLogged" hidden>
+        <span class="account-avatar" id="acctAvatar">?</span>
+        <span class="account-email" id="acctEmail"></span>
+        <button class="btn-ghost-small account-logout" id="btnAccountLogout" title="Cerrar sesión" aria-label="Cerrar sesión">⏻</button>
+      </div>
+    </div>
     
     <nav class="topbar-actions" id="libraryActions" hidden>
       <button class="btn btn-ghost" id="btnImport" data-i18n="importBtn">Importar .json</button>
@@ -45,7 +54,10 @@
     </div>
     <h1 data-i18n="heroTitle">El arte de preservar la música</h1>
     <p class="hero-sub" data-i18n="heroSub">Un lienzo digital estandarizado para transcribir, clasificar y eternizar tus partituras con una elegancia inigualable.</p>
-    <button class="btn btn-primary btn-huge" onclick="window.location.hash='#catalogo'" data-i18n="goToCatalog">Abrir mi Catálogo</button>
+    <div class="hero-actions">
+      <button class="btn btn-primary btn-huge" onclick="window.location.hash='#catalogo'" data-i18n="goToCatalog">Abrir mi Catálogo</button>
+      <button class="btn btn-ghost btn-huge" data-go-example id="btnGoExample">🎵 Ver partitura de ejemplo</button>
+    </div>
   </div>
 </main>
 
@@ -106,6 +118,22 @@
   <div class="editor-subnav">
     <button class="btn-ghost-small" id="btnBackLibrary" data-i18n="backBtn">← Volver al Catálogo</button>
     <button class="btn-ghost-small" id="btnToggleViewer" style="margin-left:auto; border: 1px solid var(--line-strong);" data-i18n="toggleViewBtn">Alternar Modo Edición</button>
+  </div>
+
+  <div class="player-bar" id="playerBar">
+    <button class="pl-btn" id="plBtnRewind" title="Volver al inicio" aria-label="Volver al inicio">⏮</button>
+    <button class="pl-btn pl-btn--play" id="plBtnPlay" title="Reproducir / Pausar" aria-label="Reproducir">▶</button>
+    <div class="pl-progress" id="plProgressWrap" role="slider" aria-label="Progreso de reproducción" tabindex="0"><div class="pl-progress-fill" id="plProgressFill"></div></div>
+    <span class="pl-time" id="plTimeLabel">0:00 / 0:00</span>
+    <div class="pl-speeds" id="plSpeeds">
+      <button class="pl-speed-btn" data-speed="0.5">0.5×</button>
+      <button class="pl-speed-btn" data-speed="0.75">0.75×</button>
+      <button class="pl-speed-btn is-active" data-speed="1">1×</button>
+      <button class="pl-speed-btn" data-speed="1.5">1.5×</button>
+      <button class="pl-speed-btn" data-speed="2">2×</button>
+    </div>
+    <label class="pl-bpm-label" title="Tempo en negras por minuto">♩= <input type="number" id="plBpm" class="pl-bpm-input" min="20" max="300" value="100"></label>
+    <span class="pl-status" id="plStatus"></span>
   </div>
   
   <div class="editor-layout" id="editorLayout">
@@ -214,7 +242,7 @@
       <div class="desk-section">
         <p class="desk-title" data-i18n="lblMeasureDetails">Compás · Detalles</p>
         <label class="check-inline"><input type="checkbox" id="repeatStart"> <span data-i18n="lblRepStart">Inicio repetición ‖:</span></label>
-        <label class="check-inline"><input type="checkbox" id="repeatEnd"> <span data-i18n="lblRepEnd">Fin repetición :‖</label>
+        <label class="check-inline"><input type="checkbox" id="repeatEnd"> <span data-i18n="lblRepEnd">Fin repetición :‖</span></label>
         <label class="field-label" data-i18n="lblDirective">Indicación (Fine, D.C.)</label>
         <select id="directiveSelect" class="field-input">
           <option value="">—</option><option value="Fine">Fine</option><option value="D.C.">D.C.</option><option value="D.C. al Fine">D.C. al Fine</option>
@@ -232,11 +260,44 @@
   </div>
 </main>
 
+<div class="modal-overlay" id="authModalOverlay" hidden>
+  <div class="modal-card">
+    <button class="modal-close" id="authModalClose" aria-label="Cerrar">×</button>
+    <div class="auth-tabs">
+      <button class="auth-tab is-active" id="authTabLogin" data-tab="login">Iniciar sesión</button>
+      <button class="auth-tab" id="authTabRegister" data-tab="register">Crear cuenta</button>
+    </div>
+    <p class="auth-subtitle" id="authSubtitle">Guarda tus partituras en la nube y ábrelas desde cualquier dispositivo.</p>
+    <form id="authForm">
+      <label class="field-label">Email</label>
+      <input type="email" id="authEmail" class="field-input" required autocomplete="email">
+      <label class="field-label">Contraseña</label>
+      <input type="password" id="authPassword" class="field-input" required autocomplete="current-password" minlength="6">
+      <p class="auth-error" id="authError" hidden></p>
+      <button type="submit" class="btn btn-primary btn-block" id="authSubmitBtn">Iniciar sesión</button>
+    </form>
+    <div class="auth-divider"><span>o</span></div>
+    <button class="btn btn-ghost btn-block auth-google-btn" id="authGoogleBtn">
+      <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.16.28-1.7V4.97H.95A9 9 0 0 0 0 9c0 1.45.35 2.83.95 4.03l3-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
+      Continuar con Google
+    </button>
+    <p class="auth-hint" id="authConfigHint" hidden>⚠️ La nube todavía no está configurada en este proyecto (faltan las claves de Firebase en <code>firebase-config.js</code>). El resto de la app funciona con normalidad en modo local.</p>
+  </div>
+</div>
+
 <footer class="sitefooter">
   <p data-i18n="footerText">Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales.</p>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 <script src="app.js"></script>
+<script src="player.js"></script>
+<script src="example-score.js"></script>
+<script src="firebase-sync.js"></script>
 </body>
 </html>
