@@ -63,9 +63,9 @@ export function renderScore() {
 
       const printFooter = document.createElement("div");
       printFooter.className = "print-footer-content";
-      printFooter.innerHTML = `<span style="display:flex; align-items:center; gap:10px;"><img src="assets/isotipo.png" class="print-logo-isotipo"> <strong>${plateLabel(score.plate)}</strong></span> <span>${p + 1} / ${totalPages}</span>`;
+      printFooter.innerHTML = `<span style="display:flex; align-items:center; gap:10px;"><img src="assets/isotipo-w.png" class="print-logo-isotipo"> <strong>${plateLabel(score.plate)}</strong></span> <span>${p + 1} / ${totalPages}</span>`;
       pageDiv.appendChild(printFooter);
-
+      
       container.appendChild(pageDiv);
       
       const linesOnThisPage = Math.min(LINES_PER_PAGE, totalLines - p * LINES_PER_PAGE);
