@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ebony & Ivory</title>
+<meta name="description" content="El arte de preservar la música">
+<link rel="icon" href="assets/isotipo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="topbar" id="mainHeader">
+  <div class="brand" id="brandHome" title="Ir al Catálogo">
+    <img src="assets/imagotipo.png" alt="Ebony & Ivory" class="brand-img">
+  </div>
+  
+  <div class="topbar-right">
+    <div class="lang-switch">
+      <button class="lang-btn active" onclick="EI.setLang('es')">ES</button>
+      <button class="lang-btn" onclick="EI.setLang('en')">EN</button>
+    </div>
+
+    <div class="account-widget" id="accountWidget">
+      <button class="btn btn-ghost" id="btnAccountLogin">👤 <span id="acctLoginLabel">Cuenta</span></button>
+      <div class="account-logged" id="accountLogged" hidden>
+        <span class="account-avatar" id="acctAvatar">?</span>
+        <span class="account-email" id="acctEmail"></span>
+        <button class="btn-ghost-small account-logout" id="btnAccountLogout" title="Cerrar sesión" aria-label="Cerrar sesión">⏻</button>
+      </div>
+    </div>
+    
+    <nav class="topbar-actions" id="libraryActions" hidden>
+      <button class="btn btn-ghost" id="btnImport" data-i18n="importBtn">Importar .json</button>
+      <input type="file" id="fileImport" accept="application/json" hidden>
+      <button class="btn btn-primary" id="btnNewScore" data-i18n="newScoreBtn">+ Nueva partitura</button>
+    </nav>
+    
+    <nav class="topbar-actions" id="editorActions" hidden>
+      <span id="saveIndicator" class="save-indicator" data-i18n="savedIndicator">Guardado ✓</span>
+      <button class="btn btn-ghost" id="btnExportJson" data-i18n="exportJsonBtn">Descargar .json</button>
+      <button class="btn btn-primary" id="btnExportPdf" data-i18n="exportPdfBtn">Exportar PDF</button>
+    </nav>
+  </div>
+</header>
+
+<main id="viewHome" class="view">
+  <div class="floating-notes" id="floatingNotes"></div>
+  <div class="home-hero">
+    <div class="hero-logo"><img src="assets/logotipo.png" alt="Ebony & Ivory" class="hero-logo-img"></div>
+    <h1 data-i18n="heroTitle">El arte de preservar la música</h1>
+    <p class="hero-sub" data-i18n="heroSub">Un lienzo digital estandarizado para transcribir, clasificar y eternizar tus partituras con una elegancia inigualable.</p>
+    <div class="hero-actions">
+      <button class="btn btn-primary btn-huge" onclick="window.location.hash='#catalogo'" data-i18n="goToCatalog">Abrir mi Catálogo</button>
+      <button class="btn btn-ghost btn-huge" id="btnGoExample">🎵 <span data-i18n="viewExample">Ver partitura de ejemplo</span></button>
+    </div>
+  </div>
+</main>
+
+<main id="viewLibrary" class="view" hidden>
+  <div class="catalog-header">
+    <h2 data-i18n="catalogTitle">Catálogo de Partituras</h2>
+    
+    <div class="catalog-toolbar">
+      <input type="text" id="searchScores" class="field-input search-input" placeholder="Buscar por título, autor o E&I..." data-i18n-placeholder="searchPlaceholder">
+      <button class="btn btn-ghost" id="btnToggleFilters" data-i18n="filterBtn">Filtros ⧨</button>
+      <select id="sortScores" class="field-input sort-select">
+        <option value="numAsc" data-i18n="sortNumAsc">Número (E&I asc.)</option>
+        <option value="numDesc" data-i18n="sortNumDesc">Número (E&I desc.)</option>
+        <option value="dateDesc" data-i18n="sortDateDesc">Última edición (Reciente)</option>
+        <option value="dateAsc" data-i18n="sortDateAsc">Última edición (Antigua)</option>
+        <option value="titleAsc" data-i18n="sortTitleAsc">Título (A-Z)</option>
+        <option value="authorAsc" data-i18n="sortAuthorAsc">Autor (A-Z)</option>
+      </select>
+    </div>
+
+    <div class="catalog-filters" id="catalogFilters" hidden>
+      <div class="filter-group">
+        <label class="field-label" data-i18n="lblTimeSig">Compás</label>
+        <select id="filterTimeSig" class="field-input">
+          <option value="all" data-i18n="optAll">Cualquiera</option>
+          <option value="4/4">4/4</option><option value="3/4">3/4</option><option value="2/4">2/4</option>
+          <option value="6/8">6/8</option><option value="9/8">9/8</option><option value="12/8">12/8</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="field-label" data-i18n="lblKeySig">Tonalidad</label>
+        <div class="custom-select" id="customFilterKeySig" tabindex="0">
+          <div class="select-selected" id="customFilterKeySelected"></div>
+          <div class="select-items" id="customFilterKeyOptions"></div>
+        </div>
+        <input type="hidden" id="filterKeySig" value="all">
+      </div>
+      <div class="filter-group">
+        <label class="field-label" data-i18n="lblHands">Manos / Pentagramas</label>
+        <select id="filterHands" class="field-input">
+          <option value="all" data-i18n="optAll">Cualquiera</option>
+          <option value="both" data-i18n="optBothHands">Ambas manos</option>
+          <option value="treble" data-i18n="optTrebleOnly">Solo mano derecha</option>
+          <option value="bass" data-i18n="optBassOnly">Solo mano izquierda</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  
+  <section class="library-grid" id="libraryGrid"></section>
+  <div class="library-empty" id="libraryEmpty" hidden>
+    <h3 data-i18n="emptyLibraryTitle">Tu catálogo está vacío (o sin resultados)</h3>
+    <p data-i18n="emptyLibrary">Pulsa «Nueva partitura» en la esquina superior derecha o cambia los filtros de búsqueda.</p>
+  </div>
+</main>
+
+<main id="viewEditor" class="view" hidden>
+  <div class="editor-subnav">
+    <button class="btn-ghost-small" id="btnBackLibrary" data-i18n="backBtn">← Volver al Catálogo</button>
+    <button class="btn-ghost-small" id="btnToggleViewer" style="margin-left:auto; border: 1px solid var(--line-strong);" data-i18n="toggleViewBtn">Alternar Modo Edición</button>
+  </div>
+
+  <div class="player-bar" id="playerBar">
+    <button class="pl-btn" id="plBtnRewind" title="Volver al inicio">⏮</button>
+    <button class="pl-btn pl-btn--play" id="plBtnPlay" title="Reproducir / Pausar">▶</button>
+    <div class="pl-progress" id="plProgressWrap"><div class="pl-progress-fill" id="plProgressFill"></div></div>
+    <span class="pl-time" id="plTimeLabel">0:00 / 0:00</span>
+    <div class="pl-speeds" id="plSpeeds">
+      <button class="pl-speed-btn is-active" data-speed="1">1×</button>
+      <button class="pl-speed-btn" data-speed="1.5">1.5×</button>
+      <button class="pl-speed-btn" data-speed="2">2×</button>
+    </div>
+    <span class="pl-status" id="plStatus"></span>
+  </div>
+  
+  <div class="editor-layout" id="editorLayout">
+    <aside class="engrave-desk" id="engraveDesk">
+      <div class="desk-section">
+        <label class="field-label" data-i18n="lblTitle">Título</label>
+        <input type="text" id="scoreTitle" class="field-input field-input--title">
+        <label class="field-label" data-i18n="lblComposer">Compositor / origen</label>
+        <input type="text" id="scoreComposer" class="field-input">
+      </div>
+
+      <div class="desk-section">
+        <div class="field-row">
+          <div>
+            <label class="field-label" data-i18n="lblTimeSig">Compás</label>
+            <select id="timeSig" class="field-input">
+              <option value="4/4">4/4</option><option value="3/4">3/4</option><option value="2/4">2/4</option>
+              <option value="6/8">6/8</option><option value="9/8">9/8</option><option value="12/8">12/8</option><option value="2/2">2/2</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" data-i18n="lblKeySig">Tonalidad</label>
+            <div class="custom-select" id="customKeySig" tabindex="0">
+              <div class="select-selected" id="customKeySigSelected"></div>
+              <div class="select-items" id="customKeySigOptions"></div>
+            </div>
+            <input type="hidden" id="keySig" value="C">
+          </div>
+        </div>
+      </div>
+
+      <hr class="desk-divider">
+
+      <div class="desk-section">
+        <p class="desk-title"><span data-i18n="lblActiveMeasure">Compás activo</span> <span id="activeMeasureLabel" class="pill">1</span></p>
+        <div class="field-row">
+          <button class="btn btn-small" id="btnPrevMeasure" data-i18n="btnPrev">‹ anterior</button>
+          <button class="btn btn-small" id="btnNextMeasure" data-i18n="btnNext">siguiente ›</button>
+        </div>
+        <div class="field-row">
+          <button class="btn btn-small btn-add" id="btnAddMeasure" data-i18n="btnAddMeasure">+ añadir compás</button>
+          <button class="btn btn-small btn-danger" id="btnDeleteMeasure" data-i18n="btnDelMeasure">eliminar compás</button>
+        </div>
+      </div>
+
+      <hr class="desk-divider">
+
+      <div class="desk-section">
+        <p class="desk-title" data-i18n="lblInputStaff">Pentagrama de entrada</p>
+        <div class="staff-toggle">
+          <button class="toggle-btn is-active" data-staff="treble" id="btnStaffTreble" data-i18n="lblTreble">Clave de Sol</button>
+          <button class="toggle-btn" data-staff="bass" id="btnStaffBass" data-i18n="lblBass">Clave de Fa</button>
+        </div>
+      </div>
+
+      <div class="desk-section">
+        <p class="desk-title" data-i18n="lblNote">Nota</p>
+        <div class="field-row note-row">
+          <label class="check-inline"><input type="checkbox" id="isRest"> <span data-i18n="lblRest">Silencio</span></label>
+        </div>
+        <div class="field-row" id="pitchFields">
+          <div>
+            <label class="field-label" data-i18n="lblPitch">Nota</label>
+            <select id="pitchLetter" class="field-input">
+              <option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>A</option><option>B</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" data-i18n="lblAccidental">Alteración</label>
+            <select id="pitchAccidental" class="field-input">
+              <option value="">—</option><option value="#">♯</option><option value="b">♭</option><option value="n">♮</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" data-i18n="lblOctave">Octava</label>
+            <select id="pitchOctave" class="field-input">
+              <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option>
+            </select>
+          </div>
+        </div>
+
+        <label class="field-label" data-i18n="lblDuration">Duración</label>
+        <div class="duration-grid" id="durationGrid">
+          <button class="dur-btn" data-dur="w">𝅝</button>
+          <button class="dur-btn" data-dur="h">𝅗𝅥</button>
+          <button class="dur-btn is-active" data-dur="q">♩</button>
+          <button class="dur-btn" data-dur="8">♪</button>
+          <button class="dur-btn" data-dur="16">𝅘𝅥𝅯</button>
+          <button class="dur-btn" data-dur="32">𝅘𝅥𝅰</button>
+        </div>
+        <label class="check-inline"><input type="checkbox" id="isDotted"> <span data-i18n="lblDotted">Con puntillo</span></label>
+
+        <label class="field-label" data-i18n="lblDynamics">Dinámica</label>
+        <select id="dynamicSelect" class="field-input">
+          <option value="">—</option><option value="pp">pp</option><option value="p">p</option><option value="mp">mp</option><option value="mf">mf</option>
+          <option value="f">f</option><option value="ff">ff</option><option value="sfz">sfz</option><option value="cresc.">cresc.</option><option value="dim.">dim.</option>
+        </select>
+
+        <button class="btn btn-primary btn-block" id="btnAddNote" data-i18n="btnAddNote">Añadir al compás</button>
+        <button class="btn btn-ghost btn-block" id="btnUndoNote" data-i18n="btnUndoNote">Deshacer última nota</button>
+      </div>
+
+      <hr class="desk-divider">
+
+      <div class="desk-section">
+        <p class="desk-title" data-i18n="lblMeasureDetails">Compás · Detalles</p>
+        <label class="check-inline"><input type="checkbox" id="repeatStart"> <span data-i18n="lblRepStart">Inicio repetición ‖:</span></label>
+        <label class="check-inline"><input type="checkbox" id="repeatEnd"> <span data-i18n="lblRepEnd">Fin repetición :‖</span></label>
+        <label class="field-label" data-i18n="lblDirective">Indicación (Fine, D.C.)</label>
+        <select id="directiveSelect" class="field-input">
+          <option value="">—</option><option value="Fine">Fine</option><option value="D.C.">D.C.</option><option value="D.C. al Fine">D.C. al Fine</option>
+          <option value="D.C. al Coda">D.C. al Coda</option><option value="D.S. al Fine">D.S. al Fine</option><option value="D.S. al Coda">D.S. al Coda</option>
+          <option value="𝄌 Coda">𝄌 Coda</option><option value="𝄋 Segno">𝄋 Segno</option>
+        </select>
+        
+        <label class="field-label" data-i18n="lblTempo">Tempo (BPM)</label>
+        <input type="number" id="scoreBpm" class="field-input" min="20" max="300" value="100">
+      </div>
+    </aside>
+
+    <section class="paper-wrap" id="paperWrap">
+      <div id="vexPagesContainer"></div>
+    </section>
+  </div>
+</main>
+
+<div class="modal-overlay" id="authModalOverlay" hidden>
+  <div class="modal-card">
+    <button class="modal-close" id="authModalClose" aria-label="Cerrar">×</button>
+    <div class="auth-tabs">
+      <button class="auth-tab is-active" id="authTabLogin" data-tab="login">Iniciar sesión</button>
+      <button class="auth-tab" id="authTabRegister" data-tab="register">Crear cuenta</button>
+    </div>
+    <p class="auth-subtitle" id="authSubtitle">Guarda tus partituras en la nube y ábrelas desde cualquier dispositivo.</p>
+    <form id="authForm">
+      <label class="field-label">Email</label>
+      <input type="email" id="authEmail" class="field-input" required autocomplete="email">
+      <label class="field-label">Contraseña</label>
+      <input type="password" id="authPassword" class="field-input" required autocomplete="current-password" minlength="6">
+      <p class="auth-error" id="authError" hidden></p>
+      <button type="submit" class="btn btn-primary btn-block" id="authSubmitBtn">Iniciar sesión</button>
+    </form>
+    <div class="auth-divider"><span>o</span></div>
+    <button class="btn btn-ghost btn-block auth-google-btn" id="authGoogleBtn">
+      <svg width="16" height="16" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.16.28-1.7V4.97H.95A9 9 0 0 0 0 9c0 1.45.35 2.83.95 4.03l3-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
+      Continuar con Google
+    </button>
+    <p class="auth-hint" id="authConfigHint" hidden>⚠️ La nube todavía no está configurada en este proyecto.</p>
+  </div>
+</div>
+
+<footer class="sitefooter">
+  <p data-i18n="footerText">Ebony & Ivory es una herramienta personal para transcribir y archivar partituras.</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
