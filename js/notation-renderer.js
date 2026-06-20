@@ -239,7 +239,7 @@ export function renderScore() {
             ctx.svg.appendChild(errText);
           }
 
-          const hitX = isFirstOfLine ? staveTreble.getNoteStartX() - 15 : staveTreble.getX();
+          const hitX = staveTreble.getNoteStartX() - 8;
           const hitRight = staveTreble.getX() + staveTreble.getWidth(); 
           const finalHitWidth = hitRight - hitX;
           
