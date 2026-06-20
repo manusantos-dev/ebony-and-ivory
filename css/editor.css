@@ -50,11 +50,41 @@ body.is-viewer .measure-hit { pointer-events: none; cursor: default; }
 /* =========================================================
    REPRODUCTOR DE PIANO
    ========================================================= */
+.editor-top-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px; 
+  margin: -10px auto 30px; 
+  flex-wrap: wrap;
+}
+
+.back-pill {
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  border-radius: 50px;
+  padding: 10px 24px;
+  box-shadow: var(--shadow-card);
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+.back-pill:hover {
+  border-color: var(--brass);
+  color: var(--ink);
+}
 .player-bar {
-  display: flex; align-items: center; gap: 16px; margin: -10px auto 30px; padding: 10px 24px;
+  display: flex; align-items: center; gap: 16px; padding: 10px 24px;
   background: var(--paper); border-radius: 50px; border: 1px solid var(--line-strong);
-  box-shadow: var(--shadow-card); max-width: 100%; width: 100%; position: relative; z-index: 10;
-  flex-wrap: wrap; justify-content: center;
+  box-shadow: var(--shadow-card); max-width: fit-content; position: relative; z-index: 10;
+  flex-wrap: wrap; justify-content: center; margin: 0; 
 }
 .pl-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line-strong); background: #fff; color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s ease; flex-shrink: 0; padding: 0; }
 .pl-btn:hover { border-color: var(--brass); }
