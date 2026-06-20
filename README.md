@@ -62,6 +62,11 @@ Have you found a bug? Is there a feature you desperately miss? Do you just want 
 Ebony & Ivory is an open-source personal tool. The musical works you transcribe remain the property of their respective original authors. Please transcribe responsibly.
 
 ---
+
+<div align="center">
+  <em>Created with passion for design, clean code, and music (even if it's just an excuse not to practice).</em>
+</div>
+
 <br><br><br>
 
 <div align="center">
