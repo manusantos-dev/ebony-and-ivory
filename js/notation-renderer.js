@@ -140,8 +140,16 @@ export function renderScore() {
             new VF.StaveConnector(staveTreble, staveBass).setType(VF.StaveConnector.type.BRACE).setContext(ctx).draw();
             new VF.StaveConnector(staveTreble, staveBass).setType(VF.StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
           }
-          new VF.StaveConnector(staveTreble, staveBass).setType(VF.StaveConnector.type.SINGLE_RIGHT).setContext(ctx).draw();
-
+          
+          let rightConnectorType = VF.StaveConnector.type.SINGLE_RIGHT;
+          
+          if (endType === VF.Barline.type.DOUBLE) {
+            rightConnectorType = VF.StaveConnector.type.THIN_DOUBLE; 
+          } else if (endType === VF.Barline.type.END || endType === VF.Barline.type.REPEAT_END) {
+            rightConnectorType = VF.StaveConnector.type.BOLD_DOUBLE_RIGHT;
+          }
+          
+          new VF.StaveConnector(staveTreble, staveBass).setType(rightConnectorType).setContext(ctx).draw();
           const buildNotes = (staffNotes, clef, staffName) => {
             const out = [];
             const restKey = clef === "bass" ? "d/3" : "b/4";
