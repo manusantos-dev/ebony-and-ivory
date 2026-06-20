@@ -8,26 +8,34 @@
 <link rel="icon" href="assets/isotipo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/editor.css">
+<link rel="stylesheet" href="css/print.css">
 </head>
 <body class="is-home">
 
 <header class="topbar" id="mainHeader">
-  <div class="brand" id="brandHome" title="Ir al Catálogo">
-    <img src="assets/imagotipo.png" alt="Ebony & Ivory" class="brand-img">
+  <div class="topbar-left">
+    <div class="brand" id="brandHome" title="Ir al Catálogo">
+      <img src="assets/imagotipo.png" alt="Ebony & Ivory" class="brand-img">
+    </div>
+    <button class="btn-ghost-small back-link" id="btnBackLibrary" data-i18n="backBtn" hidden>← Volver al Catálogo</button>
   </div>
-  
+
   <div class="topbar-right">
+    <span id="saveIndicator" class="save-indicator" data-i18n="savedIndicator" hidden>Guardado ✓</span>
+
     <div class="lang-switch">
-      <button class="lang-btn active" onclick="window.EI.setLang('es')">ES</button>
-      <button class="lang-btn" onclick="window.EI.setLang('en')">EN</button>
+      <button class="lang-btn active" data-lang="es">ES</button>
+      <button class="lang-btn" data-lang="en">EN</button>
     </div>
 
     <div class="account-logged" id="accountLogged" hidden title="Abrir Perfil">
       <span class="account-avatar" id="acctAvatar">?</span>
       <span class="account-email" id="acctEmail"></span>
     </div>
-    
+
     <button class="btn btn-ghost" id="btnAccountLogin">👤 <span id="acctLoginLabel">Cuenta</span></button>
 
     <nav class="topbar-actions" id="libraryActions" hidden>
@@ -35,9 +43,9 @@
       <input type="file" id="fileImport" accept="application/json" hidden>
       <button class="btn btn-primary" id="btnNewScore" data-i18n="newScoreBtn">+ Nueva partitura</button>
     </nav>
-    
+
     <nav class="topbar-actions" id="editorActions" hidden>
-      <span id="saveIndicator" class="save-indicator" data-i18n="savedIndicator">Guardado ✓</span>
+      <button class="btn-ghost-small" id="btnToggleViewer" data-i18n="toggleViewBtn">Alternar Visor</button>
       <button class="btn btn-ghost" id="btnExportJson" data-i18n="exportJsonBtn">Descargar .json</button>
       <button class="btn btn-primary" id="btnExportPdf" data-i18n="exportPdfBtn">Exportar PDF</button>
     </nav>
@@ -110,11 +118,6 @@
 </main>
 
 <main id="viewEditor" class="view" hidden>
-  <div class="editor-subnav">
-    <button class="btn-ghost-small" id="btnBackLibrary" data-i18n="backBtn">← Volver al Catálogo</button>
-    <button class="btn-ghost-small" id="btnToggleViewer" style="margin-left:auto; border: 1px solid var(--line-strong);" data-i18n="toggleViewBtn">Alternar Modo Edición</button>
-  </div>
-
   <div class="player-bar" id="playerBar">
     <button class="pl-btn" id="plBtnRewind" title="Volver al inicio" aria-label="Volver al inicio">
       <svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
@@ -124,6 +127,7 @@
     </button>
     <div class="pl-progress" id="plProgressWrap" role="slider" aria-label="Progreso de reproducción" tabindex="0"><div class="pl-progress-fill" id="plProgressFill"></div></div>
     <span class="pl-time" id="plTimeLabel">0:00 / 0:00</span>
+    <span class="pl-divider"></span>
     <div class="pl-speeds" id="plSpeeds">
       <button class="pl-speed-btn" data-speed="0.5">0.5×</button>
       <button class="pl-speed-btn" data-speed="0.75">0.75×</button>
@@ -131,9 +135,10 @@
       <button class="pl-speed-btn" data-speed="1.5">1.5×</button>
       <button class="pl-speed-btn" data-speed="2">2×</button>
     </div>
-    <label class="pl-bpm-label" title="Tempo en negras por minuto">♩= <input type="number" id="plBpm" class="pl-bpm-input" min="20" max="300" value="100"></label>
+    <span class="pl-divider"></span>
+    <label class="pl-bpm-label" title="Tempo en negras por minuto"><span class="pl-bpm-symbol">♩</span><span class="pl-bpm-eq">=</span><input type="number" id="plBpm" class="pl-bpm-input" min="20" max="300" value="100"></label>
   </div>
-  
+
   <div class="editor-layout" id="editorLayout">
     <aside class="engrave-desk" id="engraveDesk">
       <div class="desk-section">
@@ -290,13 +295,16 @@
         <p id="profEmailText">email@email.com</p>
       </div>
     </div>
+
+    <button class="btn btn-ghost btn-block" id="btnAccountLogout" data-i18n="logout">Cerrar sesión</button>
+
     <form id="profileForm">
       <label class="field-label" data-i18n="displayName">Nombre / Nickname</label>
       <input type="text" id="profDisplayName" class="field-input" placeholder="Ej: Amadeus">
-      
+
       <label class="field-label" data-i18n="photoUrl">Subir foto de perfil (Opcional)</label>
       <input type="file" id="profPhotoFile" class="field-input" accept="image/*">
-      
+
       <button type="submit" class="btn btn-primary btn-block" style="margin-top:20px;" data-i18n="saveProfile">Guardar Cambios</button>
     </form>
     <div class="profile-danger-zone">
@@ -315,8 +323,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-<script src="firebase-config.js"></script>
-<script src="app.js"></script>
+<script type="module" src="js/main.js"></script>
 
 </body>
 </html>
