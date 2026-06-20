@@ -1,0 +1,17 @@
+/* =========================================================
+   EBONY & IVORY — print.css
+   Reglas @media print: maquetación en A4 para la exportación
+   a PDF de las partituras.
+   ========================================================= */
+@media print{
+  .topbar, .engrave-desk, .editor-subnav, .sitefooter, .paper-hint, .player-bar, .modal-overlay { display:none !important; }
+  body, .paper-wrap{ background: #fff !important; padding:0 !important; margin:0 !important; display: block; }
+  .editor-layout { border: none; max-width: none; display: block; margin: 0; }
+  @page { size: A4 portrait; margin: 15mm 10mm 20mm 10mm; }
+  .paper-page { box-shadow: none !important; max-width: none !important; min-width: auto !important; padding: 0 !important; margin: 0 !important; page-break-after: always; height: 100vh; position: relative; }
+  .paper-page:last-child { page-break-after: auto; }
+  .print-header-content { display: flex; position: absolute; top: 0; left: 0; right: 0; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); text-transform: uppercase; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+  .print-footer-content { display: flex; position: absolute; bottom: 0; left: 0; right: 0; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); border-top: 1px solid var(--line); padding-top: 8px; }
+  .paper-page:first-child .print-header-content { display: none; }
+  .print-logo-isotipo { height: 16px; width: auto; object-fit: contain; filter: grayscale(100%); opacity: 0.6; }
+}

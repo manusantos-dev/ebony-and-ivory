@@ -1,0 +1,81 @@
+/* =========================================================
+   EBONY & IVORY — editor.css
+   Escritorio de edición, lienzo de la partitura, efectos de
+   reproducción y reproductor de audio.
+   ========================================================= */
+
+/* --- EDITOR & VIEWER --- */
+.editor-subnav { max-width: 1400px; margin: 0 auto; padding: 12px 28px; display: flex; align-items: center; }
+.editor-layout{ display:flex; align-items:flex-start; max-width: 1400px; margin: 0 auto; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--paper-edge);}
+
+body.is-viewer .engrave-desk { display: none !important; }
+body.is-viewer .editor-layout { border: none; }
+body.is-viewer .paper-wrap { margin: 0 auto; padding-top: 20px; }
+
+/* En modo visor, las cajas interactivas desaparecen por completo */
+body.is-viewer .measure-hit rect { stroke: none !important; fill: transparent !important; }
+body.is-viewer .measure-hit { pointer-events: none; cursor: default; }
+
+.engrave-desk{ width: 340px; min-width:340px; background: var(--paper); border-right: 1px solid var(--line); padding: 24px 24px 60px; height: calc(100vh - 120px); overflow-y: auto; position: sticky; top:120px; transition: transform 0.1s ease; }
+.desk-section{ margin-bottom: 4px; }
+.desk-title{ font-family: var(--font-mono); font-size: 11px; letter-spacing:.06em; text-transform:uppercase; color: var(--ink); font-weight: 600; margin: 4px 0 10px; }
+.desk-divider{ border:none; border-top: 1px dashed var(--line-strong); margin: 20px 0; }
+.pill{ display:inline-block; background: var(--gold-wash); color: var(--ink); font-family: var(--font-mono); font-size: 11px; border-radius: 999px; padding: 2px 10px; margin-left:6px; font-weight: 600; }
+
+.staff-toggle{ display:flex; border:1px solid var(--line-strong); border-radius: var(--radius); overflow:hidden; }
+.toggle-btn{ flex:1; padding:9px; background:#fff; border:none; cursor:pointer; font-size:13px; font-weight:600; color: var(--ink-soft); transition: background 0.1s; }
+.toggle-btn.is-active{ background: var(--accent); color:#fff; }
+.toggle-btn + .toggle-btn{ border-left: 1px solid var(--line-strong); }
+
+.duration-grid{ display:grid; grid-template-columns: repeat(6,1fr); gap:6px; margin-top:4px; }
+.dur-btn{ font-size: 20px; padding: 8px 0; border:1px solid var(--line-strong); border-radius: var(--radius); background:#fff; cursor:pointer; color: var(--ink); transition: background 0.1s; }
+.dur-btn.is-active{ background: var(--accent); border-color: var(--accent); color:#fff; }
+
+.paper-wrap{ flex:1; padding: 0px 40px 100px; display:flex; flex-direction:column; align-items:center; overflow-x: auto;}
+.paper-page { background: var(--paper); width: 100%; max-width: 1050px; box-shadow: var(--shadow-paper); padding: 50px 30px; position:relative; margin-bottom: 30px; }
+.paper-page svg { width: 100%; height: auto; display: block; }
+.measure-hit{ cursor:pointer; }
+.measure-hit.active rect{ fill: rgba(179, 142, 80, 0.15); stroke: var(--brass); stroke-width: 1px; }
+
+/* --- EFECTOS VISUALES DE REPRODUCCIÓN (Línea Mágica y Notas) --- */
+.playback-line-svg { pointer-events: none; will-change: transform; stroke-linecap: round; }
+.note-playing path, .note-playing rect { fill: var(--brass) !important; stroke: var(--brass) !important; transition: fill 0.05s ease, stroke 0.05s ease; }
+
+.score-letterhead{ text-align:center; margin-bottom: 14px; } /* Margen reducido al pentagrama */
+.score-letterhead h2{ font-family: var(--font-display); font-weight:700; font-size: 38px; margin:0; line-height: 1.2;}
+.score-letterhead p{ font-family: var(--font-display); font-style: italic; font-size: 18px; margin: 4px 0 0; color: var(--ink-soft); }
+.print-header-content, .print-footer-content { display: none; }
+
+/* =========================================================
+   REPRODUCTOR DE PIANO
+   ========================================================= */
+.player-bar {
+  display: flex; align-items: center; gap: 16px; margin: -10px auto 30px; padding: 10px 24px;
+  background: var(--paper); border-radius: 50px; border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-card); max-width: fit-content; position: relative; z-index: 10;
+  flex-wrap: wrap; justify-content: center;
+}
+.pl-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line-strong); background: #fff; color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s ease; flex-shrink: 0; padding: 0; }
+.pl-btn:hover { border-color: var(--brass); }
+.pl-btn svg { width: 16px; height: 16px; fill: currentColor; }
+.pl-btn--play { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pl-btn--play:hover { background: #333; }
+.player-bar.is-playing .pl-btn--play { background: var(--brass); border-color: var(--brass); }
+.pl-progress { flex: 1; min-width: 140px; height: 8px; background: var(--paper-edge); border: 1px solid var(--line-strong); border-radius: 999px; cursor: pointer; position: relative; overflow: hidden; }
+.pl-progress-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: var(--brass); border-radius: 999px; transition: width .1s linear; }
+.pl-time { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-soft); white-space: nowrap; min-width: 80px; }
+.pl-speeds { display: flex; gap: 4px; }
+.pl-speed-btn { font-family: var(--font-mono); font-size: 11px; font-weight: 600; padding: 5px 8px; border-radius: 999px; border: 1px solid var(--line-strong); background: #fff; color: var(--ink-soft); cursor: pointer; }
+.pl-speed-btn:hover { border-color: var(--brass); color: var(--ink); }
+.pl-speed-btn.is-active { background: var(--ink); border-color: var(--ink); color: #fff; }
+.pl-bpm-label { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); display:flex; align-items:center; gap: 4px;}
+.pl-bpm-input { width: 54px; font-family: var(--font-mono); font-size: 12px; padding: 4px 6px; border: 1px solid var(--line-strong); border-radius: 999px; text-align: center;}
+body.is-example-score .editor-subnav { background: var(--gold-wash); }
+.measure-hit.playing rect { fill: rgba(45, 90, 56, 0.16) !important; stroke: #2D5A38; stroke-width: 1.5; }
+
+@media (max-width: 720px) {
+  .engrave-desk { position: static; height: auto; width: 100%; min-width: 0; }
+  .editor-layout { flex-direction: column; }
+  .player-bar { padding: 10px 16px; max-width: 90%; }
+  .pl-speeds { order: 5; width: 100%; justify-content: center; }
+}
