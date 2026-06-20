@@ -431,6 +431,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   spawnFloatingNotes();
 
+  // Fix 2: Desk sticky top se alinea dinámicamente con la parte inferior del subnav del editor
+  function updateDeskTop() {
+    const subnav = document.querySelector(".editor-subnav");
+    if (subnav) {
+      const rect = subnav.getBoundingClientRect();
+      const top = rect.bottom;
+      document.documentElement.style.setProperty("--desk-top", top + "px");
+      const desk = document.getElementById("engraveDesk");
+      if (desk) desk.style.height = `calc(100vh - ${top}px)`;
+    }
+  }
+  window.addEventListener("resize", updateDeskTop);
+  // Run after layout settles
+  setTimeout(updateDeskTop, 100);
+
   // Re-render al cambiar de idioma o al sincronizar con la nube
   on("langchange", (lang) => {
     renderCustomSelects();
