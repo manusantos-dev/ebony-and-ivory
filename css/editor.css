@@ -31,8 +31,8 @@ body.is-viewer .measure-hit { pointer-events: none; cursor: default; }
 .dur-btn{ font-size: 20px; padding: 8px 0; border:1px solid var(--line-strong); border-radius: var(--radius); background:#fff; cursor:pointer; color: var(--ink); transition: background 0.1s; }
 .dur-btn.is-active{ background: var(--accent); border-color: var(--accent); color:#fff; }
 
-.paper-wrap{ flex:1; padding: 0px 40px 100px; display:flex; flex-direction:column; align-items:center; overflow-x: auto;}
-.paper-page { background: var(--paper); width: 100%; max-width: 1050px; box-shadow: var(--shadow-paper); padding: 50px 30px; position:relative; margin-bottom: 30px; }
+.paper-wrap{ flex:1; padding: 0px 40px 100px; display:block; overflow-x: auto;}
+.paper-page { background: var(--paper); width: 100%; max-width: 1050px; box-shadow: var(--shadow-paper); padding: 50px 30px; position:relative; margin: 0 auto 30px; }
 .paper-page svg { width: 100%; height: auto; display: block; }
 .measure-hit{ cursor:pointer; }
 .measure-hit.active rect{ fill: rgba(179, 142, 80, 0.15); stroke: var(--brass); stroke-width: 1px; }
