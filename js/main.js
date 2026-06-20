@@ -281,7 +281,13 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnBackLib) btnBackLib.addEventListener("click", () => { window.location.hash = "#catalogo"; });
 
   const brandHome = document.getElementById("brandHome");
-  if (brandHome) brandHome.addEventListener("click", () => { window.location.hash = "#inicio"; });
+  if (brandHome) brandHome.addEventListener("click", (e) => { 
+    if (document.body.classList.contains("is-viewer") || !document.getElementById("viewEditor").hidden) {
+      window.location.hash = "#catalogo";
+    } else {
+      window.location.hash = "#inicio"; 
+    }
+  });
 
   const btnGoCat = document.getElementById("btnGoCatalog");
   if (btnGoCat) btnGoCat.addEventListener("click", () => { window.location.hash = "#catalogo"; });
