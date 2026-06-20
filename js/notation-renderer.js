@@ -8,8 +8,8 @@ const LINES_PER_PAGE = 5;
 const TOTAL_WIDTH = 990;
 const LEFT_MARGIN = 40;
 const RIGHT_MARGIN = 40;
-const FIRST_OF_LINE_WIDTH = 280;
-const REST_OF_LINE_WIDTH = (TOTAL_WIDTH - LEFT_MARGIN - RIGHT_MARGIN - FIRST_OF_LINE_WIDTH) / (MEASURES_PER_LINE - 1);
+const FIRST_OF_LINE_WIDTH = 322;
+const REST_OF_LINE_WIDTH = 196;
 const STAVE_GAP = 92;
 const LINE_GAP = 180;
 const TOP_MARGIN = 20;
@@ -112,7 +112,7 @@ export function renderScore() {
             staveTreble.setTempo({ duration: "q", dots: 0, bpm: score.bpm || 100 }, 0);
           }
 
-          const noteStartOffset = isFirstOfLine ? 130 : 14;
+          const noteStartOffset = isFirstOfLine ? 140 : 15;
           staveTreble.setNoteStartX(x + noteStartOffset);
           staveBass.setNoteStartX(x + noteStartOffset);
 
@@ -177,28 +177,30 @@ export function renderScore() {
               });
             }
           }
-
+          
           if (trebleNotes.length > 0) {
             try { VF.Beam.generateBeams(trebleNotes, { groups: beamGroups, beam_rests: false }).forEach((b) => b.setContext(ctx).draw()); } catch (e) {}
             vTreble.draw(ctx, staveTreble);
           }
+          
           if (bassNotes.length > 0) {
             try { VF.Beam.generateBeams(bassNotes, { groups: beamGroups, beam_rests: false }).forEach((b) => b.setContext(ctx).draw()); } catch (e) {}
             vBass.draw(ctx, staveBass);
           }
-
+          
           if (measure.directive) {
             const targetArr = trebleNotes.length ? trebleNotes : bassNotes;
             if (targetArr.length) {
               targetArr[targetArr.length - 1].addModifier(
                 new VF.Annotation(measure.directive)
-                  .setFont("Inter", 12, "bold")
-                  .setVerticalJustification(VF.Annotation.VerticalJustify.TOP),
+                 .setFont("Inter", 13, "bold")
+                 .setVerticalJustification(VF.Annotation.VerticalJustify.TOP)
+                 .setXShift(30), 
                 0
               );
             }
           }
-
+          
           hitRects.push({
             x: staveTreble.getX(), y: staveTreble.getYForLine(0) - 25,
             width: staveTreble.getWidth(), height: staveBass.getYForLine(4) - staveTreble.getYForLine(0) + 50,
