@@ -1,5 +1,5 @@
 /* =========================================================================
-   EBONY & IVORY — app.js
+   EBONY & IVORY — app.js (Código Maestro Definitivo con Sincronía Perfecta)
    ========================================================================= */
 (function () {
   "use strict";
@@ -35,7 +35,7 @@
       subtitleLogin: 'Guarda tus partituras en la nube y ábrelas desde cualquier dispositivo.',
       subtitleRegister: 'Crea una cuenta gratuita para sincronizar tus partituras.',
       logout: 'Cerrar sesión', google: 'Continuar con Google', genericError: 'Algo falló. Revisa tus datos e inténtalo de nuevo.',
-      lblPassword: 'Contraseña', displayName: 'Nombre / Nickname', photoUrl: 'URL de la foto (Opcional)', saveProfile: 'Guardar Cambios',
+      lblPassword: 'Contraseña', displayName: 'Nombre / Nickname', photoUrl: 'Subir foto de perfil (Opcional)', saveProfile: 'Guardar Cambios',
       deleteAccount: 'Eliminar mi cuenta', deleteWarning: 'Esta acción borrará todas tus partituras de la nube permanentemente. ¿Estás seguro?',
       reauthNeeded: 'Por seguridad, cierra sesión y vuelve a entrar con Google o tu contraseña antes de eliminar tu cuenta.'
     },
@@ -68,7 +68,7 @@
       subtitleLogin: 'Save your scores to the cloud and open them on any device.',
       subtitleRegister: 'Create a free account to sync your scores.',
       logout: 'Sign out', google: 'Continue with Google', genericError: 'Something went wrong. Check your details and try again.',
-      lblPassword: 'Password', displayName: 'Display Name', photoUrl: 'Photo URL (Optional)', saveProfile: 'Save Changes',
+      lblPassword: 'Password', displayName: 'Display Name', photoUrl: 'Upload profile photo (Optional)', saveProfile: 'Save Changes',
       deleteAccount: 'Delete my account', deleteWarning: 'This will permanently delete all your scores from the cloud. Are you sure?',
       reauthNeeded: 'For security, please sign out and sign in again before deleting your account.'
     }
@@ -146,27 +146,25 @@
       if (option) { wrapper.querySelector('.select-selected').innerHTML = option.innerHTML; document.getElementById(wrapperId === 'customKeySig' ? 'keySig' : 'filterKeySig').value = val; }
   }
 
-  setupCustomSelect('customKeySig', 'keySig', false); setupCustomSelect('customFilterKeySig', 'filterKeySig', true);
-  document.addEventListener('click', () => document.querySelectorAll('.custom-select').forEach(el => el.classList.remove('active')));
-
-  /* ----------------------------- Partitura de Ejemplo (Beethoven N.º 9 EXACTA) ----------------------------- */
+  /* ----------------------------- Partitura de Ejemplo (Exacta al PDF) ----------------------------- */
   function getExampleScore(lang) {
     const isEs = lang === 'es';
     const note = (l, o, d, dot) => ({ rest: false, letter: l, accidental: '', octave: o, duration: d, dotted: !!dot, dynamic: '' });
     const measure = (t, b, e) => Object.assign({ treble: t, bass: b, repeatStart: false, repeatEnd: false, directive: '' }, e || {});
     
+    // Treble (Clave de Sol)
     const m1 = () => [note('E',4,'q'), note('E',4,'q'), note('F',4,'q'), note('G',4,'q')];
     const m2 = () => [note('G',4,'q'), note('F',4,'q'), note('E',4,'q'), note('D',4,'q')];
     const m3 = () => [note('C',4,'q'), note('C',4,'q'), note('D',4,'q'), note('E',4,'q')];
     const m4 = () => [note('E',4,'q',true), note('D',4,'8'), note('D',4,'h')];
     const m8 = () => [note('D',4,'q',true), note('C',4,'8'), note('C',4,'h')];
-    
     const m9 = () => [note('D',4,'q'), note('D',4,'q'), note('E',4,'q'), note('C',4,'q')];
     const m10 = () => [note('D',4,'q'), note('E',4,'8'), note('F',4,'8'), note('E',4,'q'), note('C',4,'q')];
     const m11 = () => [note('D',4,'q'), note('E',4,'8'), note('F',4,'8'), note('E',4,'q'), note('D',4,'q')];
     const m12 = () => [note('C',4,'q'), note('D',4,'q'), note('G',3,'h')];
     
-    const bR = (l, o) => [note(l, o, 'w')];
+    // Bass (Clave de Fa) ajustado al PDF
+    const bR = (l, o, d) => [note(l, o, d || 'w')];
 
     return {
       id: 'example-ode-to-joy', isExample: true, plate: 0,
@@ -174,8 +172,8 @@
       composer: 'Ludwig van Beethoven', timeSig: '4/4', keySig: 'C', bpm: 100,
       measures: [ 
         measure(m1(), bR('C',3), {repeatStart:true}), measure(m2(), bR('G',2)), measure(m3(), bR('C',3)), measure(m4(), bR('G',2)), 
-        measure(m1(), bR('C',3)), measure(m2(), bR('G',2)), measure(m3(), bR('C',3)), measure(m8(), bR('G',2), {directive:'Fine'}),
-        measure(m9(), bR('G',2)), measure(m10(), bR('G',2)), measure(m11(), bR('G',2)), measure(m12(), bR('G',2), {directive:'D.C. al Fine'}) 
+        measure(m1(), bR('C',3)), measure(m2(), bR('G',2)), measure(m3(), bR('C',3)), measure(m8(), [note('G',2,'h'), note('C',3,'h')], {directive:'Fine'}),
+        measure(m9(), bR('G',2)), measure(m10(), bR('C',3)), measure(m11(), bR('G',2)), measure(m12(), [note('C',3,'h'), note('G',2,'h')], {directive:'D.C. al Fine'}) 
       ],
       createdAt: 0, updatedAt: 0
     };
@@ -240,8 +238,12 @@
             lastSnapshotMap = snapshotOf(all); if (writes > 0) batch.commit();
           }, 4000);
         } else {
+          // PURGA LOCAL AL CERRAR SESIÓN
+          localStorage.removeItem(STORAGE_KEY);
+          currentScore = null;
           if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
           if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+          if(window.location.hash !== '#ejemplo' && window.location.hash !== '#inicio') { window.location.hash = "#inicio"; }
         }
       });
       return null;
@@ -278,6 +280,25 @@
     }; return map[code] || t('genericError');
   }
 
+  // ALGORITMO COMPRESOR DE IMÁGENES CLIENT-SIDE (Para avatares sin Storage)
+  function processProfileImage(file, callback) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas'); const SIZE = 150;
+            canvas.width = SIZE; canvas.height = SIZE;
+            const ctx = canvas.getContext('2d');
+            const minSize = Math.min(img.width, img.height);
+            const x = (img.width - minSize) / 2; const y = (img.height - minSize) / 2;
+            ctx.drawImage(img, x, y, minSize, minSize, 0, 0, SIZE, SIZE);
+            callback(canvas.toDataURL('image/jpeg', 0.85)); // Base64 ultra comprimido
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
   /* ----------------------------- DOM Loaded Events (Anti-Crashes) ----------------------------- */
   document.addEventListener('DOMContentLoaded', () => {
     
@@ -291,6 +312,9 @@
       
       const btnClose = document.getElementById('authModalClose');
       if(btnClose) btnClose.addEventListener('click', () => authOverlay.hidden = true);
+      
+      const btnLogout = document.getElementById('btnAccountLogout');
+      if(btnLogout) btnLogout.addEventListener('click', (e) => { e.stopPropagation(); if (auth) auth.signOut(); });
       
       ['authTabLogin', 'authTabRegister'].forEach(id => {
         const el = document.getElementById(id);
@@ -325,7 +349,6 @@
             document.getElementById('profNameTitle').textContent = currentUser.displayName || t('account');
             document.getElementById('profEmailText').textContent = currentUser.email || '';
             document.getElementById('profDisplayName').value = currentUser.displayName || '';
-            document.getElementById('profPhotoUrl').value = currentUser.photoURL || '';
             if(currentUser.photoURL) {
                 document.getElementById('profAvatarLg').style.backgroundImage = `url(${currentUser.photoURL})`;
                 document.getElementById('profAvatarLg').textContent = "";
@@ -338,28 +361,30 @@
         
         document.getElementById('profileForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            currentUser.updateProfile({
-                displayName: document.getElementById('profDisplayName').value,
-                photoURL: document.getElementById('profPhotoUrl').value
-            }).then(() => { updateAccountUI(); profOverlay.hidden = true; }).catch(err => alert(translateFirebaseError(err)));
+            const btn = e.target.querySelector('button[type="submit"]'); btn.disabled = true;
+            const updates = { displayName: document.getElementById('profDisplayName').value };
+            
+            const fileInput = document.getElementById('profPhotoFile');
+            if(fileInput.files.length > 0) {
+                processProfileImage(fileInput.files[0], (base64Url) => {
+                    updates.photoURL = base64Url;
+                    currentUser.updateProfile(updates).then(() => { updateAccountUI(); profOverlay.hidden = true; btn.disabled = false; }).catch(err => { alert(translateFirebaseError(err)); btn.disabled = false; });
+                });
+            } else {
+                currentUser.updateProfile(updates).then(() => { updateAccountUI(); profOverlay.hidden = true; btn.disabled = false; }).catch(err => { alert(translateFirebaseError(err)); btn.disabled = false; });
+            }
         });
 
         document.getElementById('btnDeleteAccount').addEventListener('click', async () => {
             if(!confirm(t('deleteWarning'))) return;
             try {
-                // Borrar Partituras de la nube
                 if(db) {
                     const docs = await db.collection('users').doc(currentUser.uid).collection('scores').get();
                     const batch = db.batch(); docs.forEach(d => batch.delete(d.ref)); await batch.commit();
                 }
-                // Destruir cuenta
                 await currentUser.delete();
-                profOverlay.hidden = true;
-                localStorage.removeItem(STORAGE_KEY); // Limpiar local por seguridad
-                window.location.hash = "#inicio";
-            } catch(err) {
-                alert(translateFirebaseError(err));
-            }
+                profOverlay.hidden = true; localStorage.removeItem(STORAGE_KEY); window.location.hash = "#inicio";
+            } catch(err) { alert(translateFirebaseError(err)); }
         });
     }
 
@@ -574,7 +599,7 @@
     const ds = document.getElementById("directiveSelect"); if(ds) ds.value = m.directive || "";
   }
 
-  /* ----------------------------- VexFlow Renderer (Safe Block Formatting & Sync Data) ----------------------------- */
+  /* ----------------------------- VexFlow Renderer (Block Formatting & Note Alignment) ----------------------------- */
   const MEASURES_PER_LINE = 4; const LINES_PER_PAGE = 5; const TOTAL_WIDTH = 1000; 
   const LEFT_MARGIN = 40; const RIGHT_MARGIN = 40; const FIRST_OF_LINE_WIDTH = 260; 
   const REST_OF_LINE_WIDTH = (TOTAL_WIDTH - LEFT_MARGIN - RIGHT_MARGIN - FIRST_OF_LINE_WIDTH) / (MEASURES_PER_LINE - 1); 
@@ -600,7 +625,7 @@
           if (p === 0) {
               const head = document.createElement("div"); head.className = "score-letterhead";
               head.innerHTML = `<h2>${escapeHtml(currentScore.title || t('untitled'))}</h2><p>${escapeHtml(currentScore.composer || "")}</p>`;
-              pageDiv.appendChild(head); startY += 60; // Margen reducido como se pedía
+              pageDiv.appendChild(head); startY += 60;
           }
 
           const printFooter = document.createElement('div'); printFooter.className = 'print-footer-content';
@@ -630,7 +655,12 @@
                   if (isFirstOfLine) {
                     staveTreble.addClef("treble"); staveBass.addClef("bass");
                     if (currentScore.keySig && currentScore.keySig !== "C") { staveTreble.addKeySignature(currentScore.keySig); staveBass.addKeySignature(currentScore.keySig); }
+                    
+                    // ALINEACIÓN PERFECTA: Forzamos matemáticamente que las notas empiecen en la misma X en todos los primeros compases
+                    const startXOffset = LEFT_MARGIN + 110;
+                    staveTreble.setNoteStartX(startXOffset); staveBass.setNoteStartX(startXOffset);
                   }
+
                   if (idx === 0) { 
                     staveTreble.addTimeSignature(currentScore.timeSig); staveBass.addTimeSignature(currentScore.timeSig); 
                     staveTreble.setTempo({ duration: 'q', dots: 0, bpm: currentScore.bpm || 100 }, 0); 
@@ -657,7 +687,7 @@
                       const durStr = n.duration + (n.dotted ? "d" : "") + (n.rest ? "r" : "");
                       const keys = n.rest ? [restKey] : [noteToVexKey(n)];
                       const sn = new VF.StaveNote({ clef: clef, keys: keys, duration: durStr });
-                      sn.addClass(`vf-note-${idx}-${staffName}-${nIdx}`);
+                      sn.setAttribute('id', `vf-note-${idx}-${staffName}-${nIdx}`);
                       if (n.dotted) VF.Dot.buildAndAttach([sn], { all: true });
                       if (!n.rest && n.accidental) sn.addModifier(new VF.Accidental(n.accidental), 0);
                       if (n.dynamic) { sn.addModifier(new VF.Annotation(n.dynamic).setFont("Times", 12, "italic bold").setVerticalJustification( clef === "bass" ? VF.Annotation.VerticalJustify.TOP : VF.Annotation.VerticalJustify.BOTTOM ), 0); }
@@ -687,7 +717,6 @@
                     if (targetArr.length) targetArr[targetArr.length - 1].addModifier(new VF.Annotation(measure.directive).setFont("Cormorant Garamond", 15, "italic").setVerticalJustification(VF.Annotation.VerticalJustify.TOP), 0);
                   }
                   
-                  // Extraemos las matemáticas precisas para la Línea Dorada de Barrido
                   hitRects.push({ 
                       x: staveTreble.getX(), y: staveTreble.getYForLine(0) - 25, 
                       width: staveTreble.getWidth(), height: staveBass.getYForLine(4) - staveTreble.getYForLine(0) + 50, 
@@ -716,7 +745,7 @@
       const needed = measureNeededQuarters(currentScore.timeSig); const m = currentScore.measures[editorState.activeMeasure];
       const lbl = document.getElementById("activeMeasureLabel");
       if(lbl) lbl.textContent = `${editorState.activeMeasure + 1}/${currentScore.measures.length} · ♩ Sol ${trim(quartersUsed(m.treble))}/${trim(needed)} · Fa ${trim(quartersUsed(m.bass))}/${trim(needed)}`;
-    } catch (err) { console.error(err); container.innerHTML = `<p style="padding:40px;color:#8C2F39;font-weight:bold;">Error matemático crítico al renderizar.</p>`; }
+    } catch (err) { console.error(err); container.innerHTML = `<p style="padding:40px;color:#8C2F39;font-weight:bold;">Error de renderizado VexFlow.</p>`; }
   }
 
   function trim(n) { return Number.isInteger(n) ? n : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, ""); }
@@ -751,12 +780,9 @@
     totalQuarters = pos; updateAudioBPM();
     part = new Tone.Part((time, ev) => { 
         acousticPiano.triggerAttackRelease(ev.note, Math.max(0.05, ev.durQ * (60 / Tone.Transport.bpm.value) * 0.92), time); 
-        // Iluminación exacta de las notas dibujadas por VexFlow
         Tone.Draw.schedule(() => {
-            document.querySelectorAll('.' + ev.id).forEach(el => {
-                el.classList.add('note-playing');
-                setTimeout(() => el.classList.remove('note-playing'), ev.durQ * (60 / Tone.Transport.bpm.value) * 1000);
-            });
+            const el = document.getElementById(ev.id);
+            if(el) { el.classList.add('note-playing'); setTimeout(() => el.classList.remove('note-playing'), ev.durQ * (60 / Tone.Transport.bpm.value) * 1000); }
         }, time);
     }, events).start(0);
 
@@ -771,11 +797,11 @@
 
   function teardownAudio() { if (part) { part.dispose(); part = null; } if (measurePart) { measurePart.dispose(); measurePart = null; } }
   
-  // Línea dorada de sincronización perfecta calculada vía VexFlow
   function highlightMeasureSweep(idx, durationSec) { 
     const g = document.querySelector(`.measure-hit[data-measure-idx="${idx}"]`);
     if(!g) return;
     
+    // Extracción de coordenadas matemáticas exactas ignorando Claves y Armaduras
     const startX = parseFloat(g.getAttribute('data-start-x'));
     const endX = parseFloat(g.getAttribute('data-end-x'));
     const y = parseFloat(g.getAttribute('data-y'));
@@ -787,7 +813,7 @@
 
     line.setAttribute('x1', startX); line.setAttribute('y1', y); line.setAttribute('x2', startX); line.setAttribute('y2', y + h);
     line.style.transition = 'none'; line.style.transform = `translateX(0px)`;
-    line.getBoundingClientRect(); // Forzar renderizado
+    line.getBoundingClientRect(); // Forzar renderizado en el navegador
     line.style.transition = `transform ${durationSec}s linear`; line.style.transform = `translateX(${endX - startX}px)`;
   }
   
@@ -803,7 +829,7 @@
   function pauseAudio() { Tone.Transport.pause(); isPlaying = false; updatePlayerUI(); cancelAnimationFrame(rafId); }
   window.stopPlayback = function(reachedEnd) { Tone.Transport.stop(); isPlaying = false; updatePlayerUI(); cancelAnimationFrame(rafId); clearHighlight(); const prog = document.getElementById('plProgressFill'); if(prog) prog.style.width = '0%'; }
 
-  function updatePlayerUI() { const btn = document.getElementById('plBtnPlay'); if(!btn) return; btn.textContent = isPlaying ? '⏸' : '▶'; const bar = document.getElementById('playerBar'); if(bar) bar.classList.toggle('is-playing', isPlaying); }
+  function updatePlayerUI() { const btn = document.getElementById('plBtnPlay'); if(!btn) return; btn.innerHTML = isPlaying ? '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'; const bar = document.getElementById('playerBar'); if(bar) bar.classList.toggle('is-playing', isPlaying); }
   function tickProgress() {
     if (!isPlaying) return;
     const elapsedQ = Tone.Transport.seconds * (Tone.Transport.bpm.value / 60); const frac = totalQuarters > 0 ? Math.min(1, elapsedQ / totalQuarters) : 0;
