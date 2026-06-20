@@ -68,8 +68,10 @@ body.is-viewer .measure-hit { pointer-events: none; cursor: default; }
 .pl-speed-btn { font-family: var(--font-mono); font-size: 11px; font-weight: 600; padding: 5px 8px; border-radius: 999px; border: 1px solid var(--line-strong); background: #fff; color: var(--ink-soft); cursor: pointer; }
 .pl-speed-btn:hover { border-color: var(--brass); color: var(--ink); }
 .pl-speed-btn.is-active { background: var(--ink); border-color: var(--ink); color: #fff; }
-.pl-bpm-label { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); display:flex; align-items:center; gap: 4px;}
-.pl-bpm-input { width: 54px; font-family: var(--font-mono); font-size: 12px; padding: 4px 6px; border: 1px solid var(--line-strong); border-radius: 999px; text-align: center;}
+.pl-bpm-label { font-family: var(--font-mono); color: var(--ink-soft); display:flex; align-items:center; gap: 6px;}
+.pl-bpm-symbol { font-size: 22px; color: var(--ink); line-height: 1; margin-top: -3px;}
+.pl-bpm-eq { font-size: 16px; font-weight: 600;}
+.pl-bpm-input { width: 58px; height: 32px; font-family: var(--font-mono); font-size: 14px; padding: 4px 6px; border: 1px solid var(--line-strong); border-radius: 999px; text-align: center; background: #fff; color: var(--ink);}
 body.is-example-score .editor-subnav { background: var(--gold-wash); }
 .measure-hit.playing rect { fill: rgba(45, 90, 56, 0.16) !important; stroke: #2D5A38; stroke-width: 1.5; }
 
