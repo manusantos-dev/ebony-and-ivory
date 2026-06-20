@@ -1,5 +1,5 @@
 /* =========================================================================
-   EBONY & IVORY — app.js (Código Maestro Definitivo con Sincronía Perfecta)
+   EBONY & IVORY — app.js
    ========================================================================= */
 (function () {
   "use strict";
