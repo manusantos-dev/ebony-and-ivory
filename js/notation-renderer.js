@@ -166,7 +166,7 @@ export function renderScore() {
           if (bassNotes.length > 0) { vBass.addTickables(bassNotes); voices.push(vBass); }
 
           if (voices.length > 0) {
-            const innerWidth = staveTreble.getNoteEndX() - staveTreble.getNoteStartX() - 15; 
+            const innerWidth = width - noteStartOffset - 15; 
             const formatter = new VF.Formatter();
             try {
               formatter.joinVoices(voices).format(voices, innerWidth);
@@ -193,8 +193,7 @@ export function renderScore() {
               targetArr[targetArr.length - 1].addModifier(
                 new VF.Annotation(measure.directive)
                   .setFont("Inter", 12, "bold")
-                  .setVerticalJustification(VF.Annotation.VerticalJustify.TOP)
-                  .setJustification(VF.Annotation.Justify.RIGHT),
+                  .setVerticalJustification(VF.Annotation.VerticalJustify.TOP),
                 0
               );
             }
