@@ -17,7 +17,7 @@ body.is-viewer .paper-wrap { margin: 0 auto; padding-top: 20px; }
 body.is-viewer .measure-hit rect { stroke: none !important; fill: transparent !important; }
 body.is-viewer .measure-hit { pointer-events: none; cursor: default; }
 
-.engrave-desk{ width: 340px; min-width:340px; background: var(--paper); border-right: 1px solid var(--line); padding: 24px 24px 60px; height: calc(100vh - 120px); overflow-y: auto; position: sticky; top:120px; transition: transform 0.1s ease; }
+.engrave-desk{ width: 340px; min-width:340px; background: var(--paper); border-right: 1px solid var(--line); padding: 24px 24px 60px; height: calc(100vh - 100px); overflow-y: auto; position: sticky; top:120px; transition: transform 0.1s ease; }
 .desk-section{ margin-bottom: 4px; }
 .desk-title{ font-family: var(--font-mono); font-size: 11px; letter-spacing:.06em; text-transform:uppercase; color: var(--ink); font-weight: 600; margin: 4px 0 10px; }
 .desk-divider{ border:none; border-top: 1px dashed var(--line-strong); margin: 20px 0; }
