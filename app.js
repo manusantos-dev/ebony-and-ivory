@@ -1,5 +1,5 @@
 /* =========================================================================
-   EBONY & IVORY — app.js (Código Maestro Definitivo)
+   EBONY & IVORY — app.js (Núcleo Maestro Seguro)
    ========================================================================= */
 (function () {
   "use strict";
@@ -25,8 +25,7 @@
       lblPitch: "Nota", lblAccidental: "Alteración", lblOctave: "Octava", lblDuration: "Duración",
       lblDotted: "Con puntillo", lblDynamics: "Dinámica", btnAddNote: "Añadir al compás", btnUndoNote: "Deshacer última nota",
       lblMeasureDetails: "Compás · Detalles", lblRepStart: "Inicio repetición ‖:", lblRepEnd: "Fin repetición :‖</",
-      lblDirective: "Indicación (Fine, D.C.)", lblTempo: "Tempo (BPM)",
-      footerText: "Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales.",
+      lblDirective: "Indicación (Fine, D.C.)", footerText: "Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales.",
       untitled: "Sin título", unknownAuthor: "Autor desconocido", measuresTxt: "compases",
       editBtn: "✎ Editar", viewBtn: "👁 Ver", copyBtn: "⎘ Copiar", deleteBtn: "🗑️ Borrar",
       delConfirm: "¿Eliminar partitura? No se puede deshacer.", delMeasureConfirm: "¿Eliminar este compás?",
@@ -55,8 +54,7 @@
       lblPitch: "Pitch", lblAccidental: "Accidental", lblOctave: "Octave", lblDuration: "Duration",
       lblDotted: "Dotted", lblDynamics: "Dynamics", btnAddNote: "Add to measure", btnUndoNote: "Undo last note",
       lblMeasureDetails: "Measure · Details", lblRepStart: "Start repeat ‖:", lblRepEnd: "End repeat :‖</",
-      lblDirective: "Directive (Fine, D.C.)", lblTempo: "Tempo (BPM)",
-      footerText: "Ebony & Ivory is a personal tool for transcribing and archiving sheet music. Rewritten works still belong to their original authors.",
+      lblDirective: "Directive (Fine, D.C.)", footerText: "Ebony & Ivory is a personal tool for transcribing and archiving sheet music. Rewritten works still belong to their original authors.",
       untitled: "Untitled", unknownAuthor: "Unknown author", measuresTxt: "measures",
       editBtn: "✎ Edit", viewBtn: "👁 View", copyBtn: "⎘ Copy", deleteBtn: "🗑️ Delete",
       delConfirm: "Delete this score? This cannot be undone.", delMeasureConfirm: "Delete this measure?",
@@ -76,7 +74,7 @@
     { val: "Eb", us: "Eb / Cm", eu: "Mib / Do m" }, { val: "Ab", us: "Ab / Fm", eu: "Lab / Fa m" }
   ];
 
-  /* ----------------------------- Motor Principal & i18n ----------------------------- */
+  /* ----------------------------- Configuración Principal ----------------------------- */
   let currentLang = "en", currentScore = null;     
   let editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
   let libraryState = { query: "", sortBy: "numAsc", filterTime: "all", filterKey: "all", filterHands: "all" };
@@ -140,12 +138,30 @@
       if (option) { wrapper.querySelector('.select-selected').innerHTML = option.innerHTML; document.getElementById(wrapperId === 'customKeySig' ? 'keySig' : 'filterKeySig').value = val; }
   }
 
-  setupCustomSelect('customKeySig', 'keySig', false); setupCustomSelect('customFilterKeySig', 'filterKeySig', true);
-  document.addEventListener('click', () => document.querySelectorAll('.custom-select').forEach(el => el.classList.remove('active')));
+  /* ----------------------------- Partitura de Ejemplo (Bilingüe) ----------------------------- */
+  function getExampleScore(lang) {
+    const isEs = lang === 'es';
+    const note = (l, o, d, dot) => ({ rest: false, letter: l, accidental: '', octave: o, duration: d, dotted: !!dot, dynamic: '' });
+    const measure = (t, b, e) => Object.assign({ treble: t, bass: b, repeatStart: false, repeatEnd: false, directive: '' }, e || {});
+    const m1 = () => [note('E',4,'q'), note('E',4,'q'), note('F',4,'q'), note('G',4,'q')];
+    const m2 = () => [note('G',4,'q'), note('F',4,'q'), note('E',4,'q'), note('D',4,'q')];
+    const m3 = () => [note('C',4,'q'), note('C',4,'q'), note('D',4,'q'), note('E',4,'q')];
+    const m4 = () => [note('E',4,'q',true), note('D',4,'8'), note('D',4,'h')];
+    const m8 = () => [note('D',4,'q',true), note('C',4,'8'), note('C',4,'h')];
+    const bR = (l) => [note(l,3,'w')];
 
-  /* ----------------------------- Database Local & Utils ----------------------------- */
+    return {
+      id: 'example-ode-to-joy', isExample: true, plate: 0,
+      title: isEs ? 'Oda a la Alegría' : 'Ode to Joy',
+      composer: 'Ludwig van Beethoven', timeSig: '4/4', keySig: 'C', bpm: 100,
+      measures: [ measure(m1(), bR('C'), {repeatStart:true}), measure(m2(), bR('G')), measure(m3(), bR('C')), measure(m4(), bR('G')), measure(m1(), bR('C')), measure(m2(), bR('G')), measure(m3(), bR('C')), measure(m8(), bR('G'), {repeatEnd:true, directive:'Fine'}) ],
+      createdAt: 0, updatedAt: 0
+    };
+  }
+
+  /* ----------------------------- Utils de Datos Local ----------------------------- */
   const STORAGE_KEY = "ebony_ivory:scores"; 
-  const DURATION_QUARTERS = { w: 4, h: 2, q: 1, "8": 0.5, "16": 0.25, "32": 0.125 };
+  const DUR_Q = { w: 4, h: 2, q: 1, "8": 0.5, "16": 0.25, "32": 0.125 };
   
   function uid() { return "s_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
   function loadAll() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch (e) { return {}; } }
@@ -156,7 +172,7 @@
   function formatDate(ts) { try { return new Date(ts).toLocaleDateString(currentLang === 'es' ? "es-ES" : "en-US", { day: "2-digit", month: "short", year: "numeric" }); } catch (e) { return ""; } }
   function escapeHtml(str) { const d = document.createElement("div"); d.textContent = str; return d.innerHTML; }
   function measureNeededQuarters(timeSig) { const [num, den] = timeSig.split("/").map(Number); return num * (4 / den); }
-  function quartersUsed(staffNotes) { return staffNotes.reduce((sum, n) => sum + (DURATION_QUARTERS[n.duration] || 0) * (n.dotted ? 1.5 : 1), 0); }
+  function quartersUsed(staffNotes) { return staffNotes.reduce((sum, n) => sum + (DUR_Q[n.duration] || 0) * (n.dotted ? 1.5 : 1), 0); }
   function newMeasure() { return { treble: [], bass: [], repeatStart: false, repeatEnd: false, directive: "" }; }
   function newScore() { return { id: uid(), plate: nextPlateNumber(), title: "", composer: "", timeSig: "4/4", keySig: "C", bpm: 100, measures: [newMeasure()], createdAt: Date.now(), updatedAt: Date.now() }; }
   function downloadBlob(filename, text, type) { const blob = new Blob([text], { type: type || "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 2000); }
@@ -171,20 +187,24 @@
     const newAll = {}; scores.forEach((s, index) => { s.plate = index + 1; newAll[s.id] = s; }); saveAll(newAll); 
   }
 
-  /* ----------------------------- Firebase Auth & Sync (Blindado) ----------------------------- */
+  /* ----------------------------- Firebase Auth & Sync (Super Blindado) ----------------------------- */
   let auth = null, db = null, currentUser = null, unsubscribeSnapshot = null, pollTimer = null, lastSnapshotMap = {};
   let firebaseInitError = null;
 
   function initFirebase() {
-    if (typeof firebase === 'undefined') {
-      console.warn("Firebase SDK bloqueado. Posible AdBlocker activo.");
-      return "El navegador está bloqueando Firebase (Revisa si tienes activado un AdBlocker o Brave Shields).";
-    }
-    if (!window.FIREBASE_CONFIG || !window.FIREBASE_CONFIG.apiKey) {
-      return "La nube no está configurada (Falta añadir tus claves en firebase-config.js).";
-    }
     try {
-      if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
+      if (typeof firebase === 'undefined') {
+        console.warn("Firebase bloqueado por el navegador (AdBlock o Escudos).");
+        return "El navegador ha bloqueado la conexión. Desactiva tu AdBlocker para iniciar sesión.";
+      }
+      // Busca la configuración tanto si el usuario la puso en FIREBASE_CONFIG como en EI_CONFIG.firebase
+      const fbConfig = window.FIREBASE_CONFIG || (window.EI_CONFIG && window.EI_CONFIG.firebase);
+      
+      if (!fbConfig || !fbConfig.apiKey || fbConfig.apiKey.startsWith('PEGA_')) {
+        return "La nube no está configurada. Faltan las claves en firebase-config.js.";
+      }
+      
+      if (!firebase.apps.length) firebase.initializeApp(fbConfig);
       auth = firebase.auth(); 
       db = firebase.firestore();
       
@@ -211,11 +231,9 @@
       });
       return null;
     } catch (e) { 
-      return "Error de conexión con Firebase: " + e.message;
+      return "Error crítico de Firebase: " + e.message;
     }
   }
-
-  firebaseInitError = initFirebase();
 
   function snapshotOf(map) { const out = {}; Object.keys(map).forEach((id) => { out[id] = map[id].updatedAt || 0; }); return out; }
   
@@ -234,68 +252,167 @@
       'auth/wrong-password': currentLang === 'es' ? 'Contraseña incorrecta.' : 'Wrong password.',
       'auth/email-already-in-use': currentLang === 'es' ? 'Ya existe una cuenta con este email.' : 'Email already in use.',
       'auth/weak-password': currentLang === 'es' ? 'La contraseña debe tener al menos 6 caracteres.' : 'Password must be 6 characters.',
-      'auth/popup-closed-by-user': currentLang === 'es' ? 'Ventana cerrada antes de terminar.' : 'Popup closed.'
+      'auth/popup-closed-by-user': currentLang === 'es' ? 'Ventana de Google cerrada antes de terminar.' : 'Popup closed.',
+      'auth/unauthorized-domain': currentLang === 'es' ? 'Dominio no autorizado en la consola de Firebase.' : 'Unauthorized domain in Firebase.'
     }; return map[code] || t('genericError');
   }
 
-  const authOverlay = document.getElementById('authModalOverlay');
-  if(authOverlay) {
-    const btnLogin = document.getElementById('btnAccountLogin');
-    if(btnLogin) btnLogin.addEventListener('click', () => { authOverlay.hidden = false; document.getElementById('authError').hidden = true; setTimeout(()=>document.getElementById('authEmail').focus(),50);});
+  /* ----------------------------- DOM Loaded Events (Anti-Crashes) ----------------------------- */
+  document.addEventListener('DOMContentLoaded', () => {
     
-    const btnClose = document.getElementById('authModalClose');
-    if(btnClose) btnClose.addEventListener('click', () => authOverlay.hidden = true);
-    
-    const btnLogout = document.getElementById('btnAccountLogout');
-    if(btnLogout) btnLogout.addEventListener('click', () => { if (auth) auth.signOut(); });
-    
-    ['authTabLogin', 'authTabRegister'].forEach(id => {
-      const el = document.getElementById(id);
-      if(el) el.addEventListener('click', (e) => {
-        document.getElementById('authTabLogin').classList.remove('is-active'); document.getElementById('authTabRegister').classList.remove('is-active');
-        e.target.classList.add('is-active'); refreshLangTexts(); document.getElementById('authError').hidden = true;
+    // Iniciar Firebase de forma segura
+    firebaseInitError = initFirebase();
+
+    // Eventos del Modal de Auth
+    const authOverlay = document.getElementById('authModalOverlay');
+    if(authOverlay) {
+      const btnLogin = document.getElementById('btnAccountLogin');
+      if(btnLogin) btnLogin.addEventListener('click', () => { authOverlay.hidden = false; document.getElementById('authError').hidden = true; setTimeout(()=>document.getElementById('authEmail').focus(),50);});
+      
+      const btnClose = document.getElementById('authModalClose');
+      if(btnClose) btnClose.addEventListener('click', () => authOverlay.hidden = true);
+      
+      const btnLogout = document.getElementById('btnAccountLogout');
+      if(btnLogout) btnLogout.addEventListener('click', () => { if (auth) auth.signOut(); });
+      
+      ['authTabLogin', 'authTabRegister'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.addEventListener('click', (e) => {
+          document.getElementById('authTabLogin').classList.remove('is-active'); document.getElementById('authTabRegister').classList.remove('is-active');
+          e.target.classList.add('is-active'); refreshLangTexts(); document.getElementById('authError').hidden = true;
+        });
       });
-    });
 
-    const form = document.getElementById('authForm');
-    if(form) form.addEventListener('submit', (e) => {
-      e.preventDefault(); const errBox = document.getElementById('authError'); errBox.hidden = true;
-      if(!auth) { errBox.hidden = false; errBox.textContent = firebaseInitError || "Error crítico."; return; }
-      const isReg = document.getElementById('authTabRegister').classList.contains('is-active');
-      const p = isReg ? auth.createUserWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPassword').value) : auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPassword').value);
-      p.then(() => authOverlay.hidden = true).catch(err => { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); });
+      const form = document.getElementById('authForm');
+      if(form) form.addEventListener('submit', (e) => {
+        e.preventDefault(); const errBox = document.getElementById('authError'); errBox.hidden = true;
+        if(!auth) { errBox.hidden = false; errBox.textContent = firebaseInitError || "Error crítico."; return; }
+        const isReg = document.getElementById('authTabRegister').classList.contains('is-active');
+        const p = isReg ? auth.createUserWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPassword').value) : auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPassword').value);
+        p.then(() => authOverlay.hidden = true).catch(err => { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); });
+      });
+      
+      const btnGoogle = document.getElementById('authGoogleBtn');
+      if(btnGoogle) btnGoogle.addEventListener('click', () => {
+        const errBox = document.getElementById('authError'); errBox.hidden = true;
+        if(!auth) { errBox.hidden = false; errBox.textContent = firebaseInitError || "Error crítico."; return; }
+        auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => authOverlay.hidden = true).catch(err => { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); });
+      });
+    }
+
+    // Configurar Selects Personalizados
+    setupCustomSelect('customKeySig', 'keySig', false); setupCustomSelect('customFilterKeySig', 'filterKeySig', true);
+
+    // Eventos de Navegación del Catálogo
+    const btnExpJson = document.getElementById("btnExportJson"); if(btnExpJson) btnExpJson.addEventListener("click", () => { downloadBlob(slugify(currentScore.title) + ".json", JSON.stringify(currentScore, null, 2)); });
+    const btnExpPdf = document.getElementById("btnExportPdf"); if(btnExpPdf) btnExpPdf.addEventListener("click", () => { 
+        const oTitle = document.title; document.title = `${(currentScore.title || t('untitled')).trim()} — ${(currentScore.composer || t('unknownAuthor')).trim()}`;
+        window.print(); setTimeout(() => { document.title = oTitle; }, 500);
     });
     
-    const btnGoogle = document.getElementById('authGoogleBtn');
-    if(btnGoogle) btnGoogle.addEventListener('click', () => {
-      const errBox = document.getElementById('authError'); errBox.hidden = true;
-      if(!auth) { errBox.hidden = false; errBox.textContent = firebaseInitError || "Error crítico."; return; }
-      auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => authOverlay.hidden = true).catch(err => { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); });
+    const btnImport = document.getElementById("btnImport"); if(btnImport) btnImport.addEventListener("click", () => document.getElementById("fileImport").click());
+    const fileImport = document.getElementById("fileImport"); if(fileImport) fileImport.addEventListener("change", (e) => {
+      const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
+      reader.onload = () => {
+        try { const data = JSON.parse(reader.result); if (!data.measures) throw new Error("Format error");
+          data.id = uid(); data.plate = nextPlateNumber(); data.updatedAt = Date.now(); persistScore(data); 
+          if (window.location.hash === "#catalogo") renderLibrary(); else window.location.hash = "#catalogo";
+        } catch (err) { alert("Error: " + err.message); } e.target.value = ""; 
+      }; reader.readAsText(file);
     });
-  }
 
-  /* ----------------------------- Partitura de Ejemplo ----------------------------- */
-  function getExampleScore(lang) {
-    const isEs = lang === 'es';
-    const note = (l, o, d, dot) => ({ rest: false, letter: l, accidental: '', octave: o, duration: d, dotted: !!dot, dynamic: '' });
-    const measure = (t, b, e) => Object.assign({ treble: t, bass: b, repeatStart: false, repeatEnd: false, directive: '' }, e || {});
-    const m1 = () => [note('E',4,'q'), note('E',4,'q'), note('F',4,'q'), note('G',4,'q')];
-    const m2 = () => [note('G',4,'q'), note('F',4,'q'), note('E',4,'q'), note('D',4,'q')];
-    const m3 = () => [note('C',4,'q'), note('C',4,'q'), note('D',4,'q'), note('E',4,'q')];
-    const m4 = () => [note('E',4,'q',true), note('D',4,'8'), note('D',4,'h')];
-    const m8 = () => [note('D',4,'q',true), note('C',4,'8'), note('C',4,'h')];
-    const bR = (l) => [note(l,3,'w')];
+    const btnNewScore = document.getElementById("btnNewScore"); if(btnNewScore) btnNewScore.addEventListener("click", () => { const score = newScore(); persistScore(score); window.location.hash = "#editor/" + score.id; });
+    const btnBackLib = document.getElementById("btnBackLibrary"); if(btnBackLib) btnBackLib.addEventListener("click", () => { window.location.hash = "#catalogo"; });
+    const brandHome = document.getElementById("brandHome"); if(brandHome) brandHome.addEventListener("click", () => { window.location.hash = "#inicio"; });
+    const btnGoCat = document.getElementById("btnGoCatalog"); if(btnGoCat) btnGoCat.addEventListener("click", () => { window.location.hash = "#catalogo"; });
+    const btnGoEx = document.getElementById("btnGoExample"); if(btnGoEx) btnGoEx.addEventListener("click", () => { window.location.hash = "#ejemplo"; });
+    const btnToggleV = document.getElementById("btnToggleViewer"); if(btnToggleV) btnToggleV.addEventListener("click", () => { window.location.hash = (document.body.classList.contains('is-viewer') ? "#editor/" : "#viewer/") + currentScore.id; });
 
-    return {
-      id: 'example-ode-to-joy', isExample: true, plate: 0,
-      title: isEs ? 'Oda a la Alegría' : 'Ode to Joy',
-      composer: 'Ludwig van Beethoven', timeSig: '4/4', keySig: 'C', bpm: 100,
-      measures: [ measure(m1(), bR('C'), {repeatStart:true}), measure(m2(), bR('G')), measure(m3(), bR('C')), measure(m4(), bR('G')), measure(m1(), bR('C')), measure(m2(), bR('G')), measure(m3(), bR('C')), measure(m8(), bR('G'), {repeatEnd:true, directive:'Fine'}) ],
-      createdAt: 0, updatedAt: 0
-    };
-  }
+    // Eventos de Filtros del Catálogo
+    const elSearch = document.getElementById("searchScores"); if(elSearch) elSearch.addEventListener("input", (e) => { libraryState.query = e.target.value.toLowerCase(); renderLibrary(); });
+    const elSort = document.getElementById("sortScores"); if(elSort) elSort.addEventListener("change", (e) => { libraryState.sortBy = e.target.value; renderLibrary(); });
+    const elBtnFilters = document.getElementById("btnToggleFilters"); const elFiltersPanel = document.getElementById("catalogFilters");
+    if(elBtnFilters && elFiltersPanel) elBtnFilters.addEventListener("click", () => { elFiltersPanel.hidden = !elFiltersPanel.hidden; });
+    const elFilterTime = document.getElementById("filterTimeSig"); if(elFilterTime) elFilterTime.addEventListener("change", (e) => { libraryState.filterTime = e.target.value; renderLibrary(); });
+    const elFilterHands = document.getElementById("filterHands"); if(elFilterHands) elFilterHands.addEventListener("change", (e) => { libraryState.filterHands = e.target.value; renderLibrary(); });
 
-  /* ----------------------------- Routing & Catalog ----------------------------- */
+    // Eventos del Escritorio de Edición
+    if(document.getElementById("scoreTitle")) {
+      document.getElementById("scoreTitle").addEventListener("input", (e) => { currentScore.title = e.target.value; renderScore(); });
+      document.getElementById("scoreComposer").addEventListener("input", (e) => { currentScore.composer = e.target.value; renderScore(); });
+      document.getElementById("timeSig").addEventListener("change", (e) => { currentScore.timeSig = e.target.value; renderScore(); });
+      
+      document.getElementById("btnPrevMeasure").addEventListener("click", () => { editorState.activeMeasure--; syncMeasureControls(); renderScore(); });
+      document.getElementById("btnNextMeasure").addEventListener("click", () => { editorState.activeMeasure++; syncMeasureControls(); renderScore(); });
+      document.getElementById("btnAddMeasure").addEventListener("click", () => { currentScore.measures.push(newMeasure()); editorState.activeMeasure = currentScore.measures.length - 1; syncMeasureControls(); renderScore(); });
+      document.getElementById("btnDeleteMeasure").addEventListener("click", () => {
+        if (currentScore.measures.length <= 1) { alert(t('minMeasureAlert')); return; }
+        if (!confirm(t('delMeasureConfirm'))) return;
+        currentScore.measures.splice(editorState.activeMeasure, 1); syncMeasureControls(); renderScore();
+      });
+
+      document.getElementById("repeatStart").addEventListener("change", (e) => { currentScore.measures[editorState.activeMeasure].repeatStart = e.target.checked; renderScore(); });
+      document.getElementById("repeatEnd").addEventListener("change", (e) => { currentScore.measures[editorState.activeMeasure].repeatEnd = e.target.checked; renderScore(); });
+      document.getElementById("directiveSelect").addEventListener("change", (e) => { currentScore.measures[editorState.activeMeasure].directive = e.target.value; renderScore(); });
+
+      ['Treble', 'Bass'].forEach(clef => { document.getElementById("btnStaff" + clef).addEventListener("click", () => { editorState.activeStaff = clef.toLowerCase(); document.getElementById("btnStaffTreble").classList.toggle("is-active", clef === 'Treble'); document.getElementById("btnStaffBass").classList.toggle("is-active", clef === 'Bass'); }); });
+
+      document.getElementById("isRest").addEventListener("change", (e) => { document.getElementById("pitchFields").style.opacity = e.target.checked ? 0.4 : 1; document.getElementById("pitchFields").querySelectorAll("select").forEach(s => s.disabled = e.target.checked); });
+      document.getElementById("durationGrid").addEventListener("click", (e) => { const btn = e.target.closest(".dur-btn"); if (!btn) return; editorState.duration = btn.dataset.dur; document.getElementById("durationGrid").querySelectorAll(".dur-btn").forEach(b => b.classList.toggle("is-active", b === btn)); });
+
+      document.getElementById("btnAddNote").addEventListener("click", () => {
+        const needed = measureNeededQuarters(currentScore.timeSig);
+        const durQ = (DUR_Q[editorState.duration] || 0) * (document.getElementById("isDotted").checked ? 1.5 : 1);
+        const currentUsed = quartersUsed(currentScore.measures[editorState.activeMeasure][editorState.activeStaff]);
+
+        // DENEGACIÓN MATEMÁTICA SONORA (Evita que el compás se rompa por exceso de notas)
+        if (currentUsed + durQ > needed) {
+            if(Tone && Tone.Synth) {
+                const errorSynth = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
+                errorSynth.volume.value = -10; errorSynth.triggerAttackRelease("C2", "16n");
+            }
+            const desk = document.getElementById("engraveDesk");
+            desk.style.transform = "translateX(10px)";
+            setTimeout(() => desk.style.transform = "translateX(-10px)", 50); setTimeout(() => desk.style.transform = "translateX(0)", 100);
+            return;
+        }
+
+        currentScore.measures[editorState.activeMeasure][editorState.activeStaff].push({
+          rest: document.getElementById("isRest").checked, letter: document.getElementById("pitchLetter").value, accidental: document.getElementById("pitchAccidental").value, 
+          octave: parseInt(document.getElementById("pitchOctave").value, 10), duration: editorState.duration, dotted: document.getElementById("isDotted").checked, dynamic: document.getElementById("dynamicSelect").value
+        }); document.getElementById("dynamicSelect").value = ""; renderScore();
+      });
+      document.getElementById("btnUndoNote").addEventListener("click", () => { if (currentScore.measures[editorState.activeMeasure][editorState.activeStaff].length > 0) { currentScore.measures[editorState.activeMeasure][editorState.activeStaff].pop(); renderScore(); } });
+    }
+
+    // Eventos del Audio Player
+    const btnPlay = document.getElementById('plBtnPlay');
+    if(btnPlay) {
+      btnPlay.addEventListener('click', () => isPlaying ? pauseAudio() : playAudio());
+      document.getElementById('plBtnRewind').addEventListener('click', () => window.stopPlayback(false));
+      document.querySelectorAll('.pl-speed-btn').forEach((b) => b.addEventListener('click', () => { 
+        speedFactor = parseFloat(b.dataset.speed); updateAudioBPM(); 
+        document.querySelectorAll('.pl-speed-btn').forEach(btn => btn.classList.toggle('is-active', parseFloat(btn.dataset.speed) === speedFactor));
+      }));
+      const elBpm = document.getElementById('plBpm');
+      if(elBpm) {
+          elBpm.addEventListener('change', (e) => {
+              const val = Math.max(20, Math.min(300, parseInt(e.target.value, 10) || 100));
+              if (currentScore) { currentScore.bpm = val; renderScore(); } updateAudioBPM(); e.target.value = val;
+          });
+      }
+      document.addEventListener('click', (e) => { if (isPlaying && (e.target.closest('#engraveDesk') || e.target.closest('.measure-hit'))) pauseAudio(); });
+    }
+
+    // Inicialización de la vista
+    const userLang = navigator.language || navigator.userLanguage;
+    window.EI.setLang((userLang && userLang.toLowerCase().startsWith('es')) ? 'es' : 'en');
+    window.addEventListener("hashchange", handleNavigation);
+    if(!window.location.hash || window.location.hash === "#" || window.location.hash === "") { window.location.hash = "#inicio"; } else { handleNavigation(); }
+  });
+
+
+  /* ----------------------------- Routing & Catalog Methods ----------------------------- */
   function handleNavigation() {
     const hash = window.location.hash; document.body.classList.remove('is-home', 'is-viewer');
     
@@ -386,61 +503,6 @@
     }
   }
 
-  /* ----------------------------- FILTROS & Editor Interactions ----------------------------- */
-  const elSearch = document.getElementById("searchScores"); if(elSearch) elSearch.addEventListener("input", (e) => { libraryState.query = e.target.value.toLowerCase(); renderLibrary(); });
-  const elSort = document.getElementById("sortScores"); if(elSort) elSort.addEventListener("change", (e) => { libraryState.sortBy = e.target.value; renderLibrary(); });
-  const elBtnFilters = document.getElementById("btnToggleFilters"); const elFiltersPanel = document.getElementById("catalogFilters");
-  if(elBtnFilters && elFiltersPanel) elBtnFilters.addEventListener("click", () => { elFiltersPanel.hidden = !elFiltersPanel.hidden; });
-  const elFilterTime = document.getElementById("filterTimeSig"); if(elFilterTime) elFilterTime.addEventListener("change", (e) => { libraryState.filterTime = e.target.value; renderLibrary(); });
-  const elFilterHands = document.getElementById("filterHands"); if(elFilterHands) elFilterHands.addEventListener("change", (e) => { libraryState.filterHands = e.target.value; renderLibrary(); });
-
-  if(document.getElementById("scoreTitle")) {
-    document.getElementById("scoreTitle").addEventListener("input", (e) => { currentScore.title = e.target.value; renderScore(); });
-    document.getElementById("scoreComposer").addEventListener("input", (e) => { currentScore.composer = e.target.value; renderScore(); });
-    document.getElementById("timeSig").addEventListener("change", (e) => { currentScore.timeSig = e.target.value; renderScore(); });
-    
-    document.getElementById("btnPrevMeasure").addEventListener("click", () => { editorState.activeMeasure--; syncMeasureControls(); renderScore(); });
-    document.getElementById("btnNextMeasure").addEventListener("click", () => { editorState.activeMeasure++; syncMeasureControls(); renderScore(); });
-    document.getElementById("btnAddMeasure").addEventListener("click", () => { currentScore.measures.push(newMeasure()); editorState.activeMeasure = currentScore.measures.length - 1; syncMeasureControls(); renderScore(); });
-    document.getElementById("btnDeleteMeasure").addEventListener("click", () => {
-      if (currentScore.measures.length <= 1) { alert(t('minMeasureAlert')); return; }
-      if (!confirm(t('delMeasureConfirm'))) return;
-      currentScore.measures.splice(editorState.activeMeasure, 1); syncMeasureControls(); renderScore();
-    });
-
-    document.getElementById("repeatStart").addEventListener("change", (e) => { currentScore.measures[editorState.activeMeasure].repeatStart = e.target.checked; renderScore(); });
-    document.getElementById("repeatEnd").addEventListener("change", (e) => { currentScore.measures[editorState.activeMeasure].repeatEnd = e.target.checked; renderScore(); });
-    document.getElementById("directiveSelect").addEventListener("change", (e) => { currentScore.measures[editorState.activeMeasure].directive = e.target.value; renderScore(); });
-
-    ['Treble', 'Bass'].forEach(clef => { document.getElementById("btnStaff" + clef).addEventListener("click", () => { editorState.activeStaff = clef.toLowerCase(); document.getElementById("btnStaffTreble").classList.toggle("is-active", clef === 'Treble'); document.getElementById("btnStaffBass").classList.toggle("is-active", clef === 'Bass'); }); });
-
-    document.getElementById("isRest").addEventListener("change", (e) => { document.getElementById("pitchFields").style.opacity = e.target.checked ? 0.4 : 1; document.getElementById("pitchFields").querySelectorAll("select").forEach(s => s.disabled = e.target.checked); });
-    document.getElementById("durationGrid").addEventListener("click", (e) => { const btn = e.target.closest(".dur-btn"); if (!btn) return; editorState.duration = btn.dataset.dur; document.getElementById("durationGrid").querySelectorAll(".dur-btn").forEach(b => b.classList.toggle("is-active", b === btn)); });
-
-    document.getElementById("btnAddNote").addEventListener("click", () => {
-      const needed = measureNeededQuarters(currentScore.timeSig);
-      const durQ = (DURATION_QUARTERS[editorState.duration] || 0) * (document.getElementById("isDotted").checked ? 1.5 : 1);
-      const m = currentScore.measures[editorState.activeMeasure];
-      const currentUsed = quartersUsed(m[editorState.activeStaff]);
-
-      // Comprobador de Matemáticas Exactas (Denegación Sonora)
-      if (currentUsed + durQ > needed) {
-          const errorSynth = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
-          errorSynth.volume.value = -10; errorSynth.triggerAttackRelease("C2", "16n");
-          const desk = document.getElementById("engraveDesk");
-          desk.style.transition = "transform 0.05s"; desk.style.transform = "translateX(10px)";
-          setTimeout(() => desk.style.transform = "translateX(-10px)", 50); setTimeout(() => desk.style.transform = "translateX(0)", 100);
-          return;
-      }
-
-      currentScore.measures[editorState.activeMeasure][editorState.activeStaff].push({
-        rest: document.getElementById("isRest").checked, letter: document.getElementById("pitchLetter").value, accidental: document.getElementById("pitchAccidental").value, 
-        octave: parseInt(document.getElementById("pitchOctave").value, 10), duration: editorState.duration, dotted: document.getElementById("isDotted").checked, dynamic: document.getElementById("dynamicSelect").value
-      }); document.getElementById("dynamicSelect").value = ""; renderScore();
-    });
-    document.getElementById("btnUndoNote").addEventListener("click", () => { if (currentScore.measures[editorState.activeMeasure][editorState.activeStaff].length > 0) { currentScore.measures[editorState.activeMeasure][editorState.activeStaff].pop(); renderScore(); } });
-  }
-
   function syncMeasureControls() {
     editorState.activeMeasure = Math.max(0, Math.min(editorState.activeMeasure, currentScore.measures.length - 1)); const m = currentScore.measures[editorState.activeMeasure];
     const lbl = document.getElementById("activeMeasureLabel"); if(lbl) lbl.textContent = `${editorState.activeMeasure + 1} / ${currentScore.measures.length}`;
@@ -449,7 +511,7 @@
     const ds = document.getElementById("directiveSelect"); if(ds) ds.value = m.directive || "";
   }
 
-  /* ----------------------------- VexFlow Renderer (Block Formatting Fix) ----------------------------- */
+  /* ----------------------------- VexFlow Renderer (Safe Block Formatting) ----------------------------- */
   const MEASURES_PER_LINE = 4; const LINES_PER_PAGE = 5; const TOTAL_WIDTH = 1050; 
   const LEFT_MARGIN = 50; const RIGHT_MARGIN = 50; const FIRST_OF_LINE_WIDTH = 250; 
   const REST_OF_LINE_WIDTH = (TOTAL_WIDTH - LEFT_MARGIN - RIGHT_MARGIN - FIRST_OF_LINE_WIDTH) / (MEASURES_PER_LINE - 1); 
@@ -528,11 +590,11 @@
 
                   const buildNotes = (staffNotes, clef, staffName) => {
                     const out = []; const restKey = clef === "bass" ? "d/3" : "b/4";
-                    staffNotes.forEach((n, i) => {
+                    staffNotes.forEach((n, nIdx) => {
                       const durStr = n.duration + (n.dotted ? "d" : "") + (n.rest ? "r" : "");
                       const keys = n.rest ? [restKey] : [noteToVexKey(n)];
                       const sn = new VF.StaveNote({ clef: clef, keys: keys, duration: durStr });
-                      sn.setAttribute('id', `vf-${idx}-${staffName}-${i}`); // ID Inyectado para iluminación posterior
+                      sn.setAttribute('id', `vf-${idx}-${staffName}-${nIdx}`);
                       if (n.dotted) VF.Dot.buildAndAttach([sn], { all: true });
                       if (!n.rest && n.accidental) sn.addModifier(new VF.Accidental(n.accidental), 0);
                       if (n.dynamic) { sn.addModifier(new VF.Annotation(n.dynamic).setFont("Times", 12, "italic bold").setVerticalJustification( clef === "bass" ? VF.Annotation.VerticalJustify.TOP : VF.Annotation.VerticalJustify.BOTTOM ), 0); }
@@ -541,17 +603,22 @@
                   };
 
                   const trebleNotes = buildNotes(measure.treble, "treble", "treble"); const bassNotes = buildNotes(measure.bass, "bass", "bass");
-
                   const vTreble = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT);
-                  if (trebleNotes.length > 0) vTreble.addTickables(trebleNotes);
                   const vBass = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT);
-                  if (bassNotes.length > 0) vBass.addTickables(bassNotes);
+                  
+                  const voices = [];
+                  if (trebleNotes.length > 0) { vTreble.addTickables(trebleNotes); voices.push(vTreble); }
+                  if (bassNotes.length > 0) { vBass.addTickables(bassNotes); voices.push(vBass); }
 
-                  // FORMATEO EN BLOQUE: Impide que las notas se solapen
-                  const formatter = new VF.Formatter(); const voices = [];
-                  if (trebleNotes.length > 0) voices.push(vTreble);
-                  if (bassNotes.length > 0) voices.push(vBass);
-                  if (voices.length > 0) formatter.joinVoices(voices).format(voices, width - 40);
+                  // FORMATEO SEGURO ANTI-COLAPSO: Trata de fusionar. Si el usuario ha desalineado las voces, las formatea separadas.
+                  if(voices.length > 0) {
+                      const formatter = new VF.Formatter();
+                      try {
+                          formatter.joinVoices(voices).format(voices, width - 40);
+                      } catch(e) {
+                          voices.forEach(v => { const f = new VF.Formatter(); f.joinVoices([v]).format([v], width - 40); });
+                      }
+                  }
 
                   if (trebleNotes.length > 0) { try { VF.Beam.generateBeams(trebleNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch(e) {} vTreble.draw(ctx, staveTreble); }
                   if (bassNotes.length > 0) { try { VF.Beam.generateBeams(bassNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch(e) {} vBass.draw(ctx, staveBass); }
@@ -582,12 +649,12 @@
       const needed = measureNeededQuarters(currentScore.timeSig); const m = currentScore.measures[editorState.activeMeasure];
       const lbl = document.getElementById("activeMeasureLabel");
       if(lbl) lbl.textContent = `${editorState.activeMeasure + 1}/${currentScore.measures.length} · ♩ Sol ${trim(quartersUsed(m.treble))}/${trim(needed)} · Fa ${trim(quartersUsed(m.bass))}/${trim(needed)}`;
-    } catch (err) { console.error(err); container.innerHTML = `<p style="padding:40px;color:#8C2F39;font-weight:bold;">Error matemático crítico al renderizar.</p>`; }
+    } catch (err) { console.error(err); container.innerHTML = `<p style="padding:40px;color:#8C2F39;font-weight:bold;">Error de renderizado VexFlow.</p>`; }
   }
 
   function trim(n) { return Number.isInteger(n) ? n : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, ""); }
 
-  /* ----------------------------- Audio Player & Animaciones Visuales ----------------------------- */
+  /* ----------------------------- Audio Player & Animaciones Visuales Magicas ----------------------------- */
   let acousticPiano = null, isPlaying = false, rafId = null, part = null, measurePart = null, builtForScoreKey = null, totalQuarters = 0, speedFactor = 1;
 
   function ensureAcousticPiano() {
@@ -606,7 +673,7 @@
       ['treble', 'bass'].forEach((staffName) => {
         let cursor = pos;
         (measure[staffName] || []).forEach((n, nIdx) => {
-          const durQ = (DURATION_QUARTERS[n.duration] || 0) * (n.dotted ? 1.5 : 1);
+          const durQ = (DUR_Q[n.duration] || 0) * (n.dotted ? 1.5 : 1);
           if (!n.rest && durQ > 0) {
             events.push({ time: quarterToBBS(cursor), note: n.letter.toUpperCase() + (n.accidental.replace('b', 'b') || "") + n.octave, durQ: durQ, id: `vf-${idx}-${staffName}-${nIdx}` });
           } cursor += durQ;
@@ -617,13 +684,9 @@
     totalQuarters = pos; updateAudioBPM();
     part = new Tone.Part((time, ev) => { 
         acousticPiano.triggerAttackRelease(ev.note, Math.max(0.05, ev.durQ * (60 / Tone.Transport.bpm.value) * 0.92), time); 
-        // Iluminar la nota correspondiente
         Tone.Draw.schedule(() => {
             const el = document.getElementById(ev.id);
-            if(el) {
-                el.classList.add('note-playing');
-                setTimeout(() => el.classList.remove('note-playing'), ev.durQ * (60 / Tone.Transport.bpm.value) * 1000);
-            }
+            if(el) { el.classList.add('note-playing'); setTimeout(() => el.classList.remove('note-playing'), ev.durQ * (60 / Tone.Transport.bpm.value) * 1000); }
         }, time);
     }, events).start(0);
 
@@ -632,34 +695,25 @@
         Tone.Draw.schedule(() => highlightMeasureSweep(ev.idx, durationSec), time); 
     }, measureEvents).start(0);
     
-    Tone.Transport.scheduleOnce(() => { Tone.Draw.schedule(() => stopPlayback(true), Tone.now()); }, quarterToBBS(totalQuarters));
+    Tone.Transport.scheduleOnce(() => { Tone.Draw.schedule(() => window.stopPlayback(true), Tone.now()); }, quarterToBBS(totalQuarters));
     builtForScoreKey = currentScore.id + ':' + currentScore.measures.length + ':' + currentScore.timeSig; return true;
   }
 
   function teardownAudio() { if (part) { part.dispose(); part = null; } if (measurePart) { measurePart.dispose(); measurePart = null; } }
   
-  // Dibujar la majestuosa línea dorada a través del SVG
   function highlightMeasureSweep(idx, durationSec) { 
     const rect = document.querySelector(`.measure-hit[data-measure-idx="${idx}"] rect`);
     if(rect) {
-        const svg = rect.closest('svg');
-        let line = svg.querySelector('.playback-line-svg');
-        if(!line) {
-            line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            line.setAttribute("class", "playback-line-svg");
-            line.setAttribute("stroke", "#B38E50");
-            line.setAttribute("stroke-width", "2");
-            svg.appendChild(line);
-        }
-        document.querySelectorAll('.playback-line-svg').forEach(l => { if(l !== line) l.style.display = 'none'; });
-        line.style.display = 'block';
+        const svg = rect.closest('svg'); let line = svg.querySelector('.playback-line-svg');
+        if(!line) { line = document.createElementNS("http://www.w3.org/2000/svg", "line"); line.setAttribute("class", "playback-line-svg"); line.setAttribute("stroke", "#B38E50"); line.setAttribute("stroke-width", "2"); svg.appendChild(line); }
+        document.querySelectorAll('.playback-line-svg').forEach(l => { if(l !== line) l.style.display = 'none'; }); line.style.display = 'block';
 
         const x = parseFloat(rect.getAttribute('x')); const y = parseFloat(rect.getAttribute('y'));
         const w = parseFloat(rect.getAttribute('width')); const h = parseFloat(rect.getAttribute('height'));
 
         line.setAttribute('x1', x); line.setAttribute('y1', y); line.setAttribute('x2', x); line.setAttribute('y2', y + h);
         line.style.transition = 'none'; line.style.transform = `translateX(0px)`;
-        line.getBoundingClientRect(); // Forzar renderizado
+        line.getBoundingClientRect(); 
         line.style.transition = `transform ${durationSec}s linear`; line.style.transform = `translateX(${w}px)`;
     }
   }
@@ -686,54 +740,5 @@
     rafId = requestAnimationFrame(tickProgress);
   }
   function formatTime(sec) { if (!isFinite(sec) || sec < 0) sec = 0; return Math.floor(sec / 60) + ':' + String(Math.floor(sec % 60)).padStart(2, '0'); }
-
-  const btnPlay = document.getElementById('plBtnPlay');
-  if(btnPlay) {
-    btnPlay.addEventListener('click', () => isPlaying ? pauseAudio() : playAudio());
-    document.getElementById('plBtnRewind').addEventListener('click', () => window.stopPlayback(false));
-    document.querySelectorAll('.pl-speed-btn').forEach((b) => b.addEventListener('click', () => { 
-      speedFactor = parseFloat(b.dataset.speed); updateAudioBPM(); 
-      document.querySelectorAll('.pl-speed-btn').forEach(btn => btn.classList.toggle('is-active', parseFloat(btn.dataset.speed) === speedFactor));
-    }));
-    const elBpm = document.getElementById('plBpm');
-    if(elBpm) {
-        elBpm.addEventListener('change', (e) => {
-            const val = Math.max(20, Math.min(300, parseInt(e.target.value, 10) || 100));
-            if (currentScore) { currentScore.bpm = val; renderScore(); } updateAudioBPM(); e.target.value = val;
-        });
-    }
-    document.addEventListener('click', (e) => { if (isPlaying && (e.target.closest('#engraveDesk') || e.target.closest('.measure-hit'))) pauseAudio(); });
-  }
-
-  /* ----------------------------- Export & Events ----------------------------- */
-  const btnExpJson = document.getElementById("btnExportJson"); if(btnExpJson) btnExpJson.addEventListener("click", () => { downloadBlob(slugify(currentScore.title) + ".json", JSON.stringify(currentScore, null, 2)); });
-  const btnExpPdf = document.getElementById("btnExportPdf"); if(btnExpPdf) btnExpPdf.addEventListener("click", () => { 
-      const oTitle = document.title; document.title = `${(currentScore.title || t('untitled')).trim()} — ${(currentScore.composer || t('unknownAuthor')).trim()}`;
-      window.print(); setTimeout(() => { document.title = oTitle; }, 500);
-  });
-  
-  const btnImport = document.getElementById("btnImport"); if(btnImport) btnImport.addEventListener("click", () => document.getElementById("fileImport").click());
-  const fileImport = document.getElementById("fileImport"); if(fileImport) fileImport.addEventListener("change", (e) => {
-    const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
-    reader.onload = () => {
-      try { const data = JSON.parse(reader.result); if (!data.measures) throw new Error("Format error");
-        data.id = uid(); data.plate = nextPlateNumber(); data.updatedAt = Date.now(); persistScore(data); 
-        if (window.location.hash === "#catalogo") renderLibrary(); else window.location.hash = "#catalogo";
-      } catch (err) { alert("Error: " + err.message); } e.target.value = ""; 
-    }; reader.readAsText(file);
-  });
-
-  const btnNewScore = document.getElementById("btnNewScore"); if(btnNewScore) btnNewScore.addEventListener("click", () => { const score = newScore(); persistScore(score); window.location.hash = "#editor/" + score.id; });
-  const btnBackLib = document.getElementById("btnBackLibrary"); if(btnBackLib) btnBackLib.addEventListener("click", () => { window.location.hash = "#catalogo"; });
-  const brandHome = document.getElementById("brandHome"); if(brandHome) brandHome.addEventListener("click", () => { window.location.hash = "#inicio"; });
-  const btnGoCat = document.getElementById("btnGoCatalog"); if(btnGoCat) btnGoCat.addEventListener("click", () => { window.location.hash = "#catalogo"; });
-  const btnGoEx = document.getElementById("btnGoExample"); if(btnGoEx) btnGoEx.addEventListener("click", () => { window.location.hash = "#ejemplo"; });
-  const btnToggleV = document.getElementById("btnToggleViewer"); if(btnToggleV) btnToggleV.addEventListener("click", () => { window.location.hash = (document.body.classList.contains('is-viewer') ? "#editor/" : "#viewer/") + currentScore.id; });
-
-  /* ----------------------------- Arranque ----------------------------- */
-  const userLang = navigator.language || navigator.userLanguage;
-  window.EI.setLang((userLang && userLang.toLowerCase().startsWith('es')) ? 'es' : 'en');
-  window.addEventListener("hashchange", handleNavigation);
-  if(!window.location.hash || window.location.hash === "#" || window.location.hash === "") { window.location.hash = "#inicio"; } else { handleNavigation(); }
 
 })();
