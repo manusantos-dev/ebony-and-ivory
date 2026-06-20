@@ -65,6 +65,13 @@ body.is-home .brand { opacity: 0; pointer-events: none; visibility: hidden; }
 .floating-notes { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; overflow: hidden; }
 .note-anim { position: absolute; font-size: 40px; color: var(--brass); opacity: 0.12; animation: floatUp linear infinite; }
 @keyframes floatUp { 0% { transform: translateY(100vh) rotate(0deg); } 100% { transform: translateY(-100px) rotate(360deg); } }
+body.is-home .view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0; 
+  padding-bottom: 0;
+}
 
 /* --- CATALOGO --- */
 .catalog-header { display: flex; flex-direction: column; gap: 20px; margin-bottom: 32px; }
