@@ -1,338 +1,489 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ebony & Ivory</title>
-<meta name="description" content="El arte de preservar la música">
-<link rel="icon" href="assets/isotipo.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/base.css">
-<link rel="stylesheet" href="css/components.css">
-<link rel="stylesheet" href="css/editor.css">
-<link rel="stylesheet" href="css/print.css">
-</head>
-<body class="is-home">
+/* =========================================================================
+   EBONY & IVORY — main.js
+   Punto de entrada: conecta todos los módulos, gestiona el enrutado por
+   hash y cablea los eventos del DOM con la lógica de cada módulo.
+   ========================================================================= */
+import { state, resetEditorState } from "./state.js";
+import { on, emit } from "./events.js";
+import { t, setLang } from "./i18n.js";
+import {
+  loadAll, uid, nextPlateNumber, plateLabel, slugify, formatDate, escapeHtml,
+  measureNeededQuarters, quartersUsed, newMeasure, newScore, downloadBlob,
+  persistScore, deleteScoreById
+} from "./storage.js";
+import { DUR_Q } from "./config.js";
+import { renderCustomSelects, updateCustomSelectUI, setupCustomSelect } from "./custom-select.js";
+import { getExampleScore } from "./example-score.js";
+import { renderScore } from "./notation-renderer.js";
+import { playAudio, pauseAudio, stopPlayback, isAudioPlaying, setSpeedFactor, refreshAudioBPM } from "./player.js";
+import { initFirebase, setupAuthUI, setupProfileUI } from "./auth.js";
 
-<header class="topbar" id="mainHeader">
-  <div class="topbar-left">
-    <div class="brand" id="brandHome" title="Ir al Catálogo">
-      <img src="assets/imagotipo.png" alt="Ebony & Ivory" class="brand-img">
-    </div>
-  </div>
+/* ----------------------------- Enrutado por Hash ----------------------------- */
+function handleNavigation() {
+  const hash = window.location.hash;
+  document.body.classList.remove("is-home", "is-viewer", "is-example-score");
 
-  <div class="topbar-right">
-    <span id="saveIndicator" class="save-indicator" data-i18n="savedIndicator" hidden>Guardado ✓</span>
+  const vHome = document.getElementById("viewHome");
+  const vLib = document.getElementById("viewLibrary");
+  const vEdit = document.getElementById("viewEditor");
+  const lAct = document.getElementById("libraryActions");
+  const eAct = document.getElementById("editorActions");
+  const btnToggleV = document.getElementById("btnToggleViewer");
 
-    <div class="lang-switch">
-      <button class="lang-btn active" data-lang="es">ES</button>
-      <button class="lang-btn" data-lang="en">EN</button>
-    </div>
+  if (vHome) vHome.hidden = true;
+  if (vLib) vLib.hidden = true;
+  if (vEdit) vEdit.hidden = true;
+  if (lAct) lAct.hidden = true;
+  if (eAct) eAct.hidden = true;
+  if (btnToggleV) btnToggleV.hidden = false;
 
-    <div class="account-logged" id="accountLogged" hidden title="Abrir Perfil">
-      <span class="account-avatar" id="acctAvatar">?</span>
-      <span class="account-email" id="acctEmail"></span>
-    </div>
+  stopPlayback();
 
-    <button class="btn btn-ghost" id="btnAccountLogin">👤 <span id="acctLoginLabel">Cuenta</span></button>
+  if (hash.startsWith("#editor/")) {
+    state.currentScore = loadAll()[hash.split("/")[1]];
+    if (state.currentScore) { document.body.classList.remove("is-viewer"); initEditor(); }
+    else window.location.hash = "#catalogo";
+  } else if (hash.startsWith("#viewer/")) {
+    state.currentScore = loadAll()[hash.split("/")[1]];
+    if (state.currentScore) { document.body.classList.add("is-viewer"); initEditor(); }
+    else window.location.hash = "#catalogo";
+  } else if (hash === "#ejemplo" || hash === "#example") {
+    state.currentScore = getExampleScore(state.lang);
+    document.body.classList.add("is-viewer", "is-example-score");
+    initEditor();
+    if (btnToggleV) btnToggleV.hidden = true;
+  } else if (hash === "#catalogo") {
+    state.currentScore = null;
+    if (vLib) vLib.hidden = false;
+    if (lAct) lAct.hidden = false;
+    document.title = t("catalogTitle") + " — Ebony & Ivory";
+    renderLibrary();
+    window.scrollTo(0, 0);
+  } else {
+    state.currentScore = null;
+    if (vHome) vHome.hidden = false;
+    document.body.classList.add("is-home");
+    document.title = "Ebony & Ivory";
+    window.scrollTo(0, 0);
+  }
+  const btnBackLib = document.getElementById("btnBackLibrary");
+  if (btnBackLib) {
+    btnBackLib.hidden = (hash === "#inicio" || hash === "#catalogo" || !hash);
+  }
+}
 
-    <nav class="topbar-actions" id="libraryActions" hidden>
-      <button class="btn btn-ghost" id="btnImport" data-i18n="importBtn">Importar .json</button>
-      <input type="file" id="fileImport" accept="application/json" hidden>
-      <button class="btn btn-primary" id="btnNewScore" data-i18n="newScoreBtn">+ Nueva partitura</button>
-    </nav>
+function syncEditorStickyOffset() {
+  const header = document.getElementById("mainHeader");
+  const topControls = document.querySelector(".editor-top-controls");
+  let offset = 0;
+  if (header) offset += header.getBoundingClientRect().height;
+  if (topControls) offset += topControls.getBoundingClientRect().height;
+  // Pequeño margen para que el panel no quede pegado a la barra superior.
+  document.documentElement.style.setProperty("--editor-sticky-offset", Math.round(offset) + "px");
+}
 
-    <nav class="topbar-actions" id="editorActions" hidden>
-      <button class="btn-ghost-small" id="btnToggleViewer" data-i18n="toggleViewBtn">Alternar Visor</button>
-      <button class="btn btn-ghost" id="btnExportJson" data-i18n="exportJsonBtn">Descargar .json</button>
-      <button class="btn btn-primary" id="btnExportPdf" data-i18n="exportPdfBtn">Exportar PDF</button>
-    </nav>
-  </div>
-</header>
+function initEditorStickyOffsetSync() {
+  syncEditorStickyOffset();
+  // ResizeObserver detecta cambios de alto por zoom del navegador, cambios
+  // de tamaño de fuente del sistema, o por el contenido de la barra de
+  // reproducción al envolverse en pantallas estrechas — todo lo que un
+  // simple "resize" de window no siempre capta a tiempo.
+  const header = document.getElementById("mainHeader");
+  const topControls = document.querySelector(".editor-top-controls");
+  if (typeof ResizeObserver !== "undefined") {
+    const ro = new ResizeObserver(() => syncEditorStickyOffset());
+    if (header) ro.observe(header);
+    if (topControls) ro.observe(topControls);
+  }
+  window.addEventListener("resize", syncEditorStickyOffset);
+}
 
-<main id="viewHome" class="view">
-  <div class="floating-notes" id="floatingNotes"></div>
-  <div class="home-hero">
-    <div class="hero-logo">
-      <img src="assets/logotipo.png" alt="Ebony & Ivory" class="hero-logo-img">
-    </div>
-    <h1 data-i18n="heroTitle">El arte de preservar la música</h1>
-    <p class="hero-sub" data-i18n="heroSub">Un lienzo digital estandarizado para transcribir, reproducir, clasificar y eternizar tus partituras con una elegancia inigualable.</p>
-    <div class="hero-actions">
-      <button class="btn btn-primary btn-huge" id="btnGoCatalog" data-i18n="goToCatalog">Abrir mi Catálogo</button>
-      <button class="btn btn-ghost btn-huge" id="btnGoExample">🎵 <span data-i18n="viewExample">Ver partitura de ejemplo</span></button>
-    </div>
-  </div>
-</main>
+function initEditor() {
+  resetEditorState();
+  const vEdit = document.getElementById("viewEditor");
+  const eAct = document.getElementById("editorActions");
+  if (vEdit) vEdit.hidden = false;
+  if (eAct) eAct.hidden = false;
+  document.title = (state.currentScore.title || t("untitled")) + " — Ebony & Ivory";
 
-<main id="viewLibrary" class="view" hidden>
-  <div class="catalog-header">
-    <h2 data-i18n="catalogTitle">Catálogo de Partituras</h2>
-    <div class="catalog-toolbar">
-      <input type="text" id="searchScores" class="field-input search-input" placeholder="Buscar por título, autor o E&I..." data-i18n-placeholder="searchPlaceholder">
-      <button class="btn btn-ghost" id="btnToggleFilters" data-i18n="filterBtn">Filtros ⧨</button>
-      <select id="sortScores" class="field-input sort-select">
-        <option value="numAsc" data-i18n="sortNumAsc">Número (E&I asc.)</option>
-        <option value="numDesc" data-i18n="sortNumDesc">Número (E&I desc.)</option>
-        <option value="dateDesc" data-i18n="sortDateDesc">Última edición (Reciente)</option>
-        <option value="dateAsc" data-i18n="sortDateAsc">Última edición (Antigua)</option>
-        <option value="titleAsc" data-i18n="sortTitleAsc">Título (A-Z)</option>
-        <option value="authorAsc" data-i18n="sortAuthorAsc">Autor (A-Z)</option>
-      </select>
-    </div>
-    <div class="catalog-filters" id="catalogFilters" hidden>
-      <div class="filter-group">
-        <label class="field-label" data-i18n="lblTimeSig">Compás</label>
-        <select id="filterTimeSig" class="field-input">
-          <option value="all" data-i18n="optAll">Cualquiera</option>
-          <option value="4/4">4/4</option><option value="3/4">3/4</option><option value="2/4">2/4</option>
-          <option value="6/8">6/8</option><option value="9/8">9/8</option><option value="12/8">12/8</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label class="field-label" data-i18n="lblKeySig">Tonalidad</label>
-        <div class="custom-select" id="customFilterKeySig" tabindex="0">
-          <div class="select-selected" id="customFilterKeySelected"></div>
-          <div class="select-items" id="customFilterKeyOptions"></div>
-        </div>
-        <input type="hidden" id="filterKeySig" value="all">
-      </div>
-      <div class="filter-group">
-        <label class="field-label" data-i18n="lblHands">Manos / Pentagramas</label>
-        <select id="filterHands" class="field-input">
-          <option value="all" data-i18n="optAll">Cualquiera</option>
-          <option value="both" data-i18n="optBothHands">Ambas manos</option>
-          <option value="treble" data-i18n="optTrebleOnly">Solo mano derecha</option>
-          <option value="bass" data-i18n="optBassOnly">Solo mano izquierda</option>
-        </select>
-      </div>
-    </div>
-  </div>
-  <section class="library-grid" id="libraryGrid"></section>
-  <div class="library-empty" id="libraryEmpty" hidden>
-    <h3 data-i18n="emptyLibraryTitle">Tu catálogo está vacío (o sin resultados)</h3>
-    <p data-i18n="emptyLibrary">Pulsa «Nueva partitura» en la esquina superior derecha o cambia los filtros de búsqueda.</p>
-  </div>
-</main>
+  const elTitle = document.getElementById("scoreTitle");
+  const elComposer = document.getElementById("scoreComposer");
+  const elTimeSig = document.getElementById("timeSig");
+  const elBpm = document.getElementById("plBpm");
+  if (elTitle) elTitle.value = state.currentScore.title || "";
+  if (elComposer) elComposer.value = state.currentScore.composer || "";
+  if (elTimeSig) elTimeSig.value = state.currentScore.timeSig || "4/4";
+  updateCustomSelectUI("customKeySig", state.currentScore.keySig || "C");
+  if (elBpm) elBpm.value = state.currentScore.bpm || 100;
 
-<main id="viewEditor" class="view" hidden>
-  <div class="editor-top-controls">
-    <button class="back-pill" id="btnBackLibrary" data-i18n="backBtn" hidden>← Volver al Catálogo</button>
-  
-    <div class="player-bar" id="playerBar">
-      <button class="pl-btn" id="plBtnRewind" title="Volver al inicio" aria-label="Volver al inicio">
-        <svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
-    </button>
-      <button class="pl-btn pl-btn--play" id="plBtnPlay" title="Reproducir / Pausar" aria-label="Reproducir">
-        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-      </button>
-      <div class="pl-progress" id="plProgressWrap" role="slider" aria-label="Progreso de reproducción" tabindex="0"><div class="pl-progress-fill" id="plProgressFill"></div></div>
-      <span class="pl-time" id="plTimeLabel">0:00 / 0:00</span>
-      <span class="pl-divider"></span>
-      <div class="pl-speeds" id="plSpeeds">
-        <button class="pl-speed-btn" data-speed="0.5">0.5×</button>
-        <button class="pl-speed-btn" data-speed="0.75">0.75×</button>
-        <button class="pl-speed-btn is-active" data-speed="1">1×</button>
-        <button class="pl-speed-btn" data-speed="1.5">1.5×</button>
-        <button class="pl-speed-btn" data-speed="2">2×</button>
-      </div>
-      <span class="pl-divider"></span>
-      <label class="pl-bpm-label" title="Tempo en negras por minuto"><span class="pl-bpm-symbol">♩</span><span class="pl-bpm-eq">=</span><input type="number" id="plBpm" class="pl-bpm-input" min="20" max="300" value="100"></label>
-    </div>
-  </div>
+  syncMeasureControls();
+  renderScore();
+  syncEditorStickyOffset();
+  window.scrollTo(0, 0);
+}
 
-  <div class="editor-layout" id="editorLayout">
-    <aside class="engrave-desk" id="engraveDesk">
-      <div class="desk-section">
-        <label class="field-label" data-i18n="lblTitle">Título</label>
-        <input type="text" id="scoreTitle" class="field-input field-input--title">
-        <label class="field-label" data-i18n="lblComposer">Compositor / origen</label>
-        <input type="text" id="scoreComposer" class="field-input">
-      </div>
+function syncMeasureControls() {
+  const score = state.currentScore;
+  state.editorState.activeMeasure = Math.max(0, Math.min(state.editorState.activeMeasure, score.measures.length - 1));
+  const m = score.measures[state.editorState.activeMeasure];
 
-      <div class="desk-section">
-        <div class="field-row">
-          <div>
-            <label class="field-label" data-i18n="lblTimeSig">Compás</label>
-            <select id="timeSig" class="field-input">
-              <option value="4/4">4/4</option><option value="3/4">3/4</option><option value="2/4">2/4</option>
-              <option value="6/8">6/8</option><option value="9/8">9/8</option><option value="12/8">12/8</option>
-              <option value="2/2">2/2</option>
-            </select>
-          </div>
-          <div>
-            <label class="field-label" data-i18n="lblKeySig">Tonalidad</label>
-            <div class="custom-select" id="customKeySig" tabindex="0">
-              <div class="select-selected" id="customKeySigSelected"></div>
-              <div class="select-items" id="customKeySigOptions"></div>
-            </div>
-            <input type="hidden" id="keySig" value="C">
-          </div>
-        </div>
-      </div>
+  const lbl = document.getElementById("activeMeasureLabel");
+  if (lbl) lbl.textContent = `${state.editorState.activeMeasure + 1} / ${score.measures.length}`;
 
-      <hr class="desk-divider">
+  const rs = document.getElementById("repeatStart");
+  const re = document.getElementById("repeatEnd");
+  const ds = document.getElementById("directiveSelect");
+  if (rs) rs.checked = !!m.repeatStart;
+  if (re) re.checked = !!m.repeatEnd;
+  if (ds) ds.value = m.directive || "";
+}
 
-      <div class="desk-section">
-        <p class="desk-title"><span data-i18n="lblActiveMeasure">Compás activo</span> <span id="activeMeasureLabel" class="pill">1</span></p>
-        <div class="field-row">
-          <button class="btn btn-small" id="btnPrevMeasure" data-i18n="btnPrev">‹ anterior</button>
-          <button class="btn btn-small" id="btnNextMeasure" data-i18n="btnNext">siguiente ›</button>
-        </div>
-        <div class="field-row">
-          <button class="btn btn-small btn-add" id="btnAddMeasure" data-i18n="btnAddMeasure">+ añadir compás</button>
-          <button class="btn btn-small btn-danger" id="btnDeleteMeasure" data-i18n="btnDelMeasure">eliminar compás</button>
-        </div>
-      </div>
+/* ----------------------------- Catálogo ----------------------------- */
+function renderLibrary() {
+  const lib = state.libraryState;
+  let scores = Object.values(loadAll());
 
-      <hr class="desk-divider">
+  if (lib.query) {
+    scores = scores.filter((s) =>
+      (s.title || "").toLowerCase().includes(lib.query) ||
+      (s.composer || "").toLowerCase().includes(lib.query) ||
+      plateLabel(s.plate).toLowerCase().includes(lib.query)
+    );
+  }
 
-      <div class="desk-section">
-        <p class="desk-title" data-i18n="lblInputStaff">Pentagrama de entrada</p>
-        <div class="staff-toggle">
-          <button class="toggle-btn is-active" data-staff="treble" id="btnStaffTreble" data-i18n="lblTreble">Clave de Sol</button>
-          <button class="toggle-btn" data-staff="bass" id="btnStaffBass" data-i18n="lblBass">Clave de Fa</button>
-        </div>
-      </div>
+  scores = scores.filter((s) => {
+    if (lib.filterTime !== "all" && s.timeSig !== lib.filterTime) return false;
+    if (lib.filterKey !== "all" && s.keySig !== lib.filterKey) return false;
+    if (lib.filterHands !== "all") {
+      const hasTreble = s.measures.some((m) => m.treble && m.treble.length > 0);
+      const hasBass = s.measures.some((m) => m.bass && m.bass.length > 0);
+      if (lib.filterHands === "both" && (!hasTreble || !hasBass)) return false;
+      if (lib.filterHands === "treble" && hasBass) return false;
+      if (lib.filterHands === "bass" && hasTreble) return false;
+    }
+    return true;
+  });
 
-      <div class="desk-section">
-        <p class="desk-title" data-i18n="lblNote">Nota</p>
-        <div class="field-row note-row">
-          <label class="check-inline"><input type="checkbox" id="isRest"> <span data-i18n="lblRest">Silencio</span></label>
-        </div>
-        <div class="field-row" id="pitchFields">
-          <div>
-            <label class="field-label" data-i18n="lblPitch">Nota</label>
-            <select id="pitchLetter" class="field-input">
-              <option value="C">Do (C)</option>
-              <option value="D">Re (D)</option>
-              <option value="E">Mi (E)</option>
-              <option value="F">Fa (F)</option>
-              <option value="G">Sol (G)</option>
-              <option value="A">La (A)</option>
-              <option value="B">Si (B)</option>
-            </select>
-          </div>
-          <div>
-            <label class="field-label" data-i18n="lblAccidental">Alteración</label>
-            <select id="pitchAccidental" class="field-input">
-              <option value="">—</option><option value="#">♯</option><option value="b">♭</option><option value="n">♮</option>
-            </select>
-          </div>
-          <div>
-            <label class="field-label" data-i18n="lblOctave">Octava</label>
-            <select id="pitchOctave" class="field-input">
-              <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option>
-            </select>
-          </div>
-        </div>
+  scores.sort((a, b) => {
+    if (lib.sortBy === "numAsc") return a.plate - b.plate;
+    if (lib.sortBy === "numDesc") return b.plate - a.plate;
+    if (lib.sortBy === "dateDesc") return b.updatedAt - a.updatedAt;
+    if (lib.sortBy === "dateAsc") return a.updatedAt - b.updatedAt;
+    if (lib.sortBy === "titleAsc") return (a.title || "").localeCompare(b.title || "");
+    if (lib.sortBy === "authorAsc") return (a.composer || "").localeCompare(b.composer || "");
+    return 0;
+  });
 
-        <label class="field-label" data-i18n="lblDuration">Duración</label>
-        <div class="duration-grid" id="durationGrid">
-          <button class="dur-btn" data-dur="w">𝅝</button>
-          <button class="dur-btn" data-dur="h">𝅗𝅥</button>
-          <button class="dur-btn is-active" data-dur="q">♩</button>
-          <button class="dur-btn" data-dur="8">♪</button>
-          <button class="dur-btn" data-dur="16">𝅘𝅥𝅯</button>
-          <button class="dur-btn" data-dur="32">𝅘𝅥𝅰</button>
-        </div>
-        <label class="check-inline"><input type="checkbox" id="isDotted"> <span data-i18n="lblDotted">Con puntillo</span></label>
+  const grid = document.getElementById("libraryGrid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  const empty = document.getElementById("libraryEmpty");
 
-        <label class="field-label" data-i18n="lblDynamics">Dinámica</label>
-        <select id="dynamicSelect" class="field-input">
-          <option value="">—</option><option value="pp">pp</option><option value="p">p</option><option value="mp">mp</option><option value="mf">mf</option>
-          <option value="f">f</option><option value="ff">ff</option><option value="sfz">sfz</option><option value="cresc.">cresc.</option><option value="dim.">dim.</option>
-        </select>
+  if (scores.length === 0) {
+    if (empty) empty.hidden = false;
+    grid.hidden = true;
+    return;
+  }
 
-        <button class="btn btn-primary btn-block" id="btnAddNote" data-i18n="btnAddNote">Añadir al compás</button>
-        <button class="btn btn-ghost btn-block" id="btnUndoNote" data-i18n="btnUndoNote">Deshacer última nota</button>
-      </div>
+  if (empty) empty.hidden = true;
+  grid.hidden = false;
 
-      <hr class="desk-divider">
+  scores.forEach((score) => {
+    const card = document.createElement("div");
+    card.className = "score-card";
+    card.innerHTML = `<span class="card-eyebrow">${plateLabel(score.plate)} · ${score.timeSig}</span><h3>${escapeHtml(score.title || t("untitled"))}</h3><p class="composer">${escapeHtml(score.composer || t("unknownAuthor"))}</p><div class="meta"><span>${score.measures.length} ${t("measuresTxt")}</span><span>${formatDate(score.updatedAt)}</span></div>
+      <div class="card-actions-row">
+        <button class="btn-card" data-action="view">${t("viewBtn")}</button>
+        <button class="btn-card" data-action="edit">${t("editBtn")}</button>
+        <button class="btn-card" data-action="duplicate">${t("copyBtn")}</button>
+        <button class="btn-card btn-danger-card" data-action="delete">${t("deleteBtn")}</button>
+      </div>`;
 
-      <div class="desk-section">
-        <p class="desk-title" data-i18n="lblMeasureDetails">Compás · Detalles</p>
-        <label class="check-inline"><input type="checkbox" id="repeatStart"> <span data-i18n="lblRepStart">Inicio repetición ‖:</span></label>
-        <label class="check-inline"><input type="checkbox" id="repeatEnd"> <span data-i18n="lblRepEnd">Fin repetición :‖</label>
-        <label class="field-label" data-i18n="lblDirective">Indicación (Fine, D.C.)</label>
-        <select id="directiveSelect" class="field-input">
-          <option value="">—</option><option value="Fine">Fine</option><option value="D.C.">D.C.</option><option value="D.C. al Fine">D.C. al Fine</option>
-          <option value="D.C. al Coda">D.C. al Coda</option><option value="D.S. al Fine">D.S. al Fine</option><option value="D.S. al Coda">D.S. al Coda</option>
-          <option value="𝄌 Coda">𝄌 Coda</option><option value="𝄋 Segno">𝄋 Segno</option>
-        </select>
-      </div>
-    </aside>
+    card.addEventListener("click", (e) => {
+      const action = e.target.closest("[data-action]");
+      if (!action) { window.location.hash = "#viewer/" + score.id; return; }
+      e.stopPropagation();
+      if (action.dataset.action === "delete") {
+        if (confirm(t("delConfirm"))) { deleteScoreById(score.id); renderLibrary(); }
+      } else if (action.dataset.action === "duplicate") {
+        const copy = JSON.parse(JSON.stringify(score));
+        copy.id = uid();
+        copy.plate = nextPlateNumber();
+        copy.title = (score.title || t("untitled")) + " " + t("copySuffix");
+        copy.createdAt = copy.updatedAt = Date.now();
+        persistScore(copy);
+        renderLibrary();
+      } else if (action.dataset.action === "edit") {
+        window.location.hash = "#editor/" + score.id;
+      } else if (action.dataset.action === "view") {
+        window.location.hash = "#viewer/" + score.id;
+      }
+    });
 
-    <section class="paper-wrap" id="paperWrap">
-      <div id="vexPagesContainer"></div>
-    </section>
-  </div>
-</main>
+    grid.appendChild(card);
+  });
+}
 
-<div class="modal-overlay" id="authModalOverlay" hidden>
-  <div class="modal-card">
-    <button class="modal-close" id="authModalClose" aria-label="Cerrar">×</button>
-    <div class="auth-tabs">
-      <button class="auth-tab is-active" id="authTabLogin" data-tab="login">Iniciar sesión</button>
-      <button class="auth-tab" id="authTabRegister" data-tab="register">Crear cuenta</button>
-    </div>
-    <p class="auth-subtitle" id="authSubtitle">Guarda tus partituras en la nube y ábrelas desde cualquier dispositivo.</p>
-    <form id="authForm">
-      <label class="field-label">Email</label>
-      <input type="email" id="authEmail" class="field-input" required autocomplete="email">
-      <label class="field-label" data-i18n="lblPassword">Contraseña</label>
-      <input type="password" id="authPassword" class="field-input" required autocomplete="current-password" minlength="6">
-      <p class="auth-error" id="authError" hidden></p>
-      <button type="submit" class="btn btn-primary btn-block" id="authSubmitBtn">Iniciar sesión</button>
-    </form>
-    <div class="auth-divider"><span>o</span></div>
-    <button class="btn btn-ghost btn-block auth-google-btn" id="authGoogleBtn">
-      <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.16.28-1.7V4.97H.95A9 9 0 0 0 0 9c0 1.45.35 2.83.95 4.03l3-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
-      Continuar con Google
-    </button>
-  </div>
-</div>
+/* ----------------------------- Notas Flotantes (decoración Home) ----------------------------- */
+function spawnFloatingNotes() {
+  const wrap = document.getElementById("floatingNotes");
+  if (!wrap || wrap.childElementCount > 0) return;
+  const glyphs = ["♪", "♫", "♩", "𝄞"];
+  for (let i = 0; i < 12; i++) {
+    const span = document.createElement("span");
+    span.className = "note-anim";
+    span.textContent = glyphs[i % glyphs.length];
+    span.style.left = Math.random() * 100 + "%";
+    span.style.animationDuration = 14 + Math.random() * 12 + "s";
+    span.style.animationDelay = -(Math.random() * 20) + "s";
+    span.style.fontSize = 24 + Math.random() * 30 + "px";
+    wrap.appendChild(span);
+  }
+}
 
-<div class="modal-overlay" id="profileModalOverlay" hidden>
-  <div class="modal-card">
-    <button class="modal-close" id="profileModalClose" aria-label="Cerrar">×</button>
-    <div class="profile-header">
-      <div class="profile-avatar-large" id="profAvatarLg">?</div>
-      <div class="profile-info">
-        <h3 id="profNameTitle">Usuario</h3>
-        <p id="profEmailText">email@email.com</p>
-      </div>
-    </div>
+/* ----------------------------- Wiring de eventos (DOM listo) ----------------------------- */
+document.addEventListener("DOMContentLoaded", () => {
+  initFirebase();
+  setupAuthUI();
+  setupProfileUI();
 
-    <button class="btn btn-ghost btn-block" id="btnAccountLogout" data-i18n="logout">Cerrar sesión</button>
+  // Selects personalizados de tonalidad
+  setupCustomSelect("customKeySig", "keySig", (val) => {
+    if (state.currentScore) { state.currentScore.keySig = val; renderScore(); }
+  });
+  setupCustomSelect("customFilterKeySig", "filterKeySig", (val) => {
+    state.libraryState.filterKey = val;
+    renderLibrary();
+  });
 
-    <form id="profileForm">
-      <label class="field-label" data-i18n="displayName">Nombre / Nickname</label>
-      <input type="text" id="profDisplayName" class="field-input" placeholder="Ej: Amadeus">
+  // Idioma
+  document.querySelectorAll(".lang-btn").forEach((btn) => {
+    btn.addEventListener("click", () => setLang(btn.dataset.lang));
+  });
 
-      <label class="field-label" data-i18n="photoUrl">Subir foto de perfil (Opcional)</label>
-      <input type="file" id="profPhotoFile" class="field-input" accept="image/*">
+  // Catálogo: importar / exportar / nueva partitura
+  const btnExpJson = document.getElementById("btnExportJson");
+  if (btnExpJson) btnExpJson.addEventListener("click", (e) => {
+    e.preventDefault();
+    if(!state.currentScore) return;
+    downloadBlob(slugify(state.currentScore.title) + ".json", JSON.stringify(state.currentScore, null, 2));
+  });
 
-      <button type="submit" class="btn btn-primary btn-block" style="margin-top:20px;" data-i18n="saveProfile">Guardar Cambios</button>
-    </form>
-    <div class="profile-danger-zone">
-      <button class="btn btn-ghost btn-block btn-danger" id="btnDeleteAccount" data-i18n="deleteAccount">Eliminar mi cuenta</button>
-    </div>
-  </div>
-</div>
+  const btnExpPdf = document.getElementById("btnExportPdf");
+  if (btnExpPdf) btnExpPdf.addEventListener("click", (e) => {
+    e.preventDefault();
+    if(!state.currentScore) return;
+    const oTitle = document.title;
+    document.title = `${(state.currentScore.title || t("untitled")).trim()} — ${(state.currentScore.composer || t("unknownAuthor")).trim()}`;
+    window.print();
+    setTimeout(() => { document.title = oTitle; }, 500);
+  });
 
-<footer class="sitefooter">
-  <p data-i18n="footerText">Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales.</p>
-</footer>
+  const btnImport = document.getElementById("btnImport");
+  if (btnImport) btnImport.addEventListener("click", () => document.getElementById("fileImport").click());
 
-<script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  const fileImport = document.getElementById("fileImport");
+  if (fileImport) fileImport.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (!data.measures) throw new Error("Format error");
+        data.id = uid();
+        data.plate = nextPlateNumber();
+        data.updatedAt = Date.now();
+        data.createdAt = Date.now();
+        delete data.isExample; 
+        persistScore(data);
+        if (window.location.hash === "#catalogo") renderLibrary();
+        else window.location.hash = "#catalogo";
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+      e.target.value = "";
+    };
+    reader.readAsText(file);
+  });
 
-<script type="module" src="js/main.js"></script>
+  const btnNewScore = document.getElementById("btnNewScore");
+  if (btnNewScore) btnNewScore.addEventListener("click", () => {
+    const score = newScore();
+    persistScore(score);
+    window.location.hash = "#editor/" + score.id;
+  });
 
-</body>
-</html>
+  const btnBackLib = document.getElementById("btnBackLibrary");
+  if (btnBackLib) btnBackLib.addEventListener("click", () => { window.location.hash = "#catalogo"; });
+
+  const brandHome = document.getElementById("brandHome");
+  if (brandHome) brandHome.addEventListener("click", () => { window.location.hash = "#inicio"; });
+
+  const btnGoCat = document.getElementById("btnGoCatalog");
+  if (btnGoCat) btnGoCat.addEventListener("click", () => { window.location.hash = "#catalogo"; });
+
+  const btnGoEx = document.getElementById("btnGoExample");
+  if (btnGoEx) btnGoEx.addEventListener("click", () => { window.location.hash = "#ejemplo"; });
+
+  const btnToggleV = document.getElementById("btnToggleViewer");
+  if (btnToggleV) btnToggleV.addEventListener("click", () => {
+    window.location.hash = (document.body.classList.contains("is-viewer") ? "#editor/" : "#viewer/") + state.currentScore.id;
+  });
+
+  // Filtros del catálogo
+  const elSearch = document.getElementById("searchScores");
+  if (elSearch) elSearch.addEventListener("input", (e) => { state.libraryState.query = e.target.value.toLowerCase(); renderLibrary(); });
+
+  const elSort = document.getElementById("sortScores");
+  if (elSort) elSort.addEventListener("change", (e) => { state.libraryState.sortBy = e.target.value; renderLibrary(); });
+
+  const elBtnFilters = document.getElementById("btnToggleFilters");
+  const elFiltersPanel = document.getElementById("catalogFilters");
+  if (elBtnFilters && elFiltersPanel) elBtnFilters.addEventListener("click", () => { elFiltersPanel.hidden = !elFiltersPanel.hidden; });
+
+  const elFilterTime = document.getElementById("filterTimeSig");
+  if (elFilterTime) elFilterTime.addEventListener("change", (e) => { state.libraryState.filterTime = e.target.value; renderLibrary(); });
+
+  const elFilterHands = document.getElementById("filterHands");
+  if (elFilterHands) elFilterHands.addEventListener("change", (e) => { state.libraryState.filterHands = e.target.value; renderLibrary(); });
+
+  // Escritorio de edición
+  const elScoreTitle = document.getElementById("scoreTitle");
+  if (elScoreTitle) {
+    elScoreTitle.addEventListener("input", (e) => { state.currentScore.title = e.target.value; renderScore(); });
+    document.getElementById("scoreComposer").addEventListener("input", (e) => { state.currentScore.composer = e.target.value; renderScore(); });
+    document.getElementById("timeSig").addEventListener("change", (e) => { state.currentScore.timeSig = e.target.value; renderScore(); });
+
+    document.getElementById("btnPrevMeasure").addEventListener("click", () => { state.editorState.activeMeasure--; syncMeasureControls(); renderScore(); });
+    document.getElementById("btnNextMeasure").addEventListener("click", () => { state.editorState.activeMeasure++; syncMeasureControls(); renderScore(); });
+    document.getElementById("btnAddMeasure").addEventListener("click", () => {
+      state.currentScore.measures.push(newMeasure());
+      state.editorState.activeMeasure = state.currentScore.measures.length - 1;
+      syncMeasureControls(); renderScore();
+    });
+    document.getElementById("btnDeleteMeasure").addEventListener("click", () => {
+      if (state.currentScore.measures.length <= 1) { alert(t("minMeasureAlert")); return; }
+      if (!confirm(t("delMeasureConfirm"))) return;
+      state.currentScore.measures.splice(state.editorState.activeMeasure, 1);
+      syncMeasureControls(); renderScore();
+    });
+
+    document.getElementById("repeatStart").addEventListener("change", (e) => { state.currentScore.measures[state.editorState.activeMeasure].repeatStart = e.target.checked; renderScore(); });
+    document.getElementById("repeatEnd").addEventListener("change", (e) => { state.currentScore.measures[state.editorState.activeMeasure].repeatEnd = e.target.checked; renderScore(); });
+    document.getElementById("directiveSelect").addEventListener("change", (e) => { state.currentScore.measures[state.editorState.activeMeasure].directive = e.target.value; renderScore(); });
+
+    ["Treble", "Bass"].forEach((clef) => {
+      document.getElementById("btnStaff" + clef).addEventListener("click", () => {
+        state.editorState.activeStaff = clef.toLowerCase();
+        document.getElementById("btnStaffTreble").classList.toggle("is-active", clef === "Treble");
+        document.getElementById("btnStaffBass").classList.toggle("is-active", clef === "Bass");
+      });
+    });
+
+    document.getElementById("isRest").addEventListener("change", (e) => {
+      const pitchFields = document.getElementById("pitchFields");
+      pitchFields.style.opacity = e.target.checked ? 0.4 : 1;
+      pitchFields.querySelectorAll("select").forEach((s) => { s.disabled = e.target.checked; });
+    });
+
+    document.getElementById("durationGrid").addEventListener("click", (e) => {
+      const btn = e.target.closest(".dur-btn");
+      if (!btn) return;
+      state.editorState.duration = btn.dataset.dur;
+      document.getElementById("durationGrid").querySelectorAll(".dur-btn").forEach((b) => b.classList.toggle("is-active", b === btn));
+    });
+
+    document.getElementById("btnAddNote").addEventListener("click", () => {
+      const needed = measureNeededQuarters(state.currentScore.timeSig);
+      const durQ = (DUR_Q[state.editorState.duration] || 0) * (document.getElementById("isDotted").checked ? 1.5 : 1);
+      const currentUsed = quartersUsed(state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff]);
+
+      // Denegación matemática sonora: evita que el compás se desborde
+      if (currentUsed + durQ > needed) {
+        if (typeof Tone !== "undefined" && Tone.Synth) {
+          const errorSynth = new Tone.Synth({ oscillator: { type: "square" }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
+          errorSynth.volume.value = -10;
+          errorSynth.triggerAttackRelease("C2", "16n");
+        }
+        const desk = document.getElementById("engraveDesk");
+        desk.style.transform = "translateX(10px)";
+        setTimeout(() => { desk.style.transform = "translateX(-10px)"; }, 50);
+        setTimeout(() => { desk.style.transform = "translateX(0)"; }, 100);
+        return;
+      }
+
+      state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff].push({
+        rest: document.getElementById("isRest").checked,
+        letter: document.getElementById("pitchLetter").value,
+        accidental: document.getElementById("pitchAccidental").value,
+        octave: parseInt(document.getElementById("pitchOctave").value, 10),
+        duration: state.editorState.duration,
+        dotted: document.getElementById("isDotted").checked,
+        dynamic: document.getElementById("dynamicSelect").value
+      });
+      document.getElementById("dynamicSelect").value = "";
+      renderScore();
+    });
+
+    document.getElementById("btnUndoNote").addEventListener("click", () => {
+      const staff = state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff];
+      if (staff.length > 0) { staff.pop(); renderScore(); }
+    });
+  }
+
+  // Reproductor de audio
+  const btnPlay = document.getElementById("plBtnPlay");
+  if (btnPlay) {
+    btnPlay.addEventListener("click", () => (isAudioPlaying() ? pauseAudio() : playAudio()));
+    document.getElementById("plBtnRewind").addEventListener("click", () => stopPlayback());
+
+    document.querySelectorAll(".pl-speed-btn").forEach((b) => b.addEventListener("click", () => {
+      const factor = parseFloat(b.dataset.speed);
+      setSpeedFactor(factor);
+      document.querySelectorAll(".pl-speed-btn").forEach((btn) => btn.classList.toggle("is-active", parseFloat(btn.dataset.speed) === factor));
+    }));
+
+    const elBpm = document.getElementById("plBpm");
+    if (elBpm) elBpm.addEventListener("change", (e) => {
+      const val = Math.max(20, Math.min(300, parseInt(e.target.value, 10) || 100));
+      e.target.value = val;
+      refreshAudioBPM(); 
+    });
+
+    document.addEventListener("click", (e) => {
+      if (isAudioPlaying() && (e.target.closest("#engraveDesk") || e.target.closest(".measure-hit"))) pauseAudio();
+    });
+  }
+
+  spawnFloatingNotes();
+  initEditorStickyOffsetSync();
+
+  // Re-render al cambiar de idioma o al sincronizar con la nube
+  on("langchange", (lang) => {
+    renderCustomSelects();
+    if (state.currentScore && state.currentScore.isExample) {
+      state.currentScore.title = lang === "es" ? "Oda a la Alegría" : "Ode to Joy";
+      const elTitle = document.getElementById("scoreTitle");
+      if (elTitle) elTitle.value = state.currentScore.title;
+    }
+     
+    const vLib = document.getElementById("viewLibrary");
+    const vEdit = document.getElementById("viewEditor");
+    if (vLib && !vLib.hidden) renderLibrary();
+    if (vEdit && !vEdit.hidden) renderScore();
+  });
+  on("scoreschanged", () => {
+    const vLib = document.getElementById("viewLibrary");
+    if (vLib && !vLib.hidden) renderLibrary();
+  });
+  on("measureselected", syncMeasureControls);
+
+  // Idioma inicial según el navegador, y arranque del enrutado
+  const userLang = navigator.language || navigator.userLanguage;
+  setLang(userLang && userLang.toLowerCase().startsWith("es") ? "es" : "en");
+
+  window.addEventListener("hashchange", handleNavigation);
+  if (!window.location.hash || window.location.hash === "#") window.location.hash = "#inicio";
+  else handleNavigation();
+});
