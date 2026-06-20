@@ -34,7 +34,9 @@ function scoreKeyOf(score) {
 }
 
 function updateAudioBPM() {
-  Tone.Transport.bpm.value = (state.currentScore.bpm || 100) * speedFactor;
+  const inputBpm = document.getElementById("plBpm");
+  const activeBpm = inputBpm ? parseInt(inputBpm.value, 10) : (state.currentScore.bpm || 100);
+  Tone.Transport.bpm.value = activeBpm * speedFactor;
 }
 
 function teardownAudio() {
