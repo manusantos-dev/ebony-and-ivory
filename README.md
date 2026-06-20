@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/logotipo.png" alt="Ebony & Ivory Logo" width="400">
+<img src="assets/logotipo-w.png" alt="Ebony & Ivory Logo" width="400">
 
 <br>
 
@@ -24,14 +24,14 @@
 
 <br>
 
-### <img src="assets/isotipo.png" width="16" align="center"> The Origin Story
+### <img src="assets/isotipo-w.png" width="16" align="center"> The Origin Story
 I just wanted to learn how to play the piano. But instead of actually practicing, I got frustrated searching for ugly, poorly scanned sheet music with completely different aesthetics all over the internet. 
 
 So, like anyone with their priorities "straight", I decided to postpone my musical journey to code my own sheet music editor and manager from scratch. Maybe I should close my code editor, sit at the keyboard, and finally start practicing... but hey, at least my sheet music looks incredible now.
 
 ---
 
-## <img src="assets/isotipo.png" width="20" align="center"> Technical Features
+## <img src="assets/isotipo-w.png" width="20" align="center"> Technical Features
 
 Built entirely without frameworks, this project demonstrates strong web fundamentals, focusing on performance, state management, cloud synchronization, and complex DOM manipulation.
 
@@ -42,12 +42,12 @@ Built entirely without frameworks, this project demonstrates strong web fundamen
 * **Native i18n Implementation:** A custom bilingual system (EN/ES) that auto-detects the user's `navigator.language` on load and toggles the entire UI state instantly without page reloads.
 * **Vanilla State Management:** Custom hash-based URL routing simulating a Single Page Application (SPA) experience using only Vanilla JS.
 
-## <img src="assets/isotipo.png" width="20" align="center"> Live Demo
+## <img src="assets/isotipo-w.png" width="20" align="center"> Live Demo
 
 Access the live tool hosted on GitHub Pages:
 **[https://manusantos-dev.github.io/ebony-and-ivory/](https://manusantos-dev.github.io/ebony-and-ivory/)**
 
-## <img src="assets/isotipo.png" width="20" align="center"> Disclaimer & Copyright
+## <img src="assets/isotipo-w.png" width="20" align="center"> Disclaimer & Copyright
 
 Ebony & Ivory is an open-source personal tool. The musical works you transcribe remain the property of their respective original authors. Please transcribe responsibly.
 
@@ -56,7 +56,7 @@ Ebony & Ivory is an open-source personal tool. The musical works you transcribe 
 
 <div align="center">
   
-<h1 id="español"><img src="assets/logotipo.png" alt="Ebony & Ivory Logo" width="400"></h1>
+<h1 id="español"><img src="assets/logotipo-w.png" alt="Ebony & Ivory Logo" width="400"></h1>
 
 > **El arte de preservar la música.**
 > Un lienzo digital estandarizado para transcribir, reproducir, clasificar y eternizar tus partituras con una elegancia inigualable.
@@ -74,14 +74,14 @@ Ebony & Ivory is an open-source personal tool. The musical works you transcribe 
 
 <br>
 
-### <img src="assets/isotipo.png" width="16" align="center"> La verdadera historia
+### <img src="assets/isotipo-w.png" width="16" align="center"> La verdadera historia
 Yo solo quería aprender a tocar el piano. Pero en lugar de ponerme a practicar, me frustré buscando partituras feas, mal escaneadas y con estéticas completamente distintas por todo internet. 
 
 Así que, como cualquier persona con sus prioridades "claras", decidí posponer mi aprendizaje musical para programar mi propio editor y gestor de partituras desde cero. Quizás debería cerrar el editor de código, sentarme frente al teclado y ponerme a practicar de una vez por todas... pero oye, al menos ahora mis partituras lucen increíbles.
 
 ---
 
-## <img src="assets/isotipo.png" width="20" align="center"> Características Técnicas
+## <img src="assets/isotipo-w.png" width="20" align="center"> Características Técnicas
 
 Construido completamente sin *frameworks*, este proyecto demuestra fundamentos sólidos de desarrollo web, enfocándose en el rendimiento, la gestión del estado, la sincronización en la nube y la manipulación compleja del DOM.
 
@@ -92,12 +92,12 @@ Construido completamente sin *frameworks*, este proyecto demuestra fundamentos s
 * **Implementación i18n Nativa:** Un sistema bilingüe (EN/ES) construido desde cero que autodetecta el `navigator.language` del usuario al entrar y permite cambiar el idioma de toda la interfaz en tiempo real sin recargar.
 * **Gestión de Estado Vanilla:** Enrutamiento de URLs mediante Hash simulando la fluidez de una *Single Page Application* (SPA) usando únicamente Javascript puro.
 
-## <img src="assets/isotipo.png" width="20" align="center"> Live Demo
+## <img src="assets/isotipo-w.png" width="20" align="center"> Live Demo
 
 Accede a la herramienta en vivo alojada en GitHub Pages:
 **[https://manusantos-dev.github.io/ebony-and-ivory/](https://manusantos-dev.github.io/ebony-and-ivory/)**
 
-## <img src="assets/isotipo.png" width="20" align="center"> Aviso Legal y Copyright
+## <img src="assets/isotipo-w.png" width="20" align="center"> Aviso Legal y Copyright
 
 Ebony & Ivory es una herramienta de código abierto. Las obras musicales que transcribas siguen siendo propiedad de sus respectivos autores originales. Por favor, transcribe con responsabilidad.
 
