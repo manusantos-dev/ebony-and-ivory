@@ -118,3 +118,9 @@ body.is-example-score .editor-subnav { background: var(--gold-wash); }
   .player-bar { padding: 10px 16px; max-width: 90%; }
   .pl-speeds { order: 5; width: 100%; justify-content: center; }
 }
+
+@media (max-width: 900px) {
+  .paper-page { padding: 20px 10px; }
+  .paper-wrap { padding: 10px 5px; }
+  #vexPagesContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
