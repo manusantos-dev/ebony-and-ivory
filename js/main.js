@@ -74,10 +74,19 @@ function handleNavigation() {
 
 function syncEditorStickyOffset() {
   const header = document.getElementById("mainHeader");
-  let offset = 0;
-  if (header) offset += header.getBoundingClientRect().height;
   
-  document.documentElement.style.setProperty("--editor-sticky-offset", Math.round(offset + 16) + "px");
+  let offset = 0;
+  if (header) {
+    offset = header.getBoundingClientRect().height;
+  }
+  
+  const stickyTop = Math.round(offset + 16);
+  document.documentElement.style.setProperty("--editor-sticky-offset", stickyTop + "px");
+
+  const desk = document.getElementById("engraveDesk");
+  if (desk) {
+      desk.style.height = `calc(100vh - ${stickyTop}px)`;
+  }
 }
 
 function initEditorStickyOffsetSync() {
