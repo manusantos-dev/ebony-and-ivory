@@ -66,6 +66,10 @@ function handleNavigation() {
     document.title = "Ebony & Ivory";
     window.scrollTo(0, 0);
   }
+  const btnBackLib = document.getElementById("btnBackLibrary");
+  if (btnBackLib) {
+    btnBackLib.hidden = (hash === "#inicio" || hash === "#catalogo" || !hash);
+  }
 }
 
 function initEditor() {
