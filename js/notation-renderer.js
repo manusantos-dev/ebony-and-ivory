@@ -5,10 +5,10 @@ import { emit } from "./events.js";
 
 const MEASURES_PER_LINE = 4;
 const LINES_PER_PAGE = 5;
-const TOTAL_WIDTH = 1080;
+const TOTAL_WIDTH = 990;
 const LEFT_MARGIN = 40;
 const RIGHT_MARGIN = 40;
-const FIRST_OF_LINE_WIDTH = 330;
+const FIRST_OF_LINE_WIDTH = 280;
 const REST_OF_LINE_WIDTH = (TOTAL_WIDTH - LEFT_MARGIN - RIGHT_MARGIN - FIRST_OF_LINE_WIDTH) / (MEASURES_PER_LINE - 1);
 const STAVE_GAP = 92;
 const LINE_GAP = 180;
@@ -139,7 +139,7 @@ export function renderScore() {
             staffNotes.forEach((n, nIdx) => {
               const durStr = n.duration + (n.dotted ? "d" : "") + (n.rest ? "r" : "");
               const keys = n.rest ? [restKey] : [noteToVexKey(n)];
-              const sn = new VF.StaveNote({ clef, keys, duration: durStr });
+              const sn = new VF.StaveNote({ clef, keys, duration: durStr, auto_stem: true });
               sn.setAttribute("id", `vf-note-${idx}-${staffName}-${nIdx}`);
               if (n.dotted) VF.Dot.buildAndAttach([sn], { all: true });
               if (!n.rest && n.accidental) sn.addModifier(new VF.Accidental(n.accidental), 0);
@@ -166,7 +166,7 @@ export function renderScore() {
           if (bassNotes.length > 0) { vBass.addTickables(bassNotes); voices.push(vBass); }
 
           if (voices.length > 0) {
-            const innerWidth = width - noteStartOffset - 25; 
+            const innerWidth = width - noteStartOffset - 20; 
             const formatter = new VF.Formatter();
             try {
               formatter.joinVoices(voices).format(voices, innerWidth);
