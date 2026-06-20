@@ -1,10 +1,10 @@
 /* =========================================================================
-   EBONY & IVORY — app.js (Unified Master Script)
+   EBONY & IVORY — app.js (Master Script - Flat Structure)
    ========================================================================= */
 (function () {
   "use strict";
 
-  /* ----------------------------- i18n & Static Data ----------------------------- */
+  /* ----------------------------- Textos e Idiomas (Recuperados) ----------------------------- */
   const translations = {
     es: {
       importBtn: "Importar .json", newScoreBtn: "+ Nueva partitura", backBtn: "← Volver al Catálogo",
@@ -25,7 +25,8 @@
       lblPitch: "Nota", lblAccidental: "Alteración", lblOctave: "Octava", lblDuration: "Duración",
       lblDotted: "Con puntillo", lblDynamics: "Dinámica", btnAddNote: "Añadir al compás", btnUndoNote: "Deshacer última nota",
       lblMeasureDetails: "Compás · Detalles", lblRepStart: "Inicio repetición ‖:", lblRepEnd: "Fin repetición :‖</",
-      lblDirective: "Indicación (Fine, D.C.)", footerText: "Ebony & Ivory es una herramienta personal para transcribir y archivar partituras.",
+      lblDirective: "Indicación (Fine, D.C.)", lblTempo: "Tempo (BPM)",
+      footerText: "Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales.",
       untitled: "Sin título", unknownAuthor: "Autor desconocido", measuresTxt: "compases",
       editBtn: "✎ Editar", viewBtn: "👁 Ver", copyBtn: "⎘ Copiar", deleteBtn: "🗑️ Borrar",
       delConfirm: "¿Eliminar partitura? No se puede deshacer.", delMeasureConfirm: "¿Eliminar este compás?",
@@ -54,7 +55,8 @@
       lblPitch: "Pitch", lblAccidental: "Accidental", lblOctave: "Octave", lblDuration: "Duration",
       lblDotted: "Dotted", lblDynamics: "Dynamics", btnAddNote: "Add to measure", btnUndoNote: "Undo last note",
       lblMeasureDetails: "Measure · Details", lblRepStart: "Start repeat ‖:", lblRepEnd: "End repeat :‖</",
-      lblDirective: "Directive (Fine, D.C.)", footerText: "Ebony & Ivory is a personal tool for transcribing and archiving sheet music.",
+      lblDirective: "Directive (Fine, D.C.)", lblTempo: "Tempo (BPM)",
+      footerText: "Ebony & Ivory is a personal tool for transcribing and archiving sheet music. Rewritten works still belong to their original authors.",
       untitled: "Untitled", unknownAuthor: "Unknown author", measuresTxt: "measures",
       editBtn: "✎ Edit", viewBtn: "👁 View", copyBtn: "⎘ Copy", deleteBtn: "🗑️ Delete",
       delConfirm: "Delete this score? This cannot be undone.", delMeasureConfirm: "Delete this measure?",
@@ -74,45 +76,21 @@
     { val: "Eb", us: "Eb / Cm", eu: "Mib / Do m" }, { val: "Ab", us: "Ab / Fm", eu: "Lab / Fa m" }
   ];
 
-  function getExampleScore(lang) {
-    const isEs = lang === 'es';
-    const note = (l, o, d, dot) => ({ rest: false, letter: l, accidental: '', octave: o, duration: d, dotted: !!dot, dynamic: '' });
-    const measure = (t, b, e) => Object.assign({ treble: t, bass: b, repeatStart: false, repeatEnd: false, directive: '' }, e || {});
-    
-    const m1 = () => [note('E',4,'q'), note('E',4,'q'), note('F',4,'q'), note('G',4,'q')];
-    const m2 = () => [note('G',4,'q'), note('F',4,'q'), note('E',4,'q'), note('D',4,'q')];
-    const m3 = () => [note('C',4,'q'), note('C',4,'q'), note('D',4,'q'), note('E',4,'q')];
-    const m4 = () => [note('E',4,'q',true), note('D',4,'8'), note('D',4,'h')];
-    const m8 = () => [note('D',4,'q',true), note('C',4,'8'), note('C',4,'h')];
-    const bR = (l) => [note(l,3,'w')];
-
-    return {
-      id: 'example-ode-to-joy', isExample: true, plate: 0,
-      title: isEs ? 'Sinfonía N.º 9 - Himno a la Alegría' : 'Symphony No. 9 - Ode to Joy',
-      composer: 'Ludwig van Beethoven', timeSig: '4/4', keySig: 'C', bpm: 100,
-      measures: [ measure(m1(), bR('C'), {repeatStart:true}), measure(m2(), bR('G')), measure(m3(), bR('C')), measure(m4(), bR('G')), measure(m1(), bR('C')), measure(m2(), bR('G')), measure(m3(), bR('C')), measure(m8(), bR('G'), {repeatEnd:true, directive:'Fine'}) ],
-      createdAt: 0, updatedAt: 0
-    };
-  }
-
+  /* ----------------------------- Motor Principal ----------------------------- */
   let currentLang = "en", currentScore = null;     
   let editorState = { activeMeasure: 0, activeStaff: "treble", duration: "q", dotted: false };
   let libraryState = { query: "", sortBy: "numAsc", filterTime: "all", filterKey: "all", filterHands: "all" };
   let saveTimeout = null;
 
-  /* ----------------------------- i18n & UI Init ----------------------------- */
-  window.setLang = function(lang) {
+  window.EI = {};
+  window.EI.setLang = function(lang) {
     currentLang = lang;
     document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
     const activeBtn = Array.from(document.querySelectorAll('.lang-btn')).find(btn => btn.textContent.toLowerCase() === lang);
     if(activeBtn) activeBtn.classList.add('active');
     
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-      const key = el.getAttribute('data-i18n'); if (translations[lang][key]) el.innerHTML = translations[lang][key];
-    });
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-      const key = el.getAttribute('data-i18n-placeholder'); if (translations[lang][key]) el.setAttribute('placeholder', translations[lang][key]);
-    });
+    document.querySelectorAll('[data-i18n]').forEach(el => { const key = el.getAttribute('data-i18n'); if (translations[lang][key]) el.innerHTML = translations[lang][key]; });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { const key = el.getAttribute('data-i18n-placeholder'); if (translations[lang][key]) el.setAttribute('placeholder', translations[lang][key]); });
     
     refreshLangTexts(); renderCustomSelects(); 
     if (!document.getElementById("viewLibrary").hidden) renderLibrary();
@@ -122,7 +100,7 @@
   function t(key) { return translations[currentLang][key] || key; }
 
   function refreshLangTexts() {
-    const tabLogin = document.getElementById('authTabLogin');
+    const tabLogin = document.getElementById('authTabLogin'); if(!tabLogin) return;
     if(document.getElementById('acctLoginLabel') && !currentUser) document.getElementById('acctLoginLabel').textContent = t('account');
     if(document.getElementById('authSubtitle')) document.getElementById('authSubtitle').textContent = tabLogin.classList.contains('is-active') ? t('subtitleLogin') : t('subtitleRegister');
     if(document.getElementById('authSubmitBtn')) document.getElementById('authSubmitBtn').textContent = tabLogin.classList.contains('is-active') ? t('login') : t('register');
@@ -241,18 +219,52 @@
         });
     });
 
+    function translateFirebaseError(err) {
+      const code = err && err.code;
+      const map = {
+        'auth/invalid-email': currentLang === 'es' ? 'Email no válido.' : 'Invalid email.',
+        'auth/user-not-found': currentLang === 'es' ? 'No existe ninguna cuenta con ese email.' : 'No account found with that email.',
+        'auth/wrong-password': currentLang === 'es' ? 'Contraseña incorrecta.' : 'Wrong password.',
+        'auth/email-already-in-use': currentLang === 'es' ? 'Ya existe una cuenta con ese email.' : 'An account already exists with that email.',
+        'auth/weak-password': currentLang === 'es' ? 'La contraseña debe tener al menos 6 caracteres.' : 'Password must be at least 6 characters.',
+        'auth/popup-closed-by-user': currentLang === 'es' ? 'Ventana de Google cerrada antes de terminar.' : 'Google popup closed before finishing.'
+      }; return map[code] || `${t('genericError')} (${code || 'Unknown'})`;
+    }
+
     document.getElementById('authForm').addEventListener('submit', (e) => {
       e.preventDefault(); const errBox = document.getElementById('authError'); errBox.hidden = true;
       if(!auth) { errBox.hidden = false; errBox.textContent = "Firebase no está configurado correctamente."; return; }
       const isReg = document.getElementById('authTabRegister').classList.contains('is-active');
       const p = isReg ? auth.createUserWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPassword').value) : auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPassword').value);
-      p.then(() => authOverlay.hidden = true).catch(err => { errBox.hidden = false; errBox.textContent = `${t('genericError')} (Detalle: ${err.message || err.code})`; });
+      p.then(() => authOverlay.hidden = true).catch(err => { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); });
     });
+    
     document.getElementById('authGoogleBtn').addEventListener('click', () => {
       const errBox = document.getElementById('authError'); errBox.hidden = true;
       if(!auth) { errBox.hidden = false; errBox.textContent = "Firebase no está configurado correctamente."; return; }
-      auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => authOverlay.hidden = true).catch(err => { errBox.hidden = false; errBox.textContent = `${t('genericError')} (Detalle: ${err.message || err.code})`; });
+      auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => authOverlay.hidden = true).catch(err => { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); });
     });
+  }
+
+  /* ----------------------------- Partitura de Ejemplo ----------------------------- */
+  function getExampleScore(lang) {
+    const isEs = lang === 'es';
+    const note = (l, o, d, dot) => ({ rest: false, letter: l, accidental: '', octave: o, duration: d, dotted: !!dot, dynamic: '' });
+    const measure = (t, b, e) => Object.assign({ treble: t, bass: b, repeatStart: false, repeatEnd: false, directive: '' }, e || {});
+    const m1 = () => [note('E',4,'q'), note('E',4,'q'), note('F',4,'q'), note('G',4,'q')];
+    const m2 = () => [note('G',4,'q'), note('F',4,'q'), note('E',4,'q'), note('D',4,'q')];
+    const m3 = () => [note('C',4,'q'), note('C',4,'q'), note('D',4,'q'), note('E',4,'q')];
+    const m4 = () => [note('E',4,'q',true), note('D',4,'8'), note('D',4,'h')];
+    const m8 = () => [note('D',4,'q',true), note('C',4,'8'), note('C',4,'h')];
+    const bR = (l) => [note(l,3,'w')];
+
+    return {
+      id: 'example-ode-to-joy', isExample: true, plate: 0,
+      title: isEs ? 'Sinfonía N.º 9 - Himno a la Alegría' : 'Symphony No. 9 - Ode to Joy',
+      composer: 'Ludwig van Beethoven', timeSig: '4/4', keySig: 'C', bpm: 100,
+      measures: [ measure(m1(), bR('C'), {repeatStart:true}), measure(m2(), bR('G')), measure(m3(), bR('C')), measure(m4(), bR('G')), measure(m1(), bR('C')), measure(m2(), bR('G')), measure(m3(), bR('C')), measure(m8(), bR('G'), {repeatEnd:true, directive:'Fine'}) ],
+      createdAt: 0, updatedAt: 0
+    };
   }
 
   /* ----------------------------- Routing & Catalog ----------------------------- */
@@ -605,7 +617,7 @@
 
   /* ----------------------------- Arranque ----------------------------- */
   const userLang = navigator.language || navigator.userLanguage;
-  window.setLang((userLang && userLang.toLowerCase().startsWith('es')) ? 'es' : 'en');
+  window.EI.setLang((userLang && userLang.toLowerCase().startsWith('es')) ? 'es' : 'en');
   window.addEventListener("hashchange", handleNavigation);
   if(!window.location.hash || window.location.hash === "#" || window.location.hash === "") { window.location.hash = "#inicio"; } else { handleNavigation(); }
 
