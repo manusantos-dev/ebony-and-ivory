@@ -31,9 +31,9 @@ a{ color: var(--accent); }
 body.is-home .topbar { background: transparent; border: none; box-shadow: none; position: absolute; width: 100%; }
 body.is-home .brand { opacity: 0; pointer-events: none; visibility: hidden; }
 
-/* Corrección de la separación del topbar */
-.topbar-right { display:flex; align-items:center; gap: 16px; margin-left: auto; justify-content: flex-end; }
-.topbar-actions{ display:flex; gap:10px; align-items:center; }
+/* Espaciado del Topbar Corregido */
+.topbar-right { display:flex; align-items:center; gap: 14px; margin-left: auto; }
+.topbar-actions{ display:flex; gap: 8px; align-items:center; }
 .lang-switch { display: flex; gap: 4px; border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 2px; background: var(--paper);}
 .lang-btn { background: transparent; border: none; font-size: 11px; font-weight: 600; cursor: pointer; padding: 4px 8px; border-radius: 4px; color: var(--ink-soft); }
 .lang-btn.active { background: var(--gold-wash); color: var(--ink); }
@@ -119,8 +119,9 @@ body.is-viewer .engrave-desk { display: none !important; }
 body.is-viewer .editor-layout { border: none; }
 body.is-viewer .paper-wrap { margin: 0 auto; padding-top: 20px; }
 
-/* Ocultar cajas interactivas en modo visor */
-body.is-viewer .measure-hit rect { stroke: none !important; fill: transparent !important; cursor: default; }
+/* En modo visor, las cajas interactivas desaparecen por completo */
+body.is-viewer .measure-hit rect { stroke: none !important; fill: transparent !important; }
+body.is-viewer .measure-hit { pointer-events: none; cursor: default; }
 
 .engrave-desk{ width: 340px; min-width:340px; background: var(--paper); border-right: 1px solid var(--line); padding: 24px 24px 60px; height: calc(100vh - 120px); overflow-y: auto; position: sticky; top:120px; transition: transform 0.1s ease; }
 .desk-section{ margin-bottom: 4px; }
@@ -143,9 +144,9 @@ body.is-viewer .measure-hit rect { stroke: none !important; fill: transparent !i
 .measure-hit{ cursor:pointer; }
 .measure-hit.active rect{ fill: rgba(179, 142, 80, 0.15); stroke: var(--brass); stroke-width: 1px; }
 
-/* Efectos visuales de reproducción (Línea y Notas coloridas) */
-.playback-line-svg { pointer-events: none; will-change: transform; }
-.note-playing path { fill: var(--brass) !important; stroke: var(--brass) !important; transition: fill 0.1s ease, stroke 0.1s ease; }
+/* --- EFECTOS VISUALES DE REPRODUCCIÓN (Línea y Notas) --- */
+.playback-line-svg { pointer-events: none; will-change: transform; stroke-linecap: round; }
+.note-playing path { fill: var(--brass) !important; stroke: var(--brass) !important; transition: fill 0.05s ease, stroke 0.05s ease; }
 
 .score-letterhead{ text-align:center; margin-bottom: 30px; }
 .score-letterhead h2{ font-family: var(--font-display); font-weight:700; font-size: 38px; margin:0; }
@@ -169,6 +170,8 @@ body.is-viewer .measure-hit rect { stroke: none !important; fill: transparent !i
 .pl-speed-btn { font-family: var(--font-mono); font-size: 11px; font-weight: 600; padding: 5px 8px; border-radius: 999px; border: 1px solid var(--line-strong); background: #fff; color: var(--ink-soft); cursor: pointer; }
 .pl-speed-btn:hover { border-color: var(--brass); color: var(--ink); }
 .pl-speed-btn.is-active { background: var(--ink); border-color: var(--ink); color: #fff; }
+.pl-bpm-label { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); display:flex; align-items:center; gap: 4px;}
+.pl-bpm-input { width: 54px; font-family: var(--font-mono); font-size: 12px; padding: 4px 6px; border: 1px solid var(--line-strong); border-radius: 4px;}
 .pl-status { font-size: 11.5px; color: var(--danger); font-weight: 600; }
 body.is-example-score .editor-subnav { background: var(--gold-wash); }
 .measure-hit.playing rect { fill: rgba(45, 90, 56, 0.16) !important; stroke: #2D5A38; stroke-width: 1.5; }
@@ -209,13 +212,4 @@ body.is-example-score .editor-subnav { background: var(--gold-wash); }
   .print-footer-content { display: flex; position: absolute; bottom: 0; left: 0; right: 0; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); border-top: 1px solid var(--line); padding-top: 8px; }
   .paper-page:first-child .print-header-content { display: none; }
   .print-logo-isotipo { height: 16px; width: auto; object-fit: contain; filter: grayscale(100%); opacity: 0.6; }
-}
-
-@media (max-width: 720px) {
-  .engrave-desk { position: static; height: auto; width: 100%; min-width: 0; }
-  .editor-layout { flex-direction: column; }
-  .player-bar { gap: 8px; padding: 8px 12px; }
-  .pl-speeds { order: 5; width: 100%; justify-content: center; }
-  .topbar { padding: 12px 14px; flex-wrap: wrap; gap: 10px; }
-  .topbar-right { gap: 12px; flex-wrap: wrap; }
 }
