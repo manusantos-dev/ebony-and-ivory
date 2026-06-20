@@ -118,12 +118,21 @@ export function renderScore() {
 
           staveTreble.setBegBarType(measure.repeatStart ? VF.Barline.type.REPEAT_BEGIN : VF.Barline.type.SINGLE);
           staveBass.setBegBarType(measure.repeatStart ? VF.Barline.type.REPEAT_BEGIN : VF.Barline.type.SINGLE);
+          
           let endType = VF.Barline.type.SINGLE;
-          if (measure.repeatEnd) endType = VF.Barline.type.REPEAT_END;
-          if (idx === measures.length - 1 && !measure.repeatEnd) endType = VF.Barline.type.END;
+          if (measure.repeatEnd) {
+            endType = VF.Barline.type.REPEAT_END;
+          } else if (measure.directive === "Fine") {
+            endType = VF.Barline.type.DOUBLE; 
+          } else if (measure.directive && (measure.directive.includes("D.C.") || measure.directive.includes("D.S."))) {
+            endType = VF.Barline.type.END;
+          } else if (idx === measures.length - 1) {
+            endType = VF.Barline.type.END;
+          }
+          
           staveTreble.setEndBarType(endType);
           staveBass.setEndBarType(endType);
-
+          
           staveTreble.setContext(ctx).draw();
           staveBass.setContext(ctx).draw();
 
