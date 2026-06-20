@@ -427,8 +427,14 @@ document.addEventListener("DOMContentLoaded", () => {
   spawnFloatingNotes();
 
   // Re-render al cambiar de idioma o al sincronizar con la nube
-  on("langchange", () => {
+  on("langchange", (lang) => {
     renderCustomSelects();
+    if (state.currentScore && state.currentScore.isExample) {
+      state.currentScore.title = lang === "es" ? "Oda a la Alegría" : "Ode to Joy";
+      const elTitle = document.getElementById("scoreTitle");
+      if (elTitle) elTitle.value = state.currentScore.title;
+    }
+     
     const vLib = document.getElementById("viewLibrary");
     const vEdit = document.getElementById("viewEditor");
     if (vLib && !vLib.hidden) renderLibrary();
