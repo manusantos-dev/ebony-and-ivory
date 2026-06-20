@@ -72,6 +72,32 @@ function handleNavigation() {
   }
 }
 
+function syncEditorStickyOffset() {
+  const header = document.getElementById("mainHeader");
+  const topControls = document.querySelector(".editor-top-controls");
+  let offset = 0;
+  if (header) offset += header.getBoundingClientRect().height;
+  if (topControls) offset += topControls.getBoundingClientRect().height;
+  // Pequeño margen para que el panel no quede pegado a la barra superior.
+  document.documentElement.style.setProperty("--editor-sticky-offset", Math.round(offset) + "px");
+}
+
+function initEditorStickyOffsetSync() {
+  syncEditorStickyOffset();
+  // ResizeObserver detecta cambios de alto por zoom del navegador, cambios
+  // de tamaño de fuente del sistema, o por el contenido de la barra de
+  // reproducción al envolverse en pantallas estrechas — todo lo que un
+  // simple "resize" de window no siempre capta a tiempo.
+  const header = document.getElementById("mainHeader");
+  const topControls = document.querySelector(".editor-top-controls");
+  if (typeof ResizeObserver !== "undefined") {
+    const ro = new ResizeObserver(() => syncEditorStickyOffset());
+    if (header) ro.observe(header);
+    if (topControls) ro.observe(topControls);
+  }
+  window.addEventListener("resize", syncEditorStickyOffset);
+}
+
 function initEditor() {
   resetEditorState();
   const vEdit = document.getElementById("viewEditor");
@@ -92,6 +118,7 @@ function initEditor() {
 
   syncMeasureControls();
   renderScore();
+  syncEditorStickyOffset();
   window.scrollTo(0, 0);
 }
 
@@ -430,21 +457,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   spawnFloatingNotes();
-
-  // Fix 2: Desk sticky top se alinea dinámicamente con la parte inferior del subnav del editor
-  function updateDeskTop() {
-    const subnav = document.querySelector(".editor-subnav");
-    if (subnav) {
-      const rect = subnav.getBoundingClientRect();
-      const top = rect.bottom;
-      document.documentElement.style.setProperty("--desk-top", top + "px");
-      const desk = document.getElementById("engraveDesk");
-      if (desk) desk.style.height = `calc(100vh - ${top}px)`;
-    }
-  }
-  window.addEventListener("resize", updateDeskTop);
-  // Run after layout settles
-  setTimeout(updateDeskTop, 100);
+  initEditorStickyOffsetSync();
 
   // Re-render al cambiar de idioma o al sincronizar con la nube
   on("langchange", (lang) => {

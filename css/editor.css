@@ -13,10 +13,17 @@ body.is-viewer .engrave-desk { display: none !important; }
 body.is-viewer .editor-layout { border: none; }
 body.is-viewer .paper-wrap { margin: 0 auto; padding-top: 20px; }
 
+/* En modo visor, las cajas interactivas desaparecen por completo */
 body.is-viewer .measure-hit rect { stroke: none !important; fill: transparent !important; }
 body.is-viewer .measure-hit { pointer-events: none; cursor: default; }
 
-.engrave-desk{ width: 340px; min-width:340px; background: var(--paper); border-right: 1px solid var(--line); padding: 24px 24px 60px; height: calc(100vh - var(--desk-top, 120px)); overflow-y: auto; position: sticky; top: var(--desk-top, 120px); transition: transform 0.1s ease; }
+/* --top/--height ya no se adivinan a ojo: se calculan en main.js
+   (sincronizado con ResizeObserver) según el alto real de la cabecera y la
+   barra de reproducción, y se exponen aquí mediante variables CSS. Así el
+   panel siempre arranca exactamente a la altura de la página de partitura,
+   sin importar el zoom del navegador, el tamaño de fuente o el ancho de
+   pantalla. Los valores de "fallback" sólo se usan antes del primer cálculo. */
+.engrave-desk{ width: 340px; min-width:340px; background: var(--paper); border-right: 1px solid var(--line); padding: 24px 24px 60px; height: calc(100vh - var(--editor-sticky-offset, 120px)); overflow-y: auto; position: sticky; top: var(--editor-sticky-offset, 120px); transition: transform 0.1s ease; }
 .desk-section{ margin-bottom: 4px; }
 .desk-title{ font-family: var(--font-mono); font-size: 11px; letter-spacing:.06em; text-transform:uppercase; color: var(--ink); font-weight: 600; margin: 4px 0 10px; }
 .desk-divider{ border:none; border-top: 1px dashed var(--line-strong); margin: 20px 0; }

@@ -1,86 +1,94 @@
-function note(letter, octave, duration, dotted, accidental) {
+/* =========================================================================
+   EBONY & IVORY — example-score.js
+   Partitura de ejemplo: "Oda a la Alegría" (tema de la Novena Sinfonía
+   de Beethoven). Los datos replican exactamente la transcripción de
+   referencia (verificada nota a nota), para que sirva como ejemplo fiable
+   de lo que el editor es capaz de representar.
+   ========================================================================= */
+
+function n(letter, octave, duration, dotted, accidental) {
   return { rest: false, letter, accidental: accidental || "", octave, duration, dotted: !!dotted, dynamic: "" };
 }
-
+function rest(duration) {
+  return { rest: true, letter: "G", accidental: "", octave: 4, duration, dotted: false, dynamic: "" };
+}
 function measure(treble, bass, extra) {
   return Object.assign({ treble, bass, repeatStart: false, repeatEnd: false, directive: "" }, extra || {});
-}
-
-function gSharp3(dur) {
-  return { rest: false, letter: "G", accidental: "#", octave: 3, duration: dur, dotted: false, dynamic: "" };
 }
 
 export function getExampleScore(lang) {
   const isEs = lang === "es";
 
+  const measures = [
+    // 1
+    measure(
+      [n("E", 4, "q"), n("E", 4, "q"), n("F", 4, "q"), n("G", 4, "q")],
+      [n("C", 4, "w")]
+    ),
+    // 2
+    measure(
+      [n("G", 4, "q"), n("F", 4, "q"), n("E", 4, "q"), n("D", 4, "q")],
+      [n("B", 3, "w")]
+    ),
+    // 3
+    measure(
+      [n("C", 4, "q"), n("C", 4, "q"), n("D", 4, "q"), n("E", 4, "q")],
+      [n("A", 3, "w")]
+    ),
+    // 4
+    measure(
+      [n("E", 4, "q", true), n("D", 4, "8"), n("D", 4, "h")],
+      [n("G", 3, "w")]
+    ),
+    // 5
+    measure(
+      [n("E", 4, "q"), n("E", 4, "q"), n("F", 4, "q"), n("G", 4, "q")],
+      [n("C", 4, "w")]
+    ),
+    // 6
+    measure(
+      [n("G", 4, "q"), n("F", 4, "q"), n("E", 4, "q"), n("D", 4, "q")],
+      [n("B", 3, "w")]
+    ),
+    // 7
+    measure(
+      [n("C", 4, "q"), n("C", 4, "q"), n("D", 4, "q"), n("E", 4, "q")],
+      [n("A", 3, "w")]
+    ),
+    // 8 — Fine
+    measure(
+      [n("D", 4, "q", true), n("C", 4, "8"), n("C", 4, "h")],
+      [n("G", 3, "h"), n("C", 3, "h")],
+      { directive: "Fine" }
+    ),
+    // 9
+    measure(
+      [n("D", 4, "q"), n("D", 4, "q"), n("E", 4, "q"), n("C", 4, "q")],
+      [n("G", 3, "w")]
+    ),
+    // 10
+    measure(
+      [n("D", 4, "q"), n("E", 4, "8"), n("F", 4, "8"), n("E", 4, "q"), n("C", 4, "q")],
+      [n("G", 3, "w")]
+    ),
+    // 11
+    measure(
+      [n("D", 4, "q"), n("E", 4, "8"), n("F", 4, "8"), n("E", 4, "q"), n("D", 4, "q")],
+      [n("G", 3, "h"), n("G", 3, "h", false, "#")]
+    ),
+    // 12 — D.C. al Fine
+    measure(
+      [n("C", 4, "q"), n("D", 4, "q"), rest("h")],
+      [n("A", 3, "h"), n("G", 3, "h")],
+      { directive: "D.C. al Fine" }
+    )
+  ];
+
   return {
     id: "example-ode-to-joy", isExample: true, plate: 0,
     title: isEs ? "Oda a la Alegría" : "Ode to Joy",
     composer: "Ludwig van Beethoven", timeSig: "4/4", keySig: "C", bpm: 100,
-    measures: [
-      // M1
-      measure(
-        [note("E",4,"q"), note("E",4,"q"), note("F",4,"q"), note("G",4,"q")],
-        [note("C",4,"w")]
-      ),
-      // M2
-      measure(
-        [note("G",4,"q"), note("F",4,"q"), note("E",4,"q"), note("D",4,"q")],
-        [note("B",3,"w")]
-      ),
-      // M3
-      measure(
-        [note("C",4,"q"), note("C",4,"q"), note("D",4,"q"), note("E",4,"q")],
-        [note("A",3,"w")]
-      ),
-      // M4
-      measure(
-        [note("E",4,"q",true), note("D",4,"8"), note("D",4,"h")],
-        [note("G",3,"w")]
-      ),
-      // M5
-      measure(
-        [note("E",4,"q"), note("E",4,"q"), note("F",4,"q"), note("G",4,"q")],
-        [note("C",4,"w")]
-      ),
-      // M6
-      measure(
-        [note("G",4,"q"), note("F",4,"q"), note("E",4,"q"), note("D",4,"q")],
-        [note("B",3,"w")]
-      ),
-      // M7
-      measure(
-        [note("C",4,"q"), note("C",4,"q"), note("D",4,"q"), note("E",4,"q")],
-        [note("A",3,"w")]
-      ),
-      // M8 - Fine
-      measure(
-        [note("D",4,"q",true), note("C",4,"8"), note("C",4,"h")],
-        [note("G",3,"h"), note("C",3,"h")],
-        { directive: "Fine" }
-      ),
-      // M9
-      measure(
-        [note("D",4,"q"), note("D",4,"q"), note("E",4,"q"), note("C",4,"q")],
-        [note("G",3,"w")]
-      ),
-      // M10
-      measure(
-        [note("D",4,"q"), note("E",4,"8"), note("F",4,"8"), note("E",4,"q"), note("C",4,"q")],
-        [note("G",3,"w")]
-      ),
-      // M11
-      measure(
-        [note("D",4,"q"), note("E",4,"8"), note("F",4,"8"), note("E",4,"q"), note("D",4,"q")],
-        [note("G",3,"h"), gSharp3("h")]
-      ),
-      // M12 - D.C. al Fine
-      measure(
-        [note("C",4,"q"), note("D",4,"q"), { rest: true, letter: "G", accidental: "", octave: 4, duration: "h", dotted: false, dynamic: "" }],
-        [note("A",3,"h"), note("G",3,"h")],
-        { directive: "D.C. al Fine" }
-      ),
-    ],
+    measures,
     createdAt: 0, updatedAt: 0
   };
 }

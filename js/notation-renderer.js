@@ -4,7 +4,11 @@ import { persistScore, measureNeededQuarters, quartersUsed, escapeHtml, plateLab
 import { emit } from "./events.js";
 
 const MEASURES_PER_LINE = 4;
-const LINES_PER_PAGE = 5;
+// Líneas por página: reducido de 5 a 4 para que el contenido (cabecera +
+// pentagramas + márgenes CSS) quepa siempre dentro del área imprimible de
+// una hoja A4 real. Con 5 líneas el alto necesario superaba el alto útil
+// de la página y el navegador recortaba la última línea al exportar a PDF.
+const LINES_PER_PAGE = 4;
 const TOTAL_WIDTH = 990;
 const LEFT_MARGIN = 40;
 const RIGHT_MARGIN = 40;
@@ -18,6 +22,11 @@ function noteToVexKey(n) {
   return n.letter.toLowerCase() + (n.accidental === "#" || n.accidental === "b" ? n.accidental : "") + "/" + n.octave;
 }
 
+// Devuelve SIEMPRE un array nuevo de Fraction. VexFlow puede mutar
+// internamente los objetos Fraction recibidos en `groups`; reutilizar la
+// misma instancia en docenas de llamadas (una por compás y pentagrama) es
+// un riesgo de estado compartido innecesario. Generarlo de nuevo en cada
+// llamada es barato y elimina por completo esa clase de bug.
 function beamGroupsFor(num, den, VF) {
   if (den === 8 && num % 3 === 0) return [new VF.Fraction(3, 8)];
   if (den === 8) return [new VF.Fraction(2, 8)];
@@ -42,7 +51,6 @@ export function renderScore() {
     const VF = Vex.Flow;
     const measures = score.measures;
     const [num, den] = score.timeSig.split("/").map(Number);
-    const beamGroups = beamGroupsFor(num, den, VF);
     const totalLines = Math.ceil(measures.length / MEASURES_PER_LINE);
     const totalPages = Math.ceil(totalLines / LINES_PER_PAGE) || 1;
 
@@ -178,26 +186,53 @@ export function renderScore() {
             }
           }
           
+          if (measure.directive) {
+            // IMPORTANTE: los modificadores (Annotation, Accidental, Dot...)
+            // sólo se pintan si se añaden ANTES de llamar a voice.draw().
+            // Antes este bloque se ejecutaba después de dibujar ambos
+            // pentagramas, por lo que la indicación (Fine, D.C. al Fine...)
+            // nunca llegaba a verse. Además, una indicación de fin de
+            // sección pertenece visualmente al FINAL del compás, así que
+            // se ancla a la última nota, no a la primera.
+            const targetNotes = trebleNotes.length ? trebleNotes : bassNotes;
+            const lastNote = targetNotes[targetNotes.length - 1];
+            if (lastNote) {
+              lastNote.addModifier(new VF.Annotation(measure.directive)
+                .setFont("Cormorant Garamond", 14, "italic")
+                .setVerticalJustification(VF.Annotation.VerticalJustify.TOP), 0);
+            }
+          }
+
           if (trebleNotes.length > 0) {
-            VF.Beam.generateBeams(trebleNotes, { groups: beamGroups }).forEach(b => b.setContext(ctx).draw());
+            try {
+              VF.Beam.generateBeams(trebleNotes, { groups: beamGroupsFor(num, den, VF), beam_rests: false })
+                .forEach((b) => b.setContext(ctx).draw());
+            } catch (e) { console.warn("Beam treble", e); }
             vTreble.draw(ctx, staveTreble);
           }
-          
+
           if (bassNotes.length > 0) {
-            try { VF.Beam.generateBeams(bassNotes, { groups: beamGroups, beam_rests: false }).forEach((b) => b.setContext(ctx).draw()); } catch (e) {}
+            try {
+              VF.Beam.generateBeams(bassNotes, { groups: beamGroupsFor(num, den, VF), beam_rests: false })
+                .forEach((b) => b.setContext(ctx).draw());
+            } catch (e) { console.warn("Beam bass", e); }
             vBass.draw(ctx, staveBass);
           }
           
-          if (measure.directive) {
-            const note = trebleNotes.length ? trebleNotes[0] : bassNotes[0];
-            note.addModifier(new VF.Annotation(measure.directive)
-              .setFont("Cormorant Garamond", 14, "italic")
-              .setVerticalJustification(VF.Annotation.VerticalJustify.TOP), 0);
-          }
-          
+          // El área interactiva del compás no debe incluir el ancho extra
+          // que ocupan la clave/armadura/indicación de compás en el primer
+          // compás de cada línea (FIRST_OF_LINE_WIDTH=322 vs 196 del resto).
+          // Si se usa el ancho físico completo del pentagrama, esos
+          // primeros compases salen mucho más anchos ("rectangulares") que
+          // los demás. Anclamos la caja al inicio real de las notas (con un
+          // pequeño margen) para que todas las cajas tengan una proporción
+          // uniforme y "cuadrada" como el resto.
+          const hitPad = 10;
+          const hitX = staveTreble.getNoteStartX() - hitPad;
+          const hitRight = staveTreble.getX() + staveTreble.getWidth();
           hitRects.push({
-            x: staveTreble.getX(), y: staveTreble.getYForLine(0) - 25,
-            width: staveTreble.getWidth(), height: staveBass.getYForLine(4) - staveTreble.getYForLine(0) + 50,
+            x: hitX, y: staveTreble.getYForLine(0) - 25,
+            width: hitRight - hitX, height: staveBass.getYForLine(4) - staveTreble.getYForLine(0) + 50,
             startX: staveTreble.getNoteStartX(), endX: staveTreble.getNoteEndX(), idx
           });
         }
