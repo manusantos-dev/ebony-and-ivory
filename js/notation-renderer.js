@@ -5,7 +5,13 @@ import { emit } from "./events.js";
 
 const MEASURES_PER_LINE = 4;
 const LINES_PER_PAGE = 4;
-const TOTAL_WIDTH = 990;
+const BASE_WIDTH = 990; 
+const screenWidth = window.innerWidth;
+const scale = screenWidth < 900 ? (screenWidth / BASE_WIDTH) * 0.9 : 1;
+const effectiveWidth = BASE_WIDTH * scale;
+const renderer = new VF.Renderer(svgWrap, VF.Renderer.Backends.SVG);
+renderer.resize(effectiveWidth, pageHeight * scale);
+ctx.scale(scale, scale); 
 const RIGHT_MARGIN = 40;
 const FIRST_OF_LINE_WIDTH = 322;
 const REST_OF_LINE_WIDTH = 196;
