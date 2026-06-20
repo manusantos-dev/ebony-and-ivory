@@ -48,9 +48,9 @@ body.is-viewer .measure-hit { pointer-events: none; cursor: default; }
 .playback-line-svg { pointer-events: none; will-change: transform; stroke-linecap: round; }
 .note-playing path, .note-playing rect { fill: var(--brass) !important; stroke: var(--brass) !important; transition: fill 0.05s ease, stroke 0.05s ease; }
 
-.score-letterhead{ text-align:center; margin-bottom: 14px; } /* Margen reducido al pentagrama */
-.score-letterhead h2{ font-family: var(--font-display); font-weight:700; font-size: 38px; margin:0; line-height: 1.2;}
-.score-letterhead p{ font-family: var(--font-display); font-style: italic; font-size: 18px; margin: 4px 0 0; color: var(--ink-soft); }
+.score-letterhead { text-align:center; margin-bottom: 14px; } 
+.score-letterhead h2 { font-family: var(--font-display); font-weight:700; font-size: 52px; margin:0; line-height: 1.2;}
+.score-letterhead p { font-family: var(--font-display); font-style: italic; font-size: 24px; margin: 4px 0 0; color: var(--ink-soft); }
 .print-header-content, .print-footer-content { display: none; }
 
 /* =========================================================
