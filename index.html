@@ -23,15 +23,13 @@
       <button class="lang-btn" onclick="window.EI.setLang('en')">EN</button>
     </div>
 
-    <div class="account-widget" id="accountWidget">
-      <button class="btn btn-ghost" id="btnAccountLogin">👤 <span id="acctLoginLabel">Cuenta</span></button>
-      <div class="account-logged" id="accountLogged" hidden>
-        <span class="account-avatar" id="acctAvatar">?</span>
-        <span class="account-email" id="acctEmail"></span>
-        <button class="btn-ghost-small account-logout" id="btnAccountLogout" title="Cerrar sesión" aria-label="Cerrar sesión">⏻</button>
-      </div>
+    <div class="account-logged" id="accountLogged" hidden title="Abrir Perfil">
+      <span class="account-avatar" id="acctAvatar">?</span>
+      <span class="account-email" id="acctEmail"></span>
     </div>
     
+    <button class="btn btn-ghost" id="btnAccountLogin">👤 <span id="acctLoginLabel">Cuenta</span></button>
+
     <nav class="topbar-actions" id="libraryActions" hidden>
       <button class="btn btn-ghost" id="btnImport" data-i18n="importBtn">Importar .json</button>
       <input type="file" id="fileImport" accept="application/json" hidden>
@@ -64,7 +62,6 @@
 <main id="viewLibrary" class="view" hidden>
   <div class="catalog-header">
     <h2 data-i18n="catalogTitle">Catálogo de Partituras</h2>
-    
     <div class="catalog-toolbar">
       <input type="text" id="searchScores" class="field-input search-input" placeholder="Buscar por título, autor o E&I..." data-i18n-placeholder="searchPlaceholder">
       <button class="btn btn-ghost" id="btnToggleFilters" data-i18n="filterBtn">Filtros ⧨</button>
@@ -77,7 +74,6 @@
         <option value="authorAsc" data-i18n="sortAuthorAsc">Autor (A-Z)</option>
       </select>
     </div>
-
     <div class="catalog-filters" id="catalogFilters" hidden>
       <div class="filter-group">
         <label class="field-label" data-i18n="lblTimeSig">Compás</label>
@@ -106,7 +102,6 @@
       </div>
     </div>
   </div>
-  
   <section class="library-grid" id="libraryGrid"></section>
   <div class="library-empty" id="libraryEmpty" hidden>
     <h3 data-i18n="emptyLibraryTitle">Tu catálogo está vacío (o sin resultados)</h3>
@@ -258,6 +253,7 @@
   </div>
 </main>
 
+<!-- Modal Auth -->
 <div class="modal-overlay" id="authModalOverlay" hidden>
   <div class="modal-card">
     <button class="modal-close" id="authModalClose" aria-label="Cerrar">×</button>
@@ -269,16 +265,40 @@
     <form id="authForm">
       <label class="field-label">Email</label>
       <input type="email" id="authEmail" class="field-input" required autocomplete="email">
-      <label class="field-label">Contraseña</label>
+      <label class="field-label" data-i18n="lblPassword">Contraseña</label>
       <input type="password" id="authPassword" class="field-input" required autocomplete="current-password" minlength="6">
       <p class="auth-error" id="authError" hidden></p>
       <button type="submit" class="btn btn-primary btn-block" id="authSubmitBtn">Iniciar sesión</button>
     </form>
     <div class="auth-divider"><span>o</span></div>
     <button class="btn btn-ghost btn-block auth-google-btn" id="authGoogleBtn">
-      <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.16.28-1.7V4.97H.95A9 9 0 0 0 0 9c0 1.45.35 2.83.95 4.03l3-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
+      <svg width="16" height="16" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.16.28-1.7V4.97H.95A9 9 0 0 0 0 9c0 1.45.35 2.83.95 4.03l3-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
       Continuar con Google
     </button>
+  </div>
+</div>
+
+<!-- Modal Perfil -->
+<div class="modal-overlay" id="profileModalOverlay" hidden>
+  <div class="modal-card">
+    <button class="modal-close" id="profileModalClose" aria-label="Cerrar">×</button>
+    <div class="profile-header">
+      <div class="profile-avatar-large" id="profAvatarLg">?</div>
+      <div class="profile-info">
+        <h3 id="profNameTitle">Usuario</h3>
+        <p id="profEmailText">email@email.com</p>
+      </div>
+    </div>
+    <form id="profileForm">
+      <label class="field-label" data-i18n="displayName">Nombre / Nickname</label>
+      <input type="text" id="profDisplayName" class="field-input" placeholder="Ej: Amadeus">
+      <label class="field-label" data-i18n="photoUrl">URL de la foto de perfil (Opcional)</label>
+      <input type="url" id="profPhotoUrl" class="field-input" placeholder="https://...">
+      <button type="submit" class="btn btn-primary btn-block" style="margin-top:20px;" data-i18n="saveProfile">Guardar Cambios</button>
+    </form>
+    <div class="profile-danger-zone">
+      <button class="btn btn-ghost btn-block btn-danger" id="btnDeleteAccount" data-i18n="deleteAccount">Eliminar mi cuenta</button>
+    </div>
   </div>
 </div>
 
