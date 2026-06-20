@@ -49,11 +49,6 @@ export function renderScore() {
       const pageDiv = document.createElement("div");
       pageDiv.className = "paper-page";
 
-      const printHeader = document.createElement("div");
-      printHeader.className = "print-header-content";
-      printHeader.innerHTML = `<span>${escapeHtml(score.title || t("untitled"))} — ${escapeHtml(score.composer)}</span> <span>${plateLabel(score.plate)}</span>`;
-      pageDiv.appendChild(printHeader);
-
       let startY = TOP_MARGIN;
       if (p === 0) {
         const head = document.createElement("div");
@@ -68,11 +63,11 @@ export function renderScore() {
 
       const printFooter = document.createElement("div");
       printFooter.className = "print-footer-content";
-      printFooter.innerHTML = `<span><img src="assets/isotipo.png" class="print-logo-isotipo"></span> <span>${p + 1} / ${totalPages}</span>`;
+      printFooter.innerHTML = `<span style="display:flex; align-items:center; gap:10px;"><img src="assets/isotipo.png" class="print-logo-isotipo"> <strong>${plateLabel(score.plate)}</strong></span> <span>${p + 1} / ${totalPages}</span>`;
       pageDiv.appendChild(printFooter);
 
       container.appendChild(pageDiv);
-
+      
       const linesOnThisPage = Math.min(LINES_PER_PAGE, totalLines - p * LINES_PER_PAGE);
       const pageHeight = startY + linesOnThisPage * LINE_GAP + 20;
 
