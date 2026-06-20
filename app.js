@@ -1,5 +1,5 @@
 /* =========================================================================
-   EBONY & IVORY — app.js (Código Maestro - Blindado y Corregido)
+   EBONY & IVORY — app.js (Código Maestro Definitivo)
    ========================================================================= */
 (function () {
   "use strict";
@@ -25,7 +25,8 @@
       lblPitch: "Nota", lblAccidental: "Alteración", lblOctave: "Octava", lblDuration: "Duración",
       lblDotted: "Con puntillo", lblDynamics: "Dinámica", btnAddNote: "Añadir al compás", btnUndoNote: "Deshacer última nota",
       lblMeasureDetails: "Compás · Detalles", lblRepStart: "Inicio repetición ‖:", lblRepEnd: "Fin repetición :‖</",
-      lblDirective: "Indicación (Fine, D.C.)", footerText: "Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales.",
+      lblDirective: "Indicación (Fine, D.C.)", lblTempo: "Tempo (BPM)",
+      footerText: "Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales.",
       untitled: "Sin título", unknownAuthor: "Autor desconocido", measuresTxt: "compases",
       editBtn: "✎ Editar", viewBtn: "👁 Ver", copyBtn: "⎘ Copiar", deleteBtn: "🗑️ Borrar",
       delConfirm: "¿Eliminar partitura? No se puede deshacer.", delMeasureConfirm: "¿Eliminar este compás?",
@@ -54,7 +55,8 @@
       lblPitch: "Pitch", lblAccidental: "Accidental", lblOctave: "Octave", lblDuration: "Duration",
       lblDotted: "Dotted", lblDynamics: "Dynamics", btnAddNote: "Add to measure", btnUndoNote: "Undo last note",
       lblMeasureDetails: "Measure · Details", lblRepStart: "Start repeat ‖:", lblRepEnd: "End repeat :‖</",
-      lblDirective: "Directive (Fine, D.C.)", footerText: "Ebony & Ivory is a personal tool for transcribing and archiving sheet music. Rewritten works still belong to their original authors.",
+      lblDirective: "Directive (Fine, D.C.)", lblTempo: "Tempo (BPM)",
+      footerText: "Ebony & Ivory is a personal tool for transcribing and archiving sheet music. Rewritten works still belong to their original authors.",
       untitled: "Untitled", unknownAuthor: "Unknown author", measuresTxt: "measures",
       editBtn: "✎ Edit", viewBtn: "👁 View", copyBtn: "⎘ Copy", deleteBtn: "🗑️ Delete",
       delConfirm: "Delete this score? This cannot be undone.", delMeasureConfirm: "Delete this measure?",
@@ -178,7 +180,7 @@
       console.warn("Firebase SDK bloqueado. Posible AdBlocker activo.");
       return "El navegador está bloqueando Firebase (Revisa si tienes activado un AdBlocker o Brave Shields).";
     }
-    if (!window.FIREBASE_CONFIG || !window.FIREBASE_CONFIG.apiKey || window.FIREBASE_CONFIG.apiKey.startsWith('PEGA_')) {
+    if (!window.FIREBASE_CONFIG || !window.FIREBASE_CONFIG.apiKey) {
       return "La nube no está configurada (Falta añadir tus claves en firebase-config.js).";
     }
     try {
@@ -207,9 +209,8 @@
           if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
         }
       });
-      return null; // Todo Ok
+      return null;
     } catch (e) { 
-      console.warn('Firebase init error:', e); 
       return "Error de conexión con Firebase: " + e.message;
     }
   }
@@ -287,7 +288,7 @@
 
     return {
       id: 'example-ode-to-joy', isExample: true, plate: 0,
-      title: isEs ? 'Sinfonía N.º 9 - Himno a la Alegría' : 'Symphony No. 9 - Ode to Joy',
+      title: isEs ? 'Oda a la Alegría' : 'Ode to Joy',
       composer: 'Ludwig van Beethoven', timeSig: '4/4', keySig: 'C', bpm: 100,
       measures: [ measure(m1(), bR('C'), {repeatStart:true}), measure(m2(), bR('G')), measure(m3(), bR('C')), measure(m4(), bR('G')), measure(m1(), bR('C')), measure(m2(), bR('G')), measure(m3(), bR('C')), measure(m8(), bR('G'), {repeatEnd:true, directive:'Fine'}) ],
       createdAt: 0, updatedAt: 0
@@ -304,7 +305,7 @@
     const lAct = document.getElementById("libraryActions"); if(lAct) lAct.hidden = true; 
     const eAct = document.getElementById("editorActions"); if(eAct) eAct.hidden = true;
     
-    if(typeof stopPlayback === 'function') stopPlayback(false);
+    if(typeof window.stopPlayback === 'function') window.stopPlayback(false);
 
     if (hash.startsWith("#editor/")) {
       currentScore = loadAll()[hash.split("/")[1]]; if (currentScore) { document.body.classList.remove('is-viewer'); initEditor(); } else window.location.hash = "#catalogo";
@@ -385,7 +386,7 @@
     }
   }
 
-  /* ----------------------------- FILTROS & Interacciones ----------------------------- */
+  /* ----------------------------- FILTROS & Editor Interactions ----------------------------- */
   const elSearch = document.getElementById("searchScores"); if(elSearch) elSearch.addEventListener("input", (e) => { libraryState.query = e.target.value.toLowerCase(); renderLibrary(); });
   const elSort = document.getElementById("sortScores"); if(elSort) elSort.addEventListener("change", (e) => { libraryState.sortBy = e.target.value; renderLibrary(); });
   const elBtnFilters = document.getElementById("btnToggleFilters"); const elFiltersPanel = document.getElementById("catalogFilters");
@@ -417,6 +418,21 @@
     document.getElementById("durationGrid").addEventListener("click", (e) => { const btn = e.target.closest(".dur-btn"); if (!btn) return; editorState.duration = btn.dataset.dur; document.getElementById("durationGrid").querySelectorAll(".dur-btn").forEach(b => b.classList.toggle("is-active", b === btn)); });
 
     document.getElementById("btnAddNote").addEventListener("click", () => {
+      const needed = measureNeededQuarters(currentScore.timeSig);
+      const durQ = (DURATION_QUARTERS[editorState.duration] || 0) * (document.getElementById("isDotted").checked ? 1.5 : 1);
+      const m = currentScore.measures[editorState.activeMeasure];
+      const currentUsed = quartersUsed(m[editorState.activeStaff]);
+
+      // Comprobador de Matemáticas Exactas (Denegación Sonora)
+      if (currentUsed + durQ > needed) {
+          const errorSynth = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
+          errorSynth.volume.value = -10; errorSynth.triggerAttackRelease("C2", "16n");
+          const desk = document.getElementById("engraveDesk");
+          desk.style.transition = "transform 0.05s"; desk.style.transform = "translateX(10px)";
+          setTimeout(() => desk.style.transform = "translateX(-10px)", 50); setTimeout(() => desk.style.transform = "translateX(0)", 100);
+          return;
+      }
+
       currentScore.measures[editorState.activeMeasure][editorState.activeStaff].push({
         rest: document.getElementById("isRest").checked, letter: document.getElementById("pitchLetter").value, accidental: document.getElementById("pitchAccidental").value, 
         octave: parseInt(document.getElementById("pitchOctave").value, 10), duration: editorState.duration, dotted: document.getElementById("isDotted").checked, dynamic: document.getElementById("dynamicSelect").value
@@ -433,7 +449,7 @@
     const ds = document.getElementById("directiveSelect"); if(ds) ds.value = m.directive || "";
   }
 
-  /* ----------------------------- VexFlow Renderer ----------------------------- */
+  /* ----------------------------- VexFlow Renderer (Block Formatting Fix) ----------------------------- */
   const MEASURES_PER_LINE = 4; const LINES_PER_PAGE = 5; const TOTAL_WIDTH = 1050; 
   const LEFT_MARGIN = 50; const RIGHT_MARGIN = 50; const FIRST_OF_LINE_WIDTH = 250; 
   const REST_OF_LINE_WIDTH = (TOTAL_WIDTH - LEFT_MARGIN - RIGHT_MARGIN - FIRST_OF_LINE_WIDTH) / (MEASURES_PER_LINE - 1); 
@@ -451,7 +467,6 @@
       
       for (let p = 0; p < totalPages; p++) {
           const pageDiv = document.createElement('div'); pageDiv.className = 'paper-page';
-          
           const printHeader = document.createElement('div'); printHeader.className = 'print-header-content';
           printHeader.innerHTML = `<span>${escapeHtml(currentScore.title || t('untitled'))} — ${escapeHtml(currentScore.composer)}</span> <span>${plateLabel(currentScore.plate)}</span>`;
           pageDiv.appendChild(printHeader);
@@ -511,12 +526,13 @@
                   }
                   new VF.StaveConnector(staveTreble, staveBass).setType(VF.StaveConnector.type.SINGLE_RIGHT).setContext(ctx).draw();
 
-                  const buildNotes = (staffNotes, clef) => {
+                  const buildNotes = (staffNotes, clef, staffName) => {
                     const out = []; const restKey = clef === "bass" ? "d/3" : "b/4";
-                    staffNotes.forEach((n) => {
+                    staffNotes.forEach((n, i) => {
                       const durStr = n.duration + (n.dotted ? "d" : "") + (n.rest ? "r" : "");
                       const keys = n.rest ? [restKey] : [noteToVexKey(n)];
                       const sn = new VF.StaveNote({ clef: clef, keys: keys, duration: durStr });
+                      sn.setAttribute('id', `vf-${idx}-${staffName}-${i}`); // ID Inyectado para iluminación posterior
                       if (n.dotted) VF.Dot.buildAndAttach([sn], { all: true });
                       if (!n.rest && n.accidental) sn.addModifier(new VF.Accidental(n.accidental), 0);
                       if (n.dynamic) { sn.addModifier(new VF.Annotation(n.dynamic).setFont("Times", 12, "italic bold").setVerticalJustification( clef === "bass" ? VF.Annotation.VerticalJustify.TOP : VF.Annotation.VerticalJustify.BOTTOM ), 0); }
@@ -524,18 +540,21 @@
                     }); return out;
                   };
 
-                  const trebleNotes = buildNotes(measure.treble, "treble"); const bassNotes = buildNotes(measure.bass, "bass");
+                  const trebleNotes = buildNotes(measure.treble, "treble", "treble"); const bassNotes = buildNotes(measure.bass, "bass", "bass");
 
-                  if (trebleNotes.length > 0) {
-                    const vTreble = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT); vTreble.addTickables(trebleNotes);
-                    try { VF.Beam.generateBeams(trebleNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch(e) {}
-                    new VF.Formatter().joinVoices([vTreble]).format([vTreble], width - 30); vTreble.draw(ctx, staveTreble);
-                  }
-                  if (bassNotes.length > 0) {
-                    const vBass = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT); vBass.addTickables(bassNotes);
-                    try { VF.Beam.generateBeams(bassNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch(e) {}
-                    new VF.Formatter().joinVoices([vBass]).format([vBass], width - 30); vBass.draw(ctx, staveBass);
-                  }
+                  const vTreble = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT);
+                  if (trebleNotes.length > 0) vTreble.addTickables(trebleNotes);
+                  const vBass = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT);
+                  if (bassNotes.length > 0) vBass.addTickables(bassNotes);
+
+                  // FORMATEO EN BLOQUE: Impide que las notas se solapen
+                  const formatter = new VF.Formatter(); const voices = [];
+                  if (trebleNotes.length > 0) voices.push(vTreble);
+                  if (bassNotes.length > 0) voices.push(vBass);
+                  if (voices.length > 0) formatter.joinVoices(voices).format(voices, width - 40);
+
+                  if (trebleNotes.length > 0) { try { VF.Beam.generateBeams(trebleNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch(e) {} vTreble.draw(ctx, staveTreble); }
+                  if (bassNotes.length > 0) { try { VF.Beam.generateBeams(bassNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch(e) {} vBass.draw(ctx, staveBass); }
 
                   if (measure.directive) {
                     const targetArr = trebleNotes.length ? trebleNotes : bassNotes;
@@ -568,7 +587,7 @@
 
   function trim(n) { return Number.isInteger(n) ? n : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, ""); }
 
-  /* ----------------------------- Audio Player (Tone.js Acoustic Piano) ----------------------------- */
+  /* ----------------------------- Audio Player & Animaciones Visuales ----------------------------- */
   let acousticPiano = null, isPlaying = false, rafId = null, part = null, measurePart = null, builtForScoreKey = null, totalQuarters = 0, speedFactor = 1;
 
   function ensureAcousticPiano() {
@@ -586,25 +605,66 @@
       measureEvents.push({ time: quarterToBBS(pos), idx });
       ['treble', 'bass'].forEach((staffName) => {
         let cursor = pos;
-        (measure[staffName] || []).forEach((n) => {
+        (measure[staffName] || []).forEach((n, nIdx) => {
           const durQ = (DURATION_QUARTERS[n.duration] || 0) * (n.dotted ? 1.5 : 1);
-          if (!n.rest && durQ > 0) events.push({ time: quarterToBBS(cursor), note: n.letter.toUpperCase() + (n.accidental.replace('b', 'b') || "") + n.octave, durQ: durQ });
-          cursor += durQ;
+          if (!n.rest && durQ > 0) {
+            events.push({ time: quarterToBBS(cursor), note: n.letter.toUpperCase() + (n.accidental.replace('b', 'b') || "") + n.octave, durQ: durQ, id: `vf-${idx}-${staffName}-${nIdx}` });
+          } cursor += durQ;
         });
       }); pos += measureNeededQuarters(currentScore.timeSig);
     });
 
     totalQuarters = pos; updateAudioBPM();
-    part = new Tone.Part((time, ev) => { acousticPiano.triggerAttackRelease(ev.note, Math.max(0.05, ev.durQ * (60 / Tone.Transport.bpm.value) * 0.92), time); }, events).start(0);
-    measurePart = new Tone.Part((time, ev) => { Tone.Draw.schedule(() => highlightMeasure(ev.idx), time); }, measureEvents).start(0);
+    part = new Tone.Part((time, ev) => { 
+        acousticPiano.triggerAttackRelease(ev.note, Math.max(0.05, ev.durQ * (60 / Tone.Transport.bpm.value) * 0.92), time); 
+        // Iluminar la nota correspondiente
+        Tone.Draw.schedule(() => {
+            const el = document.getElementById(ev.id);
+            if(el) {
+                el.classList.add('note-playing');
+                setTimeout(() => el.classList.remove('note-playing'), ev.durQ * (60 / Tone.Transport.bpm.value) * 1000);
+            }
+        }, time);
+    }, events).start(0);
+
+    measurePart = new Tone.Part((time, ev) => { 
+        const durationSec = measureNeededQuarters(currentScore.timeSig) * (60 / Tone.Transport.bpm.value);
+        Tone.Draw.schedule(() => highlightMeasureSweep(ev.idx, durationSec), time); 
+    }, measureEvents).start(0);
+    
     Tone.Transport.scheduleOnce(() => { Tone.Draw.schedule(() => stopPlayback(true), Tone.now()); }, quarterToBBS(totalQuarters));
     builtForScoreKey = currentScore.id + ':' + currentScore.measures.length + ':' + currentScore.timeSig; return true;
   }
 
   function teardownAudio() { if (part) { part.dispose(); part = null; } if (measurePart) { measurePart.dispose(); measurePart = null; } }
-  let lastHighlighted = null;
-  function highlightMeasure(idx) { if (lastHighlighted !== null) document.querySelectorAll('[data-measure-idx="' + lastHighlighted + '"]').forEach((el) => el.classList.remove('playing')); document.querySelectorAll('[data-measure-idx="' + idx + '"]').forEach((el) => el.classList.add('playing')); lastHighlighted = idx; }
-  function clearHighlight() { if (lastHighlighted !== null) document.querySelectorAll('[data-measure-idx="' + lastHighlighted + '"]').forEach((el) => el.classList.remove('playing')); lastHighlighted = null; }
+  
+  // Dibujar la majestuosa línea dorada a través del SVG
+  function highlightMeasureSweep(idx, durationSec) { 
+    const rect = document.querySelector(`.measure-hit[data-measure-idx="${idx}"] rect`);
+    if(rect) {
+        const svg = rect.closest('svg');
+        let line = svg.querySelector('.playback-line-svg');
+        if(!line) {
+            line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("class", "playback-line-svg");
+            line.setAttribute("stroke", "#B38E50");
+            line.setAttribute("stroke-width", "2");
+            svg.appendChild(line);
+        }
+        document.querySelectorAll('.playback-line-svg').forEach(l => { if(l !== line) l.style.display = 'none'; });
+        line.style.display = 'block';
+
+        const x = parseFloat(rect.getAttribute('x')); const y = parseFloat(rect.getAttribute('y'));
+        const w = parseFloat(rect.getAttribute('width')); const h = parseFloat(rect.getAttribute('height'));
+
+        line.setAttribute('x1', x); line.setAttribute('y1', y); line.setAttribute('x2', x); line.setAttribute('y2', y + h);
+        line.style.transition = 'none'; line.style.transform = `translateX(0px)`;
+        line.getBoundingClientRect(); // Forzar renderizado
+        line.style.transition = `transform ${durationSec}s linear`; line.style.transform = `translateX(${w}px)`;
+    }
+  }
+  
+  function clearHighlight() { document.querySelectorAll('.playback-line-svg').forEach(l => l.style.display = 'none'); document.querySelectorAll('.note-playing').forEach(n => n.classList.remove('note-playing')); }
 
   function playAudio() {
     if (!currentScore) return;
@@ -630,7 +690,7 @@
   const btnPlay = document.getElementById('plBtnPlay');
   if(btnPlay) {
     btnPlay.addEventListener('click', () => isPlaying ? pauseAudio() : playAudio());
-    document.getElementById('plBtnRewind').addEventListener('click', () => stopPlayback(false));
+    document.getElementById('plBtnRewind').addEventListener('click', () => window.stopPlayback(false));
     document.querySelectorAll('.pl-speed-btn').forEach((b) => b.addEventListener('click', () => { 
       speedFactor = parseFloat(b.dataset.speed); updateAudioBPM(); 
       document.querySelectorAll('.pl-speed-btn').forEach(btn => btn.classList.toggle('is-active', parseFloat(btn.dataset.speed) === speedFactor));
