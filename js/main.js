@@ -74,26 +74,18 @@ function handleNavigation() {
 
 function syncEditorStickyOffset() {
   const header = document.getElementById("mainHeader");
-  const topControls = document.querySelector(".editor-top-controls");
   let offset = 0;
   if (header) offset += header.getBoundingClientRect().height;
-  if (topControls) offset += topControls.getBoundingClientRect().height;
-  // Pequeño margen para que el panel no quede pegado a la barra superior.
-  document.documentElement.style.setProperty("--editor-sticky-offset", Math.round(offset) + "px");
+  
+  document.documentElement.style.setProperty("--editor-sticky-offset", Math.round(offset + 16) + "px");
 }
 
 function initEditorStickyOffsetSync() {
   syncEditorStickyOffset();
-  // ResizeObserver detecta cambios de alto por zoom del navegador, cambios
-  // de tamaño de fuente del sistema, o por el contenido de la barra de
-  // reproducción al envolverse en pantallas estrechas — todo lo que un
-  // simple "resize" de window no siempre capta a tiempo.
   const header = document.getElementById("mainHeader");
-  const topControls = document.querySelector(".editor-top-controls");
   if (typeof ResizeObserver !== "undefined") {
     const ro = new ResizeObserver(() => syncEditorStickyOffset());
     if (header) ro.observe(header);
-    if (topControls) ro.observe(topControls);
   }
   window.addEventListener("resize", syncEditorStickyOffset);
 }
