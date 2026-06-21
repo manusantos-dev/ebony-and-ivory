@@ -11,8 +11,8 @@ const RENDER_CFG = {
   LEFT_MARGIN: 40,
   FIRST_LINE_WIDTH: 330,
   REST_LINE_WIDTH: 200,
-  STAVE_GAP: 110,
-  LINE_GAP: 220,
+  STAVE_GAP: 120,
+  LINE_GAP: 240,
   TOP_MARGIN: 20
 };
 
@@ -21,7 +21,6 @@ const noteToVexKey = (n) => `${n.letter.toLowerCase()}${n.accidental === "#" || 
 export function renderScore() {
   const score = state.currentScore;
   if (!score) return;
-  
   persistScore(score);
 
   const container = document.getElementById("vexPagesContainer");
@@ -52,8 +51,8 @@ export function renderScore() {
       pageDiv.appendChild(svgWrap);
 
       const printFooter = document.createElement("div");
-      printFooter.className = "print-footer-content";
-      printFooter.innerHTML = `<span style="display:flex; align-items:center; gap:10px;"><img src="assets/isotipo-w.png" class="print-logo-isotipo"> <strong>${plateLabel(score.plate)}</strong></span> <span>${p + 1} / ${totalPages}</span>`;
+      printFooter.className = "print-footer-content print-only"; 
+      printFooter.innerHTML = `<span style="display:flex; align-items:center; gap:10px;"><img src="assets/ebony-ivory-brand-mark.png" class="print-logo-isotipo"> <strong>${plateLabel(score.plate)}</strong></span> <span>${p + 1} / ${totalPages}</span>`;
       pageDiv.appendChild(printFooter);
       container.appendChild(pageDiv);
       
@@ -188,12 +187,12 @@ export function renderScore() {
             }
             
             if (trebleNotes.length > 0) {
-              try { VF.Beam.generateBeams(trebleNotes).forEach(b => b.setContext(ctx).draw()); } catch {}
+              try { VF.Beam.generateBeams(trebleNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch {}
               vTreble.draw(ctx, staveTreble);
             }
 
             if (bassNotes.length > 0) {
-              try { VF.Beam.generateBeams(bassNotes).forEach(b => b.setContext(ctx).draw()); } catch {}
+              try { VF.Beam.generateBeams(bassNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch {}
               vBass.draw(ctx, staveBass);
             }
           } catch (measureErr) {

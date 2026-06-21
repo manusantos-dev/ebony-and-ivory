@@ -178,17 +178,15 @@ const highlightMeasureSweep = (idx, durationSec) => {
   
   document.querySelectorAll(".playback-line-svg").forEach(l => l.style.display = l === line ? "block" : "none");
 
+  line.style.transition = "none";
+  line.style.transform = `translateX(0px)`;
   line.setAttribute("x1", startX); line.setAttribute("y1", y);
   line.setAttribute("x2", startX); line.setAttribute("y2", y + h);
-  line.style.transition = "none";
-  line.style.transform = "translateX(0px)";
   
-  requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        line.style.transition = `transform ${durationSec}s linear`;
-        line.style.transform = `translateX(${endX - startX}px)`;
-      });
-  });
+  void line.offsetWidth; // Force Reflow (Fix bug line)
+  
+  line.style.transition = `transform ${durationSec}s linear`;
+  line.style.transform = `translateX(${endX - startX}px)`;
 };
 
 const clearHighlight = () => {

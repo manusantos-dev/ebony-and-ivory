@@ -44,19 +44,19 @@ a { color: var(--color-accent); text-decoration: none; }
 
 body.dark-theme {
   --color-paper: #1A1A1A;
-  --color-paper-edge: #0F0F0F;
-  --color-ink: #F4F0EA;
-  --color-ink-soft: #A8A090;
+  --color-paper-edge: #121212;
+  --color-ink: #EAEAEA;
+  --color-ink-soft: #9E9E9E;
   --color-line: #333333;
-  --color-line-strong: #444444;
-  --color-gold-wash: #2A2620;
+  --color-line-strong: #4A4A4A;
+  --color-gold-wash: #242424;
   --color-brass: #D4AF37;
   --color-accent: #D4AF37;
   background-color: var(--color-paper-edge);
 }
 
 body.dark-theme .paper-wrap {
-  filter: invert(0.92) hue-rotate(180deg) brightness(1.05);
+  filter: invert(0.88) hue-rotate(180deg) contrast(1.1) brightness(1.1);
   background: transparent;
 }
 
@@ -67,6 +67,5 @@ body.dark-theme .logo-modal {
   transition: filter 0.3s ease;
 }
 
-body.dark-theme .pl-btn--play {
-  color: #121212 !important;
-}
+.print-only { display: none; }
+@media print { .print-only { display: block !important; } }
