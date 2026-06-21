@@ -6,7 +6,7 @@ export const renderCustomSelects = () => {
   const optionsHtml = (isFilter) => {
     const isEs = state.lang === "es";
     return [
-      ...(isFilter ? [`<div data-val="all"><span>${t("optKeyAll")}</span></div>`] : []),
+      ...(isFilter ? [`<div data-val="all"><span>${t("optAll")}</span></div>`] : []),
       ...KEYS_DB.map(k => `<div data-val="${k.val}"><span>${isEs ? k.eu : k.us}</span><span class="translucent">${isEs ? k.us : k.eu}</span></div>`)
     ].join("");
   };
@@ -26,8 +26,11 @@ export const renderCustomSelects = () => {
 
 export const updateCustomSelectUI = (wrapperId, val) => {
   const wrapper = document.getElementById(wrapperId);
-  const option = wrapper?.querySelector(`.select-items div[data-val="${val}"]`);
-  if (!wrapper || !option) return;
+  if (!wrapper) return;
+  
+  let option = wrapper.querySelector(`.select-items div[data-val="${val}"]`);
+  if (!option && val === "all") option = wrapper.querySelector(`.select-items div[data-val="all"]`);
+  if (!option) return;
   
   wrapper.querySelector(".select-selected").innerHTML = option.innerHTML;
   const targetInputId = wrapperId === "customKeySig" ? "keySig" : "filterKeySig";

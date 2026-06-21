@@ -25,6 +25,8 @@
   <div class="topbar-right">
     <span id="saveIndicator" class="save-indicator" data-i18n="savedIndicator" hidden>Guardado ✓</span>
 
+    <button class="btn btn-ghost-small" id="btnGoCodex" title="Catálogo Público">🌍 El Códice</button>
+
     <div class="lang-switch">
       <button class="lang-btn active" data-lang="es">ES</button>
       <button class="lang-btn" data-lang="en">EN</button>
@@ -44,7 +46,7 @@
     </nav>
 
     <nav class="topbar-actions" id="editorActions" hidden>
-      <button class="btn-ghost-small" id="btnTogglePractice" data-i18n="practiceBtn">Modo Práctica</button>
+      <button class="btn-ghost-small" id="btnTogglePractice" data-i18n="practiceBtn">🎤 Modo Práctica</button>
       <button class="btn-ghost-small" id="btnToggleViewer" data-i18n="toggleViewBtn">Alternar Visor</button>
       <button class="btn btn-ghost" id="btnExportJson" data-i18n="exportJsonBtn">Descargar .json</button>
       <button class="btn btn-primary" id="btnExportPdf" data-i18n="exportPdfBtn">Exportar PDF</button>
@@ -57,7 +59,7 @@
   <div class="home-hero">
     <img src="/assets/ebony-ivory-primary-logo.png" alt="Ebony & Ivory" class="logo-primary">
     <h1 class="home-subtitle" data-i18n="heroTitle">El arte de preservar la música</h1>
-    <p class="hero-sub" data-i18n="heroSub">La plataforma definitiva para la notación musical. Transcribe, clasifica y preserva tu repertorio con precisión de grabador.</p>
+    <p class="hero-sub" data-i18n="heroSub">El entorno profesional para la notación y el grabado musical. Transcribe, clasifica y eterniza tu repertorio con precisión absoluta.</p>
     <div class="hero-actions">
       <button class="btn btn-primary btn-huge" id="btnGoCatalog" data-i18n="goToCatalog">Abrir mi Catálogo</button>
       <button class="btn btn-ghost btn-huge" id="btnGoExample">🎵 <span data-i18n="viewExample">Ver partitura de ejemplo</span></button>
@@ -67,7 +69,7 @@
 
 <main id="viewLibrary" class="view" hidden>
   <div class="catalog-header">
-    <h2 data-i18n="catalogTitle">Catálogo de Partituras</h2>
+    <h2 data-i18n="catalogTitle">Mi Catálogo</h2>
     <div class="catalog-toolbar">
       <input type="text" id="searchScores" class="field-input search-input" placeholder="Buscar por título, autor o E&I..." data-i18n-placeholder="searchPlaceholder">
       <button class="btn btn-ghost" id="btnToggleFilters" data-i18n="filterBtn">Filtros ⧨</button>
@@ -115,6 +117,18 @@
   </div>
 </main>
 
+<main id="viewCodex" class="view" hidden>
+  <div class="catalog-header">
+    <h2>El Códice 🌍</h2>
+    <p style="color:var(--color-ink-soft); margin-top:-10px;">El gran archivo público. Descubre y estudia las transcripciones de la comunidad.</p>
+    <div class="catalog-toolbar">
+      <input type="text" id="searchCodex" class="field-input search-input" placeholder="Buscar en el Códice...">
+      <button class="btn btn-ghost" id="btnBackToMyCatalog">Volver a Mi Catálogo</button>
+    </div>
+  </div>
+  <section class="library-grid" id="codexGrid"></section>
+</main>
+
 <main id="viewEditor" class="view" hidden>
   <div class="editor-top-controls">
     <button class="back-pill" id="btnBackLibrary" data-i18n="backBtn" hidden>← Volver</button>
@@ -141,7 +155,7 @@
       <div class="desk-section">
         <label class="field-label" data-i18n="lblTitle">Título de la Obra</label>
         <input type="text" id="scoreTitle" class="field-input field-input--title">
-        <label class="field-label" data-i18n="lblComposer">Compositor/es (separados por coma)</label>
+        <label class="field-label" data-i18n="lblComposer">Compositor/es</label>
         <input type="text" id="scoreComposer" class="field-input">
       </div>
 
@@ -166,23 +180,19 @@
         </div>
       </div>
 
-      <hr class="desk-divider">
-
       <div class="desk-section">
         <div class="measure-controls-header">
-          <p class="desk-title"><span data-i18n="lblActiveMeasure">Compás activo</span> <span id="activeMeasureLabel" class="pill">1</span></p>
+          <p class="desk-title" style="border:none; margin:0;"><span data-i18n="lblActiveMeasure">Compás</span> <span id="activeMeasureLabel" class="pill">1</span></p>
         </div>
         <div class="field-row">
           <button class="btn btn-small" id="btnPrevMeasure" data-i18n="btnPrev">‹ ant</button>
           <button class="btn btn-small" id="btnNextMeasure" data-i18n="btnNext">sig ›</button>
         </div>
         <div class="field-row" style="margin-top:8px;">
-          <button class="btn btn-small btn-add" id="btnAddMeasure" data-i18n="btnAddMeasure">+ añadir compás</button>
+          <button class="btn btn-small btn-add" id="btnAddMeasure" data-i18n="btnAddMeasure">+ añadir</button>
           <button class="btn btn-small btn-danger" id="btnDeleteMeasure" data-i18n="btnDelMeasure">eliminar</button>
         </div>
       </div>
-
-      <hr class="desk-divider">
 
       <div class="desk-section">
         <p class="desk-title" data-i18n="lblInputStaff">Edición de Notas</p>
@@ -191,12 +201,11 @@
           <button class="toggle-btn" data-staff="bass" id="btnStaffBass" data-i18n="lblBass">Clave Fa</button>
         </div>
         
-        <div class="note-list-container" id="noteListContainer">
-            </div>
+        <div class="note-list-container" id="noteListContainer"></div>
 
         <div class="note-builder">
             <div class="field-row note-row">
-            <label class="check-inline"><input type="checkbox" id="isRest"> <span data-i18n="lblRest">Insertar Silencio</span></label>
+              <label class="check-inline"><input type="checkbox" id="isRest"> <span data-i18n="lblRest">Insertar Silencio</span></label>
             </div>
             <div class="field-row" id="pitchFields">
             <div>
@@ -222,12 +231,11 @@
 
             <label class="field-label" data-i18n="lblDuration">Duración</label>
             <div class="duration-grid" id="durationGrid">
-            <button class="dur-btn" data-dur="w">𝅝</button>
-            <button class="dur-btn" data-dur="h">𝅗𝅥</button>
-            <button class="dur-btn is-active" data-dur="q">♩</button>
-            <button class="dur-btn" data-dur="8">♪</button>
-            <button class="dur-btn" data-dur="16">𝅘𝅥𝅯</button>
-            <button class="dur-btn" data-dur="32">𝅘𝅥𝅰</button>
+              <button class="dur-btn" data-dur="w" title="Redonda"><svg width="24" height="24" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="6" ry="4" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+              <button class="dur-btn" data-dur="h" title="Blanca"><svg width="24" height="24" viewBox="0 0 24 24"><ellipse cx="9" cy="15" rx="5" ry="3.5" fill="none" stroke="currentColor" stroke-width="2" transform="rotate(-15 9 15)"/><line x1="13.5" y1="14" x2="13.5" y2="3" stroke="currentColor" stroke-width="2"/></svg></button>
+              <button class="dur-btn is-active" data-dur="q" title="Negra"><svg width="24" height="24" viewBox="0 0 24 24"><ellipse cx="9" cy="15" rx="5" ry="3.5" fill="currentColor" transform="rotate(-15 9 15)"/><line x1="13.5" y1="14" x2="13.5" y2="3" stroke="currentColor" stroke-width="2"/></svg></button>
+              <button class="dur-btn" data-dur="8" title="Corchea"><svg width="24" height="24" viewBox="0 0 24 24"><ellipse cx="8" cy="16" rx="4.5" ry="3" fill="currentColor" transform="rotate(-15 8 16)"/><line x1="12" y1="15" x2="12" y2="4" stroke="currentColor" stroke-width="2"/><path d="M12 4 Q17 4 18 10" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+              <button class="dur-btn" data-dur="16" title="Semicorchea"><svg width="24" height="24" viewBox="0 0 24 24"><ellipse cx="8" cy="17" rx="4.5" ry="3" fill="currentColor" transform="rotate(-15 8 17)"/><line x1="12" y1="16" x2="12" y2="5" stroke="currentColor" stroke-width="2"/><path d="M12 5 Q16 5 17 9 M12 9 Q16 9 17 13" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
             </div>
             <label class="check-inline"><input type="checkbox" id="isDotted"> <span data-i18n="lblDotted">Puntillo</span></label>
 
@@ -246,50 +254,49 @@
 
             <label class="field-label" data-i18n="lblDynamics">Dinámica</label>
             <select id="dynamicSelect" class="field-input">
-            <option value="">—</option><option value="pp">pp</option><option value="p">p</option><option value="mp">mp</option><option value="mf">mf</option>
-            <option value="f">f</option><option value="ff">ff</option><option value="sfz">sfz</option><option value="cresc.">cresc.</option><option value="dim.">dim.</option>
+              <option value="">—</option><option value="pp">pp</option><option value="p">p</option><option value="mp">mp</option><option value="mf">mf</option>
+              <option value="f">f</option><option value="ff">ff</option><option value="sfz">sfz</option><option value="cresc.">cresc.</option><option value="dim.">dim.</option>
             </select>
 
-            <button class="btn btn-primary btn-block" id="btnAddNote" data-i18n="btnAddNote">Añadir al compás</button>
+            <button class="btn btn-primary btn-block" id="btnAddNote" data-i18n="btnAddNote">Añadir nota</button>
         </div>
       </div>
 
-      <hr class="desk-divider">
-
       <div class="desk-section">
-        <p class="desk-title" data-i18n="lblMeasureDetails">Compás · Indicaciones</p>
+        <p class="desk-title" data-i18n="lblMeasureDetails">Indicaciones</p>
         <label class="check-inline"><input type="checkbox" id="repeatStart"> <span data-i18n="lblRepStart">Inicio repetición ‖:</span></label>
         <label class="check-inline"><input type="checkbox" id="repeatEnd"> <span data-i18n="lblRepEnd">Fin repetición :‖</span></label>
-        <label class="field-label" data-i18n="lblDirective">Salto o Fin (Fine, D.C.)</label>
+        <label class="field-label" data-i18n="lblDirective">Salto/Fin</label>
         <select id="directiveSelect" class="field-input">
-          <option value="">—</option><option value="Fine">Fine</option><option value="D.C.">D.C.</option><option value="D.C. al Fine">D.C. al Fine</option>
-          <option value="D.S. al Fine">D.S. al Fine</option><option value="𝄋 Segno">𝄋 Segno</option>
+          <option value="">—</option>
+          <option value="Fine">Fine</option>
+          <option value="D.C.">D.C.</option>
+          <option value="D.C. al Fine">D.C. al Fine</option>
+          <option value="D.S. al Fine">D.S. al Fine</option>
+          <option value="To Coda">To Coda</option>
+          <option value="D.C. al Coda">D.C. al Coda</option>
+          <option value="𝄋 Segno">𝄋 Segno</option>
+          <option value="𝄌 Coda">𝄌 Coda</option>
         </select>
       </div>
     </aside>
 
     <section class="paper-wrap" id="paperWrap">
+      <div id="practiceFloatingOverlay" hidden>
+         <div class="practice-pill">
+            <span class="practice-pulse"></span>
+            <span style="background:var(--color-brass); color:#121212; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; letter-spacing:1px; margin-right:8px;">DEMO</span>
+            <span>Escuchando... Toca: </span>
+            <strong id="practiceExpectedNote" style="color:var(--color-brass);">--</strong>
+            <span style="opacity:0.5; margin:0 8px;">| Detectado:</span>
+            <strong id="practiceDetectedNote">--</strong>
+            <button id="btnStopPracticeFloating" class="btn btn-ghost-small" style="margin-left:auto;">✕</button>
+         </div>
+      </div>
       <div id="vexPagesContainer"></div>
     </section>
   </div>
 </main>
-
-<div class="modal-overlay" id="practiceModalOverlay" hidden>
-    <div class="modal-card">
-        <div class="modal-header-brand"><img src="/assets/ebony-ivory-primary-logo.png" alt="Ebony & Ivory" class="logo-modal"></div>
-        <button class="modal-close" id="practiceModalClose" aria-label="Cerrar">×</button>
-        <h3 style="text-align:center; font-family:var(--font-display); font-size:24px; margin-top:0;">Modo Práctica</h3>
-        <p style="text-align:center; color:var(--color-ink-soft); font-size:14px; margin-bottom:24px;">Toca tu instrumento real. El micrófono escuchará las notas y la partitura avanzará automáticamente cuando toques la nota correcta.</p>
-        <div style="text-align:center; margin-bottom:24px;">
-            <div id="practiceMicStatus" style="display:inline-block; padding:8px 16px; border-radius:50px; background:var(--color-paper-edge); font-family:var(--font-mono); font-size:12px; font-weight:600;">Esperando micrófono...</div>
-        </div>
-        <div style="text-align:center; margin-bottom:24px;">
-            <p style="font-family:var(--font-mono); font-size:11px; text-transform:uppercase; color:var(--color-ink-soft); margin-bottom:4px;">Nota detectada</p>
-            <div id="practiceDetectedNote" style="font-size:32px; font-weight:700; color:var(--color-brass);">--</div>
-        </div>
-        <button class="btn btn-primary btn-block" id="btnStartPractice">Iniciar Práctica</button>
-    </div>
-</div>
 
 <div class="modal-overlay" id="authModalOverlay" hidden>
   <div class="modal-card">
@@ -352,7 +359,7 @@
 </div>
 
 <footer class="sitefooter">
-  <p data-i18n="footerText">Ebony & Ivory es un entorno de grabado y archivo musical. Los derechos de las obras transcritas pertenecen a sus respectivos creadores.</p>
+  <p data-i18n="footerText">Ebony & Ivory es un lienzo digital de grado profesional para archivística musical. Los derechos de las obras transcritas pertenecen a sus respectivos creadores.</p>
 </footer>
 
 <script type="module" src="/src/js/main.js"></script>

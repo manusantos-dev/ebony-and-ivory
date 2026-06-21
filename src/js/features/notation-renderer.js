@@ -18,6 +18,15 @@ const RENDER_CFG = {
 
 const noteToVexKey = (n) => `${n.letter.toLowerCase()}${n.accidental === "#" || n.accidental === "b" ? n.accidental : ""}/${n.octave}`;
 
+const safeBeam = (notes, ctx) => {
+  if (!notes.some(n => n.getIntrinsicTicks() < 4096)) return;
+  try { 
+    VF.Beam.generateBeams(notes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); 
+  } catch (e) {
+    console.warn("VexFlow Beaming skipped:", e);
+  }
+};
+
 export function renderScore() {
   const score = state.currentScore;
   if (!score) return;
@@ -51,7 +60,7 @@ export function renderScore() {
       pageDiv.appendChild(svgWrap);
 
       const printFooter = document.createElement("div");
-      printFooter.className = "print-footer-content print-only"; 
+      printFooter.className = "print-footer-content print-only";
       printFooter.innerHTML = `<span style="display:flex; align-items:center; gap:10px;"><img src="assets/ebony-ivory-brand-mark.png" class="print-logo-isotipo"> <strong>${plateLabel(score.plate)}</strong></span> <span>${p + 1} / ${totalPages}</span>`;
       pageDiv.appendChild(printFooter);
       container.appendChild(pageDiv);
@@ -170,7 +179,8 @@ export function renderScore() {
                 lastNote.addModifier(
                   new VF.Annotation(measure.directive)
                     .setFont("Times", 13, "italic bold")
-                    .setVerticalJustification(1),
+                    .setVerticalJustification(3) 
+                    .setJustification(VF.Annotation.Justify.RIGHT),
                   0
                 );
               }
@@ -187,12 +197,12 @@ export function renderScore() {
             }
             
             if (trebleNotes.length > 0) {
-              try { VF.Beam.generateBeams(trebleNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch {}
+              safeBeam(trebleNotes, ctx);
               vTreble.draw(ctx, staveTreble);
             }
 
             if (bassNotes.length > 0) {
-              try { VF.Beam.generateBeams(bassNotes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch {}
+              safeBeam(bassNotes, ctx);
               vBass.draw(ctx, staveBass);
             }
           } catch (measureErr) {

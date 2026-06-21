@@ -8,6 +8,7 @@ import { getExampleScore } from "./features/example-score.js";
 import { renderScore } from "./features/notation-renderer.js";
 import { playAudio, pauseAudio, stopPlayback, isAudioPlaying, setSpeedFactor, refreshAudioBPM } from "./features/player.js";
 import { startPracticeMode, stopPracticeMode } from "./features/practice.js";
+import { clearRedoStack } from "./features/keyboard.js";
 import { initFirebase, setupAuthUI, setupProfileUI } from "./auth.js";
 import { showToast } from "./ui/toast.js";
 import { debounce } from './utils/debounce.js';
@@ -16,6 +17,9 @@ import { initDragAndDrop } from './features/drag-drop.js';
 import { checkMaintenanceStatus } from './features/maintenance.js';
 import { showConfirm } from './ui/dialog.js';
 
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
+
 const handleNavigation = () => {
   const hash = window.location.hash;
   document.body.classList.remove("is-home", "is-viewer", "is-example-score");
@@ -23,6 +27,7 @@ const handleNavigation = () => {
   const views = {
     home: document.getElementById("viewHome"),
     lib: document.getElementById("viewLibrary"),
+    codex: document.getElementById("viewCodex"),
     edit: document.getElementById("viewEditor"),
     lAct: document.getElementById("libraryActions"),
     eAct: document.getElementById("editorActions"),
@@ -54,6 +59,12 @@ const handleNavigation = () => {
     if (views.lAct) views.lAct.hidden = false;
     document.title = `${t("catalogTitle")} — Ebony & Ivory`;
     renderLibrary();
+    window.scrollTo(0, 0);
+  } else if (hash === "#codice") {
+    state.currentScore = null;
+    if (views.codex) views.codex.hidden = false;
+    document.title = `El Códice — Ebony & Ivory`;
+    renderCodex();
     window.scrollTo(0, 0);
   } else {
     state.currentScore = null;
@@ -141,6 +152,74 @@ const renderNoteList = () => {
     });
 };
 
+/* --- Catálogo Público (El Códice) --- */
+const renderCodex = async () => {
+  const grid = document.getElementById("codexGrid");
+  if (!grid) return;
+  grid.innerHTML = "<p style='text-align:center; grid-column: 1/-1;'>Cargando el Códice...</p>";
+
+  try {
+    const db = firebase.firestore();
+    const snap = await db.collection("public_scores").limit(50).get();
+    grid.innerHTML = "";
+    if (snap.empty) {
+       grid.innerHTML = "<p style='text-align:center; grid-column: 1/-1;'>Aún no hay partituras públicas.</p>";
+       return;
+    }
+
+    snap.forEach(doc => {
+      const score = doc.data();
+      const card = document.createElement("div");
+      card.className = "score-card";
+      card.innerHTML = `
+        <span class="card-eyebrow">Por: ${escapeHtml(score.publisherName || "Anónimo")}</span>
+        <button class="btn-pin" style="color:var(--color-danger);">❤ ${score.likes || 0}</button>
+        <h3>${escapeHtml(score.title || t("untitled"))}</h3>
+        <p class="composer">${escapeHtml(score.composer || t("unknownAuthor"))}</p>
+        <div class="meta"><span>${score.measures?.length || 0} compases</span></div>
+        <div class="card-actions-row">
+          <button class="btn-card" data-action="view-codex">Examinar obra</button>
+          <button class="btn-card" data-action="clone-codex">Guardar en mi Catálogo</button>
+        </div>`;
+      
+      card.addEventListener("click", (e) => {
+        const action = e.target.closest("[data-action]");
+        if (!action) return;
+        if (action.dataset.action === "clone-codex") {
+           const copy = { ...score, id: uid(), plate: nextPlateNumber(), createdAt: Date.now(), updatedAt: Date.now() };
+           delete copy.publisherName; delete copy.likes; delete copy.views;
+           persistScore(copy);
+           showToast("Partitura guardada en Mi Catálogo", "success");
+        } else if (action.dataset.action === "view-codex") {
+           state.currentScore = score;
+           window.location.hash = `#viewer/${score.id}`; 
+        }
+      });
+      grid.appendChild(card);
+    });
+  } catch (err) {
+    grid.innerHTML = "<p style='text-align:center; color:var(--color-danger); grid-column: 1/-1;'>No se pudo conectar con El Códice.</p>";
+  }
+};
+
+const publishToCodex = async (score) => {
+  if (!state.currentUser) { showToast("Inicia sesión para publicar", "error"); return; }
+  try {
+    const db = firebase.firestore();
+    await db.collection("public_scores").doc(score.id).set({
+      ...score,
+      publisherUid: state.currentUser.uid,
+      publisherName: state.currentUser.displayName || state.currentUser.email || "Anónimo",
+      likes: 0,
+      views: 0
+    });
+    showToast("¡Partitura inmortalizada en El Códice!", "success");
+  } catch(e) {
+    showToast("Error al publicar: " + e.message, "error");
+  }
+};
+
+/* --- Mi Catálogo --- */
 const renderLibrary = () => {
   const lib = state.libraryState;
   let scores = Object.values(loadAll());
@@ -204,8 +283,8 @@ const renderLibrary = () => {
       <div class="card-actions-row">
         <button class="btn-card" data-action="view">${t("viewBtn")}</button>
         <button class="btn-card" data-action="edit">${t("editBtn")}</button>
-        <button class="btn-card" data-action="duplicate">${t("copyBtn")}</button>
-        <button class="btn-card btn-danger-card" data-action="delete">${t("deleteBtn")}</button>
+        <button class="btn-card" data-action="publish" title="Publicar en El Códice">🌍 Publicar</button>
+        <button class="btn-card btn-danger-card" data-action="delete">🗑</button>
       </div>`;
 
     card.addEventListener("click", async (e) => {
@@ -222,9 +301,8 @@ const renderLibrary = () => {
         if (await showConfirm("Eliminar partitura", "¿Seguro que quieres borrar esta obra?", "Borrar", true)) {
           deleteScoreById(score.id); renderLibrary();
         }
-      } else if (act === "duplicate") {
-        const copy = { ...score, id: uid(), plate: nextPlateNumber(), title: `${score.title || t("untitled")} ${t("copySuffix")}`, createdAt: Date.now(), updatedAt: Date.now() };
-        persistScore(copy); renderLibrary();
+      } else if (act === "publish") {
+        publishToCodex(score);
       } else if (act === "edit") window.location.hash = `#editor/${score.id}`;
       else if (act === "view") window.location.hash = `#viewer/${score.id}`;
     });
@@ -280,20 +358,15 @@ const setupEventListeners = () => {
   document.getElementById("brandHome")?.addEventListener("click", () => window.location.hash = "#inicio");
   document.getElementById("btnGoCatalog")?.addEventListener("click", () => window.location.hash = "#catalogo");
   document.getElementById("btnGoExample")?.addEventListener("click", () => window.location.hash = "#ejemplo");
+  document.getElementById("btnGoCodex")?.addEventListener("click", () => window.location.hash = "#codice");
+  document.getElementById("btnBackToMyCatalog")?.addEventListener("click", () => window.location.hash = "#catalogo");
   
   document.getElementById("btnToggleViewer")?.addEventListener("click", () => {
     window.location.hash = (document.body.classList.contains("is-viewer") ? "#editor/" : "#viewer/") + state.currentScore.id;
   });
 
-  const practiceOverlay = document.getElementById("practiceModalOverlay");
-  document.getElementById("btnTogglePractice")?.addEventListener("click", () => {
-      if (practiceOverlay) practiceOverlay.hidden = false;
-  });
-  document.getElementById("practiceModalClose")?.addEventListener("click", () => {
-      if (practiceOverlay) practiceOverlay.hidden = true;
-      stopPracticeMode();
-  });
-  document.getElementById("btnStartPractice")?.addEventListener("click", startPracticeMode);
+  document.getElementById("btnTogglePractice")?.addEventListener("click", startPracticeMode);
+  document.getElementById("btnStopPracticeFloating")?.addEventListener("click", stopPracticeMode);
 
   document.getElementById("searchScores")?.addEventListener("input", (e) => { state.libraryState.query = e.target.value.toLowerCase(); renderLibrary(); });
   document.getElementById("sortScores")?.addEventListener("change", (e) => { state.libraryState.sortBy = e.target.value; renderLibrary(); });
@@ -368,6 +441,7 @@ const setupEventListeners = () => {
         return;
       }
 
+      clearRedoStack();
       state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff].push({
         rest: document.getElementById("isRest").checked,
         letter: document.getElementById("pitchLetter").value,
