@@ -182,9 +182,13 @@ const highlightMeasureSweep = (idx, durationSec) => {
   line.setAttribute("x2", startX); line.setAttribute("y2", y + h);
   line.style.transition = "none";
   line.style.transform = "translateX(0px)";
-  line.getBoundingClientRect();
-  line.style.transition = `transform ${durationSec}s linear`;
-  line.style.transform = `translateX(${endX - startX}px)`;
+  
+  requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        line.style.transition = `transform ${durationSec}s linear`;
+        line.style.transform = `translateX(${endX - startX}px)`;
+      });
+  });
 };
 
 const clearHighlight = () => {

@@ -16,7 +16,6 @@ export const nextPlateNumber = () => {
 };
 
 export const plateLabel = (n) => `E&I ${String(n).padStart(3, "0")}`;
-export const trim = (n) => Number(n.toFixed(2)).toString();
 
 export const slugify = (str) => (str || "score")
   .toLowerCase()

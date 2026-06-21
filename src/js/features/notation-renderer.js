@@ -7,22 +7,16 @@ import { emit } from '../core/events.js';
 const RENDER_CFG = {
   MEASURES_PER_LINE: 4,
   LINES_PER_PAGE: 4,
-  TOTAL_WIDTH: 990,
+  TOTAL_WIDTH: 1020,
   LEFT_MARGIN: 40,
-  FIRST_LINE_WIDTH: 322,
-  REST_LINE_WIDTH: 196,
-  STAVE_GAP: 92,
-  LINE_GAP: 180,
+  FIRST_LINE_WIDTH: 330,
+  REST_LINE_WIDTH: 200,
+  STAVE_GAP: 110,
+  LINE_GAP: 220,
   TOP_MARGIN: 20
 };
 
 const noteToVexKey = (n) => `${n.letter.toLowerCase()}${n.accidental === "#" || n.accidental === "b" ? n.accidental : ""}/${n.octave}`;
-
-const beamGroupsFor = (num, den) => {
-  if (den === 8 && num % 3 === 0) return [new VF.Fraction(3, 8)];
-  if (den === 8) return [new VF.Fraction(2, 8)];
-  return [new VF.Fraction(1, 4)];
-};
 
 export function renderScore() {
   const score = state.currentScore;
@@ -48,7 +42,8 @@ export function renderScore() {
       if (p === 0) {
         const head = document.createElement("div");
         head.className = "score-letterhead";
-        head.innerHTML = `<h2>${escapeHtml(score.title || t("untitled"))}</h2><p>${escapeHtml(score.composer || "")}</p>`;
+        const composersHtml = (score.composer || "").split(",").map(c => `<span>${escapeHtml(c.trim())}</span>`).join(" &middot; ");
+        head.innerHTML = `<h2>${escapeHtml(score.title || t("untitled"))}</h2><p>${composersHtml}</p>`;
         pageDiv.appendChild(head);
         startY += 85;
       }
@@ -139,11 +134,18 @@ export function renderScore() {
               sn.setAttribute("id", `vf-note-${idx}-${staffName}-${nIdx}`);
               if (n.dotted) VF.Dot.buildAndAttach([sn], { all: true });
               if (!n.rest && n.accidental) sn.addModifier(new VF.Accidental(n.accidental), 0);
+              
+              if (n.lyric) {
+                  sn.addModifier(new VF.Annotation(n.lyric).setFont("Times", 12).setVerticalJustification(3), 0);
+              }
+              if (n.fingering) {
+                  sn.addModifier(new VF.FretHandFinger(n.fingering).setPosition(3), 0);
+              }
               if (n.dynamic) {
                 sn.addModifier(
                   new VF.Annotation(n.dynamic)
                     .setFont("Times", 12, "italic bold")
-                    .setVerticalJustification(clef === "bass" ? VF.Annotation.VerticalJustify.TOP : VF.Annotation.VerticalJustify.BOTTOM),
+                    .setVerticalJustification(clef === "bass" ? 4 : 3),
                   0
                 );
               }
@@ -169,8 +171,7 @@ export function renderScore() {
                 lastNote.addModifier(
                   new VF.Annotation(measure.directive)
                     .setFont("Times", 13, "italic bold")
-                    .setVerticalJustification(VF.Annotation.VerticalJustify.TOP)
-                    .setJustification(VF.Annotation.Justify.RIGHT),
+                    .setVerticalJustification(1),
                   0
                 );
               }
@@ -187,12 +188,12 @@ export function renderScore() {
             }
             
             if (trebleNotes.length > 0) {
-              try { VF.Beam.generateBeams(trebleNotes, { groups: beamGroupsFor(num, den), beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch {}
+              try { VF.Beam.generateBeams(trebleNotes).forEach(b => b.setContext(ctx).draw()); } catch {}
               vTreble.draw(ctx, staveTreble);
             }
 
             if (bassNotes.length > 0) {
-              try { VF.Beam.generateBeams(bassNotes, { groups: beamGroupsFor(num, den), beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch {}
+              try { VF.Beam.generateBeams(bassNotes).forEach(b => b.setContext(ctx).draw()); } catch {}
               vBass.draw(ctx, staveBass);
             }
           } catch (measureErr) {
@@ -210,9 +211,9 @@ export function renderScore() {
           const hitRight = staveTreble.getX() + staveTreble.getWidth(); 
           
           hitRects.push({
-            x: hitX, y: staveTreble.getYForLine(0) - 25,
-            width: hitRight - hitX, height: staveBass.getYForLine(4) - staveTreble.getYForLine(0) + 50,
-            startX: staveTreble.getNoteStartX(), endX: staveTreble.getNoteEndX(), idx
+            x: hitX, y: staveTreble.getYForLine(0) - 35,
+            width: hitRight - hitX, height: staveBass.getYForLine(4) - staveTreble.getYForLine(0) + 70,
+            startX: hitX + 8, endX: staveTreble.getNoteEndX(), idx
           });
         }
       }

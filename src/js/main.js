@@ -7,13 +7,13 @@ import { renderCustomSelects, updateCustomSelectUI, setupCustomSelect } from "./
 import { getExampleScore } from "./features/example-score.js";
 import { renderScore } from "./features/notation-renderer.js";
 import { playAudio, pauseAudio, stopPlayback, isAudioPlaying, setSpeedFactor, refreshAudioBPM } from "./features/player.js";
+import { startPracticeMode, stopPracticeMode } from "./features/practice.js";
 import { initFirebase, setupAuthUI, setupProfileUI } from "./auth.js";
 import { showToast } from "./ui/toast.js";
 import { debounce } from './utils/debounce.js';
 import { initShortcuts } from './features/keyboard.js';
 import { initDragAndDrop } from './features/drag-drop.js';
 import { checkMaintenanceStatus } from './features/maintenance.js';
-import { initThemeControls } from './features/theme.js';
 import { showConfirm } from './ui/dialog.js';
 
 const handleNavigation = () => {
@@ -33,6 +33,7 @@ const handleNavigation = () => {
   Object.values(views).forEach(v => { if (v) v.hidden = true; });
   if (views.btnV) views.btnV.hidden = false;
   stopPlayback();
+  stopPracticeMode();
 
   if (hash.startsWith("#editor/") || hash.startsWith("#viewer/")) {
     state.currentScore = loadAll()[hash.split("/")[1]];
@@ -63,16 +64,22 @@ const handleNavigation = () => {
   }
   
   if (views.btnB) views.btnB.hidden = !["#editor/", "#viewer/", "#ejemplo"].some(h => hash.startsWith(h));
+  updateViewerButtonText();
 };
 
 const syncEditorStickyOffset = () => {
   const header = document.getElementById("mainHeader");
-  const offset = header ? header.getBoundingClientRect().height : 0;
-  const stickyTop = Math.round(offset + 16);
+  const stickyTop = header ? Math.round(header.getBoundingClientRect().height) : 0;
   document.documentElement.style.setProperty("--editor-sticky-offset", `${stickyTop}px`);
 
   const desk = document.getElementById("engraveDesk");
   if (desk) desk.style.height = `calc(100vh - ${stickyTop}px)`;
+};
+
+const updateViewerButtonText = () => {
+    const btn = document.getElementById("btnToggleViewer");
+    if (!btn) return;
+    btn.textContent = document.body.classList.contains("is-viewer") ? t("editMode") : t("viewMode");
 };
 
 const initEditor = (views) => {
@@ -105,6 +112,33 @@ const syncMeasureControls = () => {
   if (rs) rs.checked = !!m.repeatStart;
   if (re) re.checked = !!m.repeatEnd;
   if (ds) ds.value = m.directive || "";
+  
+  renderNoteList();
+};
+
+const renderNoteList = () => {
+    const container = document.getElementById("noteListContainer");
+    if (!container || !state.currentScore) return;
+    
+    const notes = state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff] || [];
+    container.innerHTML = "";
+    
+    notes.forEach((n, idx) => {
+        const tag = document.createElement("div");
+        tag.className = "note-tag";
+        const symbol = n.rest ? "Sil." : `${n.letter}${n.accidental || ""}${n.octave}`;
+        tag.innerHTML = `<span>${symbol}</span> <span class="note-tag-del" data-idx="${idx}">✕</span>`;
+        container.appendChild(tag);
+    });
+
+    container.querySelectorAll(".note-tag-del").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            const idx = parseInt(e.target.dataset.idx, 10);
+            state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff].splice(idx, 1);
+            syncMeasureControls();
+            renderScore();
+        });
+    });
 };
 
 const renderLibrary = () => {
@@ -160,11 +194,12 @@ const renderLibrary = () => {
   scores.forEach((score) => {
     const card = document.createElement("div");
     card.className = "score-card";
+    const composersHtml = (score.composer || t("unknownAuthor")).split(",").map(c => escapeHtml(c.trim())).join(", ");
     card.innerHTML = `
       <span class="card-eyebrow">${plateLabel(score.plate)} · ${score.timeSig}</span>
       <button class="btn-pin ${score.pinned ? 'is-pinned' : ''}" data-action="pin">★</button>
       <h3>${escapeHtml(score.title || t("untitled"))}</h3>
-      <p class="composer">${escapeHtml(score.composer || t("unknownAuthor"))}</p>
+      <p class="composer">${composersHtml}</p>
       <div class="meta"><span>${score.measures.length} ${t("measuresTxt")}</span><span>${formatDate(score.updatedAt)}</span></div>
       <div class="card-actions-row">
         <button class="btn-card" data-action="view">${t("viewBtn")}</button>
@@ -245,9 +280,20 @@ const setupEventListeners = () => {
   document.getElementById("brandHome")?.addEventListener("click", () => window.location.hash = "#inicio");
   document.getElementById("btnGoCatalog")?.addEventListener("click", () => window.location.hash = "#catalogo");
   document.getElementById("btnGoExample")?.addEventListener("click", () => window.location.hash = "#ejemplo");
+  
   document.getElementById("btnToggleViewer")?.addEventListener("click", () => {
     window.location.hash = (document.body.classList.contains("is-viewer") ? "#editor/" : "#viewer/") + state.currentScore.id;
   });
+
+  const practiceOverlay = document.getElementById("practiceModalOverlay");
+  document.getElementById("btnTogglePractice")?.addEventListener("click", () => {
+      if (practiceOverlay) practiceOverlay.hidden = false;
+  });
+  document.getElementById("practiceModalClose")?.addEventListener("click", () => {
+      if (practiceOverlay) practiceOverlay.hidden = true;
+      stopPracticeMode();
+  });
+  document.getElementById("btnStartPractice")?.addEventListener("click", startPracticeMode);
 
   document.getElementById("searchScores")?.addEventListener("input", (e) => { state.libraryState.query = e.target.value.toLowerCase(); renderLibrary(); });
   document.getElementById("sortScores")?.addEventListener("change", (e) => { state.libraryState.sortBy = e.target.value; renderLibrary(); });
@@ -273,7 +319,7 @@ const setupEventListeners = () => {
     
     document.getElementById("btnDeleteMeasure").addEventListener("click", async () => {
       if (state.currentScore.measures.length <= 1) { showToast(t("minMeasureAlert"), 'error'); return; }
-      if (await showConfirm("Eliminar compás", "Se borrarán todas las notas de este compás.", "Eliminar", true)) {
+      if (await showConfirm("Eliminar compás", "Se borrarán todas las notas.", "Eliminar", true)) {
         state.currentScore.measures.splice(state.editorState.activeMeasure, 1);
         syncMeasureControls(); renderScore();
       }
@@ -288,6 +334,7 @@ const setupEventListeners = () => {
         state.editorState.activeStaff = clef.toLowerCase();
         document.getElementById("btnStaffTreble").classList.toggle("is-active", clef === "Treble");
         document.getElementById("btnStaffBass").classList.toggle("is-active", clef === "Bass");
+        renderNoteList();
       });
     });
 
@@ -328,15 +375,15 @@ const setupEventListeners = () => {
         octave: parseInt(document.getElementById("pitchOctave").value, 10),
         duration: state.editorState.duration,
         dotted: document.getElementById("isDotted").checked,
-        dynamic: document.getElementById("dynamicSelect").value
+        dynamic: document.getElementById("dynamicSelect").value,
+        fingering: document.getElementById("fingeringSelect").value,
+        lyric: document.getElementById("lyricInput").value
       });
       document.getElementById("dynamicSelect").value = "";
+      document.getElementById("fingeringSelect").value = "";
+      document.getElementById("lyricInput").value = "";
+      syncMeasureControls();
       renderScore();
-    });
-
-    document.getElementById("btnUndoNote").addEventListener("click", () => {
-      const staff = state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff];
-      if (staff.length > 0) { staff.pop(); renderScore(); }
     });
   }
 
@@ -364,7 +411,21 @@ const setupEventListeners = () => {
 
 document.addEventListener("DOMContentLoaded", async () => {
   await checkMaintenanceStatus();
-  initThemeControls();
+  
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  if (savedTheme === 'dark') document.body.classList.add('dark-theme');
+  const themeBtn = document.createElement('button');
+  themeBtn.className = 'btn btn-ghost theme-toggle';
+  themeBtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+  themeBtn.onclick = () => {
+    document.body.classList.toggle('dark-theme');
+    const isDark = document.body.classList.contains('dark-theme');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    themeBtn.textContent = isDark ? '☀️' : '🌙';
+  };
+  const langSwitch = document.querySelector('.lang-switch');
+  if (langSwitch) langSwitch.before(themeBtn);
+
   initFirebase();
   setupAuthUI();
   setupProfileUI();
@@ -413,6 +474,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     if (!document.getElementById("viewLibrary")?.hidden) renderLibrary();
     if (!document.getElementById("viewEditor")?.hidden) renderScore();
+    updateViewerButtonText();
   });
   
   on("scoreschanged", () => { if (!document.getElementById("viewLibrary")?.hidden) renderLibrary(); });

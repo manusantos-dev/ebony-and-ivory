@@ -3,17 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob: https://apis.google.com https://www.gstatic.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://lh3.googleusercontent.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://tonejs.github.io; frame-src 'self' https://*.firebaseapp.com;">
-
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob: https://apis.google.com https://www.gstatic.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://lh3.googleusercontent.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://tonejs.github.io; media-src 'self' https://tonejs.github.io; frame-src 'self' https://*.firebaseapp.com;">
 <title>Ebony & Ivory</title>
-<meta name="description" content="El arte de preservar la música">
-
 <link rel="icon" type="image/png" href="/assets/ebony-ivory-brand-mark.png">
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-
 <link rel="stylesheet" href="/src/css/base.css">
 <link rel="stylesheet" href="/src/css/components.css">
 <link rel="stylesheet" href="/src/css/editor.css">
@@ -50,6 +44,7 @@
     </nav>
 
     <nav class="topbar-actions" id="editorActions" hidden>
+      <button class="btn-ghost-small" id="btnTogglePractice" data-i18n="practiceBtn">Modo Práctica</button>
       <button class="btn-ghost-small" id="btnToggleViewer" data-i18n="toggleViewBtn">Alternar Visor</button>
       <button class="btn btn-ghost" id="btnExportJson" data-i18n="exportJsonBtn">Descargar .json</button>
       <button class="btn btn-primary" id="btnExportPdf" data-i18n="exportPdfBtn">Exportar PDF</button>
@@ -61,10 +56,8 @@
   <div class="floating-notes" id="floatingNotes"></div>
   <div class="home-hero">
     <img src="/assets/ebony-ivory-primary-logo.png" alt="Ebony & Ivory" class="logo-primary">
-    
     <h1 class="home-subtitle" data-i18n="heroTitle">El arte de preservar la música</h1>
-    <p class="hero-sub" data-i18n="heroSub">Un lienzo digital estandarizado para transcribir, reproducir, clasificar y eternizar tus partituras con una elegancia inigualable.</p>
-    
+    <p class="hero-sub" data-i18n="heroSub">La plataforma definitiva para la notación musical. Transcribe, clasifica y preserva tu repertorio con precisión de grabador.</p>
     <div class="hero-actions">
       <button class="btn btn-primary btn-huge" id="btnGoCatalog" data-i18n="goToCatalog">Abrir mi Catálogo</button>
       <button class="btn btn-ghost btn-huge" id="btnGoExample">🎵 <span data-i18n="viewExample">Ver partitura de ejemplo</span></button>
@@ -109,8 +102,8 @@
         <select id="filterHands" class="field-input">
           <option value="all" data-i18n="optAll">Cualquiera</option>
           <option value="both" data-i18n="optBothHands">Ambas manos</option>
-          <option value="treble" data-i18n="optTrebleOnly">Solo mano derecha</option>
-          <option value="bass" data-i18n="optBassOnly">Solo mano izquierda</option>
+          <option value="treble" data-i18n="optTrebleOnly">Solo derecha</option>
+          <option value="bass" data-i18n="optBassOnly">Solo izquierda</option>
         </select>
       </div>
     </div>
@@ -124,16 +117,11 @@
 
 <main id="viewEditor" class="view" hidden>
   <div class="editor-top-controls">
-    <button class="back-pill" id="btnBackLibrary" data-i18n="backBtn" hidden>← Volver al Catálogo</button>
-  
+    <button class="back-pill" id="btnBackLibrary" data-i18n="backBtn" hidden>← Volver</button>
     <div class="player-bar" id="playerBar">
-      <button class="pl-btn" id="plBtnRewind" title="Volver al inicio" aria-label="Volver al inicio">
-        <svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
-    </button>
-      <button class="pl-btn pl-btn--play" id="plBtnPlay" title="Reproducir / Pausar" aria-label="Reproducir">
-        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-      </button>
-      <div class="pl-progress" id="plProgressWrap" role="slider" aria-label="Progreso de reproducción" tabindex="0"><div class="pl-progress-fill" id="plProgressFill"></div></div>
+      <button class="pl-btn" id="plBtnRewind" title="Volver al inicio" aria-label="Volver al inicio"><svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg></button>
+      <button class="pl-btn pl-btn--play" id="plBtnPlay" title="Reproducir / Pausar" aria-label="Reproducir"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+      <div class="pl-progress" id="plProgressWrap"><div class="pl-progress-fill" id="plProgressFill"></div></div>
       <span class="pl-time" id="plTimeLabel">0:00 / 0:00</span>
       <span class="pl-divider"></span>
       <div class="pl-speeds" id="plSpeeds">
@@ -144,16 +132,16 @@
         <button class="pl-speed-btn" data-speed="2">2×</button>
       </div>
       <span class="pl-divider"></span>
-      <label class="pl-bpm-label" title="Tempo en negras por minuto"><span class="pl-bpm-symbol">♩</span><span class="pl-bpm-eq">=</span><input type="number" id="plBpm" class="pl-bpm-input" min="20" max="300" value="100"></label>
+      <label class="pl-bpm-label" title="Tempo"><span class="pl-bpm-symbol">♩</span><span class="pl-bpm-eq">=</span><input type="number" id="plBpm" class="pl-bpm-input" min="20" max="300" value="100"></label>
     </div>
   </div>
 
   <div class="editor-layout" id="editorLayout">
     <aside class="engrave-desk" id="engraveDesk">
       <div class="desk-section">
-        <label class="field-label" data-i18n="lblTitle">Título</label>
+        <label class="field-label" data-i18n="lblTitle">Título de la Obra</label>
         <input type="text" id="scoreTitle" class="field-input field-input--title">
-        <label class="field-label" data-i18n="lblComposer">Compositor / origen</label>
+        <label class="field-label" data-i18n="lblComposer">Compositor/es (separados por coma)</label>
         <input type="text" id="scoreComposer" class="field-input">
       </div>
 
@@ -181,91 +169,101 @@
       <hr class="desk-divider">
 
       <div class="desk-section">
-        <p class="desk-title"><span data-i18n="lblActiveMeasure">Compás activo</span> <span id="activeMeasureLabel" class="pill">1</span></p>
-        <div class="field-row">
-          <button class="btn btn-small" id="btnPrevMeasure" data-i18n="btnPrev">‹ anterior</button>
-          <button class="btn btn-small" id="btnNextMeasure" data-i18n="btnNext">siguiente ›</button>
+        <div class="measure-controls-header">
+          <p class="desk-title"><span data-i18n="lblActiveMeasure">Compás activo</span> <span id="activeMeasureLabel" class="pill">1</span></p>
         </div>
         <div class="field-row">
+          <button class="btn btn-small" id="btnPrevMeasure" data-i18n="btnPrev">‹ ant</button>
+          <button class="btn btn-small" id="btnNextMeasure" data-i18n="btnNext">sig ›</button>
+        </div>
+        <div class="field-row" style="margin-top:8px;">
           <button class="btn btn-small btn-add" id="btnAddMeasure" data-i18n="btnAddMeasure">+ añadir compás</button>
-          <button class="btn btn-small btn-danger" id="btnDeleteMeasure" data-i18n="btnDelMeasure">eliminar compás</button>
+          <button class="btn btn-small btn-danger" id="btnDeleteMeasure" data-i18n="btnDelMeasure">eliminar</button>
         </div>
       </div>
 
       <hr class="desk-divider">
 
       <div class="desk-section">
-        <p class="desk-title" data-i18n="lblInputStaff">Pentagrama de entrada</p>
+        <p class="desk-title" data-i18n="lblInputStaff">Edición de Notas</p>
         <div class="staff-toggle">
-          <button class="toggle-btn is-active" data-staff="treble" id="btnStaffTreble" data-i18n="lblTreble">Clave de Sol</button>
-          <button class="toggle-btn" data-staff="bass" id="btnStaffBass" data-i18n="lblBass">Clave de Fa</button>
+          <button class="toggle-btn is-active" data-staff="treble" id="btnStaffTreble" data-i18n="lblTreble">Clave Sol</button>
+          <button class="toggle-btn" data-staff="bass" id="btnStaffBass" data-i18n="lblBass">Clave Fa</button>
         </div>
-      </div>
+        
+        <div class="note-list-container" id="noteListContainer">
+            </div>
 
-      <div class="desk-section">
-        <p class="desk-title" data-i18n="lblNote">Nota</p>
-        <div class="field-row note-row">
-          <label class="check-inline"><input type="checkbox" id="isRest"> <span data-i18n="lblRest">Silencio</span></label>
-        </div>
-        <div class="field-row" id="pitchFields">
-          <div>
-            <label class="field-label" data-i18n="lblPitch">Nota</label>
-            <select id="pitchLetter" class="field-input">
-              <option value="C">Do (C)</option>
-              <option value="D">Re (D)</option>
-              <option value="E">Mi (E)</option>
-              <option value="F">Fa (F)</option>
-              <option value="G">Sol (G)</option>
-              <option value="A">La (A)</option>
-              <option value="B">Si (B)</option>
+        <div class="note-builder">
+            <div class="field-row note-row">
+            <label class="check-inline"><input type="checkbox" id="isRest"> <span data-i18n="lblRest">Insertar Silencio</span></label>
+            </div>
+            <div class="field-row" id="pitchFields">
+            <div>
+                <label class="field-label" data-i18n="lblPitch">Nota</label>
+                <select id="pitchLetter" class="field-input">
+                <option value="C">Do (C)</option><option value="D">Re (D)</option><option value="E">Mi (E)</option>
+                <option value="F">Fa (F)</option><option value="G">Sol (G)</option><option value="A">La (A)</option><option value="B">Si (B)</option>
+                </select>
+            </div>
+            <div>
+                <label class="field-label" data-i18n="lblAccidental">Alt.</label>
+                <select id="pitchAccidental" class="field-input">
+                <option value="">—</option><option value="#">♯</option><option value="b">♭</option><option value="n">♮</option>
+                </select>
+            </div>
+            <div>
+                <label class="field-label" data-i18n="lblOctave">Oct.</label>
+                <select id="pitchOctave" class="field-input">
+                <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option>
+                </select>
+            </div>
+            </div>
+
+            <label class="field-label" data-i18n="lblDuration">Duración</label>
+            <div class="duration-grid" id="durationGrid">
+            <button class="dur-btn" data-dur="w">𝅝</button>
+            <button class="dur-btn" data-dur="h">𝅗𝅥</button>
+            <button class="dur-btn is-active" data-dur="q">♩</button>
+            <button class="dur-btn" data-dur="8">♪</button>
+            <button class="dur-btn" data-dur="16">𝅘𝅥𝅯</button>
+            <button class="dur-btn" data-dur="32">𝅘𝅥𝅰</button>
+            </div>
+            <label class="check-inline"><input type="checkbox" id="isDotted"> <span data-i18n="lblDotted">Puntillo</span></label>
+
+            <div class="field-row" style="margin-top: 12px;">
+                <div>
+                    <label class="field-label" data-i18n="lblFingering">Dedo</label>
+                    <select id="fingeringSelect" class="field-input">
+                        <option value="">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label" data-i18n="lblLyric">Letra</label>
+                    <input type="text" id="lyricInput" class="field-input" placeholder="Ej: La">
+                </div>
+            </div>
+
+            <label class="field-label" data-i18n="lblDynamics">Dinámica</label>
+            <select id="dynamicSelect" class="field-input">
+            <option value="">—</option><option value="pp">pp</option><option value="p">p</option><option value="mp">mp</option><option value="mf">mf</option>
+            <option value="f">f</option><option value="ff">ff</option><option value="sfz">sfz</option><option value="cresc.">cresc.</option><option value="dim.">dim.</option>
             </select>
-          </div>
-          <div>
-            <label class="field-label" data-i18n="lblAccidental">Alteración</label>
-            <select id="pitchAccidental" class="field-input">
-              <option value="">—</option><option value="#">♯</option><option value="b">♭</option><option value="n">♮</option>
-            </select>
-          </div>
-          <div>
-            <label class="field-label" data-i18n="lblOctave">Octava</label>
-            <select id="pitchOctave" class="field-input">
-              <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option>
-            </select>
-          </div>
+
+            <button class="btn btn-primary btn-block" id="btnAddNote" data-i18n="btnAddNote">Añadir al compás</button>
         </div>
-
-        <label class="field-label" data-i18n="lblDuration">Duración</label>
-        <div class="duration-grid" id="durationGrid">
-          <button class="dur-btn" data-dur="w">𝅝</button>
-          <button class="dur-btn" data-dur="h">𝅗𝅥</button>
-          <button class="dur-btn is-active" data-dur="q">♩</button>
-          <button class="dur-btn" data-dur="8">♪</button>
-          <button class="dur-btn" data-dur="16">𝅘𝅥𝅯</button>
-          <button class="dur-btn" data-dur="32">𝅘𝅥𝅰</button>
-        </div>
-        <label class="check-inline"><input type="checkbox" id="isDotted"> <span data-i18n="lblDotted">Con puntillo</span></label>
-
-        <label class="field-label" data-i18n="lblDynamics">Dinámica</label>
-        <select id="dynamicSelect" class="field-input">
-          <option value="">—</option><option value="pp">pp</option><option value="p">p</option><option value="mp">mp</option><option value="mf">mf</option>
-          <option value="f">f</option><option value="ff">ff</option><option value="sfz">sfz</option><option value="cresc.">cresc.</option><option value="dim.">dim.</option>
-        </select>
-
-        <button class="btn btn-primary btn-block" id="btnAddNote" data-i18n="btnAddNote">Añadir al compás</button>
-        <button class="btn btn-ghost btn-block" id="btnUndoNote" data-i18n="btnUndoNote">Deshacer última nota</button>
       </div>
 
       <hr class="desk-divider">
 
       <div class="desk-section">
-        <p class="desk-title" data-i18n="lblMeasureDetails">Compás · Detalles</p>
+        <p class="desk-title" data-i18n="lblMeasureDetails">Compás · Indicaciones</p>
         <label class="check-inline"><input type="checkbox" id="repeatStart"> <span data-i18n="lblRepStart">Inicio repetición ‖:</span></label>
-        <label class="check-inline"><input type="checkbox" id="repeatEnd"> <span data-i18n="lblRepEnd">Fin repetición :‖</label>
-        <label class="field-label" data-i18n="lblDirective">Indicación (Fine, D.C.)</label>
+        <label class="check-inline"><input type="checkbox" id="repeatEnd"> <span data-i18n="lblRepEnd">Fin repetición :‖</span></label>
+        <label class="field-label" data-i18n="lblDirective">Salto o Fin (Fine, D.C.)</label>
         <select id="directiveSelect" class="field-input">
           <option value="">—</option><option value="Fine">Fine</option><option value="D.C.">D.C.</option><option value="D.C. al Fine">D.C. al Fine</option>
-          <option value="D.C. al Coda">D.C. al Coda</option><option value="D.S. al Fine">D.S. al Fine</option><option value="D.S. al Coda">D.S. al Coda</option>
-          <option value="𝄌 Coda">𝄌 Coda</option><option value="𝄋 Segno">𝄋 Segno</option>
+          <option value="D.S. al Fine">D.S. al Fine</option><option value="𝄋 Segno">𝄋 Segno</option>
         </select>
       </div>
     </aside>
@@ -276,17 +274,32 @@
   </div>
 </main>
 
+<div class="modal-overlay" id="practiceModalOverlay" hidden>
+    <div class="modal-card">
+        <div class="modal-header-brand"><img src="/assets/ebony-ivory-primary-logo.png" alt="Ebony & Ivory" class="logo-modal"></div>
+        <button class="modal-close" id="practiceModalClose" aria-label="Cerrar">×</button>
+        <h3 style="text-align:center; font-family:var(--font-display); font-size:24px; margin-top:0;">Modo Práctica</h3>
+        <p style="text-align:center; color:var(--color-ink-soft); font-size:14px; margin-bottom:24px;">Toca tu instrumento real. El micrófono escuchará las notas y la partitura avanzará automáticamente cuando toques la nota correcta.</p>
+        <div style="text-align:center; margin-bottom:24px;">
+            <div id="practiceMicStatus" style="display:inline-block; padding:8px 16px; border-radius:50px; background:var(--color-paper-edge); font-family:var(--font-mono); font-size:12px; font-weight:600;">Esperando micrófono...</div>
+        </div>
+        <div style="text-align:center; margin-bottom:24px;">
+            <p style="font-family:var(--font-mono); font-size:11px; text-transform:uppercase; color:var(--color-ink-soft); margin-bottom:4px;">Nota detectada</p>
+            <div id="practiceDetectedNote" style="font-size:32px; font-weight:700; color:var(--color-brass);">--</div>
+        </div>
+        <button class="btn btn-primary btn-block" id="btnStartPractice">Iniciar Práctica</button>
+    </div>
+</div>
+
 <div class="modal-overlay" id="authModalOverlay" hidden>
   <div class="modal-card">
-    <div class="modal-header-brand">
-      <img src="/assets/ebony-ivory-primary-logo.png" alt="Ebony & Ivory" class="logo-modal">
-    </div>
+    <div class="modal-header-brand"><img src="/assets/ebony-ivory-primary-logo.png" alt="Ebony & Ivory" class="logo-modal"></div>
     <button class="modal-close" id="authModalClose" aria-label="Cerrar">×</button>
     <div class="auth-tabs">
       <button class="auth-tab is-active" id="authTabLogin" data-tab="login">Iniciar sesión</button>
       <button class="auth-tab" id="authTabRegister" data-tab="register">Crear cuenta</button>
     </div>
-    <p class="auth-subtitle" id="authSubtitle">Guarda tus partituras en la nube y ábrelas desde cualquier dispositivo.</p>
+    <p class="auth-subtitle" id="authSubtitle"></p>
     <form id="authForm">
       <label class="field-label">Email</label>
       <input type="email" id="authEmail" class="field-input" required autocomplete="email">
@@ -297,7 +310,7 @@
     </form>
     <div class="auth-divider"><span>o</span></div>
     <button class="btn btn-ghost btn-block auth-google-btn" id="authGoogleBtn">
-      <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.16.28-1.7V4.97H.95A9 9 0 0 0 0 9c0 1.45.35 2.83.95 4.03l3-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
+      <svg width="16" height="16" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.16.28-1.7V4.97H.95A9 9 0 0 0 0 9c0 1.45.35 2.83.95 4.03l3-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
       Continuar con Google
     </button>
   </div>
@@ -310,31 +323,27 @@
       <div class="profile-avatar-large" id="profAvatarLg">?</div>
       <div class="profile-info">
         <h3 id="profNameTitle">Usuario</h3>
-        <p id="profEmailText">email@email.com</p>
+        <p id="profEmailText">email</p>
       </div>
     </div>
-
     <button class="btn btn-ghost btn-block" id="btnAccountLogout" data-i18n="logout">Cerrar sesión</button>
-
     <form id="profileForm">
-      <label class="field-label" data-i18n="displayName">Nombre / Nickname</label>
-      <input type="text" id="profDisplayName" class="field-input" placeholder="Ej: Amadeus">
-
-      <label class="field-label" data-i18n="photoUrl">Subir foto de perfil (Opcional)</label>
+      <label class="field-label" data-i18n="displayName">Nombre</label>
+      <input type="text" id="profDisplayName" class="field-input">
+      <label class="field-label" data-i18n="photoUrl">Foto (Opcional)</label>
       <input type="file" id="profPhotoFile" class="field-input" accept="image/*">
-
-      <button type="submit" class="btn btn-primary btn-block" style="margin-top:20px;" data-i18n="saveProfile">Guardar Cambios</button>
+      <button type="submit" class="btn btn-primary btn-block" style="margin-top:20px;" data-i18n="saveProfile">Guardar</button>
     </form>
     <div class="profile-danger-zone">
-      <button class="btn btn-ghost btn-block btn-danger" id="btnDeleteAccount" data-i18n="deleteAccount">Eliminar mi cuenta</button>
+      <button class="btn btn-ghost btn-block btn-danger" id="btnDeleteAccount" data-i18n="deleteAccount">Eliminar cuenta</button>
     </div>
   </div>
 </div>
 
 <div class="modal-overlay" id="confirmModalOverlay" hidden style="z-index: 10000;">
   <div class="modal-card modal-card--small">
-    <h3 id="confirmTitle" style="margin-top: 0;">¿Estás seguro?</h3>
-    <p id="confirmMessage" style="color: #888; margin-bottom: 24px; font-size: 14px;"></p>
+    <h3 id="confirmTitle" style="margin-top: 0; font-family: var(--font-display); font-size: 24px;">Confirmar</h3>
+    <p id="confirmMessage" style="color: var(--color-ink-soft); margin-bottom: 24px; font-size: 14px;"></p>
     <div class="field-row" style="gap: 12px;">
       <button class="btn btn-ghost" id="btnConfirmCancel">Cancelar</button>
       <button class="btn btn-primary" id="btnConfirmAccept">Aceptar</button>
@@ -343,10 +352,9 @@
 </div>
 
 <footer class="sitefooter">
-  <p data-i18n="footerText">Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales.</p>
+  <p data-i18n="footerText">Ebony & Ivory es un entorno de grabado y archivo musical. Los derechos de las obras transcritas pertenecen a sus respectivos creadores.</p>
 </footer>
 
 <script type="module" src="/src/js/main.js"></script>
-
 </body>
 </html>
