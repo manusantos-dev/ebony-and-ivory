@@ -1,7 +1,8 @@
-import { state } from "./state.js";
-import { t } from "./i18n.js";
-import { persistScore, measureNeededQuarters, quartersUsed, escapeHtml, plateLabel, trim } from "./storage.js";
-import { emit } from "./events.js";
+import * as VF from 'vexflow';
+import { state } from '../core/state.js';
+import { t } from '../ui/i18n.js';
+import { persistScore, measureNeededQuarters, quartersUsed, escapeHtml, plateLabel, trim } from '../core/storage.js';
+import { emit } from '../core/events.js';
 
 const MEASURES_PER_LINE = 4;
 const LINES_PER_PAGE = 4;
@@ -33,13 +34,7 @@ export function renderScore() {
   if (!container) return;
   container.innerHTML = "";
 
-  if (typeof Vex === "undefined") {
-    container.innerHTML = '<p style="padding:40px;color:#8C2F39;font-weight:bold;">No se ha podido cargar VexFlow.</p>';
-    return;
-  }
-
   try {
-    const VF = Vex.Flow;
     const measures = score.measures;
     const [num, den] = score.timeSig.split("/").map(Number);
     const totalLines = Math.ceil(measures.length / MEASURES_PER_LINE);

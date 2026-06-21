@@ -3,22 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob: https://apis.google.com https://www.gstatic.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://lh3.googleusercontent.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://tonejs.github.io; frame-src 'self' https://*.firebaseapp.com;">
+
 <title>Ebony & Ivory</title>
 <meta name="description" content="El arte de preservar la música">
-<link rel="icon" href="assets/isotipo.png">
+
+<link rel="icon" type="image/png" href="/assets/ebony-ivory-brand-mark.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/base.css">
-<link rel="stylesheet" href="css/components.css">
-<link rel="stylesheet" href="css/editor.css">
-<link rel="stylesheet" href="css/print.css">
+
+<link rel="stylesheet" href="/src/css/base.css">
+<link rel="stylesheet" href="/src/css/components.css">
+<link rel="stylesheet" href="/src/css/editor.css">
+<link rel="stylesheet" href="/src/css/print.css">
 </head>
 <body class="is-home">
 
 <header class="topbar" id="mainHeader">
   <div class="topbar-left">
-    <div class="brand" id="brandHome" title="Ir al Catálogo">
-      <img src="assets/imagotipo.png" alt="Ebony & Ivory" class="brand-img">
+    <div class="brand" id="brandHome" style="cursor:pointer;" title="Inicio">
+      <img src="/assets/ebony-ivory-wordmark.png" alt="Ebony & Ivory" class="logo-wordmark">
     </div>
   </div>
 
@@ -54,11 +60,11 @@
 <main id="viewHome" class="view">
   <div class="floating-notes" id="floatingNotes"></div>
   <div class="home-hero">
-    <div class="hero-logo">
-      <img src="assets/logotipo.png" alt="Ebony & Ivory" class="hero-logo-img">
-    </div>
-    <h1 data-i18n="heroTitle">El arte de preservar la música</h1>
+    <img src="/assets/ebony-ivory-primary-logo.png" alt="Ebony & Ivory" class="logo-primary">
+    
+    <h1 class="home-subtitle" data-i18n="heroTitle">El arte de preservar la música</h1>
     <p class="hero-sub" data-i18n="heroSub">Un lienzo digital estandarizado para transcribir, reproducir, clasificar y eternizar tus partituras con una elegancia inigualable.</p>
+    
     <div class="hero-actions">
       <button class="btn btn-primary btn-huge" id="btnGoCatalog" data-i18n="goToCatalog">Abrir mi Catálogo</button>
       <button class="btn btn-ghost btn-huge" id="btnGoExample">🎵 <span data-i18n="viewExample">Ver partitura de ejemplo</span></button>
@@ -272,6 +278,9 @@
 
 <div class="modal-overlay" id="authModalOverlay" hidden>
   <div class="modal-card">
+    <div class="modal-header-brand">
+      <img src="/assets/ebony-ivory-primary-logo.png" alt="Ebony & Ivory" class="logo-modal">
+    </div>
     <button class="modal-close" id="authModalClose" aria-label="Cerrar">×</button>
     <div class="auth-tabs">
       <button class="auth-tab is-active" id="authTabLogin" data-tab="login">Iniciar sesión</button>
@@ -322,17 +331,22 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="confirmModalOverlay" hidden style="z-index: 10000;">
+  <div class="modal-card modal-card--small">
+    <h3 id="confirmTitle" style="margin-top: 0;">¿Estás seguro?</h3>
+    <p id="confirmMessage" style="color: #888; margin-bottom: 24px; font-size: 14px;"></p>
+    <div class="field-row" style="gap: 12px;">
+      <button class="btn btn-ghost" id="btnConfirmCancel">Cancelar</button>
+      <button class="btn btn-primary" id="btnConfirmAccept">Aceptar</button>
+    </div>
+  </div>
+</div>
+
 <footer class="sitefooter">
   <p data-i18n="footerText">Ebony & Ivory es una herramienta personal para transcribir y archivar partituras. Las obras que reescribas siguen perteneciendo a sus autores originales.</p>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-
-<script type="module" src="js/main.js"></script>
+<script type="module" src="/src/js/main.js"></script>
 
 </body>
 </html>

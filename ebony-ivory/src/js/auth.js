@@ -1,8 +1,15 @@
-import { FIREBASE_CONFIG, STORAGE_KEY } from "./config.js";
-import { state } from "./state.js";
-import { t } from "./i18n.js";
-import { loadAll, saveAll } from "./storage.js";
-import { emit, on } from "./events.js";
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
+import 'firebase/compat/firestore';
+import { FIREBASE_CONFIG, STORAGE_KEY } from './core/config.js';
+import { state } from "./core/state.js";
+import { t } from "./ui/i18n.js";
+import { loadAll, saveAll } from "./core/storage.js";
+import { emit, on } from "./core/events.js";
+import { showToast } from "./ui/toast.js";
+import { isMaintenanceMode } from './features/maintenance.js';
+import { showSyncing, showSynced } from './ui/sync-status.js';
+import { showConfirm } from './ui/dialog.js';
 
 let auth = null;
 let db = null;
@@ -15,6 +22,33 @@ function snapshotOf(map) {
   const out = {};
   Object.keys(map).forEach((id) => { out[id] = map[id].updatedAt || 0; });
   return out;
+}
+
+function syncToCloud() {
+  if (isMaintenanceMode || !state.currentUser || !db) return;
+  const coll = db.collection("users").doc(state.currentUser.uid).collection("scores");
+  const all = loadAll();
+  const batch = db.batch();
+  let writes = 0;
+  
+  Object.keys(all).forEach((id) => {
+    if (!lastSnapshotMap[id] || lastSnapshotMap[id] !== (all[id].updatedAt || 0)) {
+      batch.set(coll.doc(id), all[id]);
+      writes++;
+    }
+  });
+  
+  Object.keys(lastSnapshotMap).forEach((id) => {
+    if (!all[id]) { batch.delete(coll.doc(id)); writes++; }
+  });
+  
+  if (writes > 0) {
+    showSyncing();
+    batch.commit().then(() => {
+      lastSnapshotMap = snapshotOf(all);
+      showSynced();
+    }).catch(() => showSynced());
+  }
 }
 
 export function initFirebase() {
@@ -58,22 +92,11 @@ export function initFirebase() {
           }
         });
 
-        pollTimer = setInterval(() => {
-          const all = loadAll();
-          const batch = db.batch();
-          let writes = 0;
-          Object.keys(all).forEach((id) => {
-            if (!lastSnapshotMap[id] || lastSnapshotMap[id] !== (all[id].updatedAt || 0)) {
-              batch.set(coll.doc(id), all[id]);
-              writes++;
-            }
-          });
-          Object.keys(lastSnapshotMap).forEach((id) => {
-            if (!all[id]) { batch.delete(coll.doc(id)); writes++; }
-          });
-          lastSnapshotMap = snapshotOf(all);
-          if (writes > 0) batch.commit();
-        }, 4000);
+        if (pollTimer) clearInterval(pollTimer);
+        if (!isMaintenanceMode) {
+           pollTimer = setInterval(syncToCloud, 4000);
+        }
+
       } else {
         localStorage.removeItem(STORAGE_KEY);
         state.currentScore = null;
@@ -252,7 +275,7 @@ export function setupProfileUI() {
     const apply = () => {
       state.currentUser.updateProfile(updates)
         .then(() => { updateAccountUI(); profOverlay.hidden = true; btn.disabled = false; })
-        .catch((err) => { alert(translateFirebaseError(err)); btn.disabled = false; });
+        .catch((err) => { showToast(translateFirebaseError(err), 'error'); btn.disabled = false; });
     };
 
     if (fileInput.files.length > 0) {
@@ -263,7 +286,8 @@ export function setupProfileUI() {
   });
 
   document.getElementById("btnDeleteAccount").addEventListener("click", async () => {
-    if (!confirm(t("deleteWarning"))) return;
+    const isConfirmed = await showConfirm("Eliminar cuenta", "Se borrarán permanentemente todos tus datos y partituras de la nube.", "Eliminar cuenta", true);
+    if (!isConfirmed) return;
     try {
       if (db) {
         const docs = await db.collection("users").doc(state.currentUser.uid).collection("scores").get();
@@ -276,7 +300,7 @@ export function setupProfileUI() {
       localStorage.removeItem(STORAGE_KEY);
       window.location.hash = "#inicio";
     } catch (err) {
-      alert(translateFirebaseError(err));
+      showToast(translateFirebaseError(err), 'error');
     }
   });
 }

@@ -1,0 +1,85 @@
+:root {
+  /* Design System: Colors */
+  --color-paper: #FAF8F5;
+  --color-paper-edge: #EBE5D9;
+  --color-ink: #121212;
+  --color-ink-soft: #4A4A4A;
+  --color-accent: #121212;
+  --color-brass: #B38E50;
+  --color-gold-wash: #F1EAD7;
+  --color-line: #D8D0C1;
+  --color-line-strong: #C4BBA8;
+  --color-danger: #8C2F39;
+  --color-success: #2D5A38;
+
+  /* Design System: Typography */
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+
+  /* Design System: Geometry & Elevation */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 12px;
+  --shadow-card: 0 4px 6px rgba(18, 18, 18, 0.05), 0 16px 32px -12px rgba(18, 18, 18, 0.10);
+  --shadow-paper: 0 4px 8px rgba(18, 18, 18, 0.05), 0 32px 64px -24px rgba(18, 18, 18, 0.25);
+}
+
+/* Base Reset */
+@media (prefers-reduced-motion: reduce) { 
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } 
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+
+body {
+  background-color: var(--color-paper-edge);
+  background-image: radial-gradient(var(--color-line) 1px, transparent 1px);
+  background-size: 20px 20px;
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+a { color: var(--color-accent); text-decoration: none; }
+:focus-visible { outline: 2px solid var(--color-brass); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+/* Global State: Dark Theme */
+body.dark-theme {
+  --color-paper: #1E1E1E;
+  --color-paper-edge: #121212;
+  --color-ink: #E0E0E0;
+  --color-ink-soft: #A0A0A0;
+  --color-line: #333333;
+  --color-line-strong: #444444;
+  --color-gold-wash: #2A2A2A;
+  background-color: var(--color-paper-edge);
+}
+
+body.dark-theme .paper-wrap {
+  filter: invert(0.9) hue-rotate(180deg);
+  background: transparent;
+}
+
+body.dark-theme .logo-wordmark,
+body.dark-theme .logo-primary,
+body.dark-theme .logo-modal {
+  filter: invert(0.9) hue-rotate(180deg) brightness(1.2);
+  transition: filter 0.3s ease;
+}
+
+/* Global State: Zen Mode */
+body.zen-mode .topbar,
+body.zen-mode .engrave-desk,
+body.zen-mode .editor-top-controls {
+  display: none !important;
+}
+body.zen-mode .editor-layout { display: block; }
+body.zen-mode .paper-wrap { margin: 0 auto; padding: 40px 0; }
+body.zen-mode .btn-exit-zen { display: block; }

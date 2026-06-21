@@ -1,6 +1,7 @@
-import { state } from "./state.js";
-import { DUR_Q } from "./config.js";
-import { measureNeededQuarters } from "./storage.js";
+import * as Tone from 'tone';
+import { state } from '../core/state.js';
+import { DUR_Q } from '../core/config.js';
+import { measureNeededQuarters } from '../core/storage.js';
 
 let acousticPiano = null;
 let isPlaying = false;

@@ -1,5 +1,5 @@
-import { KEYS_DB } from "./config.js";
-import { state } from "./state.js";
+import { KEYS_DB } from "../core/config.js";
+import { state } from "../core/state.js";
 import { t } from "./i18n.js";
 
 export function renderCustomSelects() {
