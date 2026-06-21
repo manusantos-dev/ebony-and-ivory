@@ -16,16 +16,12 @@ let db = null;
 let unsubscribeSnapshot = null;
 let pollTimer = null;
 let lastSnapshotMap = {};
-let firebaseInitError = null;
 
-function snapshotOf(map) {
-  const out = {};
-  Object.keys(map).forEach((id) => { out[id] = map[id].updatedAt || 0; });
-  return out;
-}
+const snapshotOf = (map) => Object.fromEntries(Object.entries(map).map(([k, v]) => [k, v.updatedAt || 0]));
 
-function syncToCloud() {
+const syncToCloud = () => {
   if (isMaintenanceMode || !state.currentUser || !db) return;
+  
   const coll = db.collection("users").doc(state.currentUser.uid).collection("scores");
   const all = loadAll();
   const batch = db.batch();
@@ -47,19 +43,14 @@ function syncToCloud() {
     batch.commit().then(() => {
       lastSnapshotMap = snapshotOf(all);
       showSynced();
-    }).catch(() => showSynced());
+    }).catch(showSynced);
   }
-}
+};
 
-export function initFirebase() {
+export const initFirebase = () => {
   try {
-    if (typeof firebase === "undefined") {
-      firebaseInitError = "El navegador está bloqueando la conexión. Desactiva tu AdBlocker para iniciar sesión.";
-      return firebaseInitError;
-    }
-    if (!FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey.startsWith("PEGA_")) {
-      firebaseInitError = "La nube no está configurada. Faltan las claves en config.js.";
-      return firebaseInitError;
+    if (typeof firebase === "undefined" || !FIREBASE_CONFIG.apiKey) {
+      return "Error de conexión o configuración Firebase.";
     }
 
     if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
@@ -74,17 +65,20 @@ export function initFirebase() {
       if (user) {
         lastSnapshotMap = {};
         const coll = db.collection("users").doc(user.uid).collection("scores");
+        
         unsubscribeSnapshot = coll.onSnapshot((snap) => {
           const cloudMap = {};
           snap.forEach((doc) => { cloudMap[doc.id] = doc.data(); });
           const localAll = loadAll();
           let changed = false;
+          
           Object.keys(cloudMap).forEach((id) => {
             if (!localAll[id] || (cloudMap[id].updatedAt || 0) > (localAll[id].updatedAt || 0)) {
               localAll[id] = cloudMap[id];
               changed = true;
             }
           });
+          
           if (changed) {
             saveAll(localAll);
             lastSnapshotMap = snapshotOf(localAll);
@@ -93,29 +87,24 @@ export function initFirebase() {
         });
 
         if (pollTimer) clearInterval(pollTimer);
-        if (!isMaintenanceMode) {
-           pollTimer = setInterval(syncToCloud, 4000);
-        }
+        if (!isMaintenanceMode) pollTimer = setInterval(syncToCloud, 4000);
 
       } else {
         localStorage.removeItem(STORAGE_KEY);
         state.currentScore = null;
         if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-        if (window.location.hash !== "#ejemplo" && window.location.hash !== "#inicio") {
-          window.location.hash = "#inicio";
-        }
+        if (!["#ejemplo", "#inicio"].includes(window.location.hash)) window.location.hash = "#inicio";
       }
     });
 
     return null;
   } catch (e) {
-    firebaseInitError = "Error crítico de Firebase: " + e.message;
-    return firebaseInitError;
+    return `Error crítico Firebase: ${e.message}`;
   }
-}
+};
 
-export function updateAccountUI() {
+export const updateAccountUI = () => {
   const loginBtn = document.getElementById("btnAccountLogin");
   const loggedBox = document.getElementById("accountLogged");
   if (!loginBtn) return;
@@ -137,44 +126,38 @@ export function updateAccountUI() {
     loginBtn.hidden = false;
     loggedBox.hidden = true;
   }
-}
+};
 
-export function translateFirebaseError(err) {
-  const code = err && err.code;
-  const isEs = state.lang === "es";
+export const translateFirebaseError = (err) => {
   const map = {
-    "auth/invalid-email": isEs ? "Email no válido." : "Invalid email.",
-    "auth/user-not-found": isEs ? "No existe ninguna cuenta con este email." : "No account found.",
-    "auth/wrong-password": isEs ? "Contraseña incorrecta." : "Wrong password.",
-    "auth/email-already-in-use": isEs ? "Ya existe una cuenta con este email." : "Email already in use.",
-    "auth/weak-password": isEs ? "La contraseña debe tener al menos 6 caracteres." : "Password must be 6 characters.",
-    "auth/popup-closed-by-user": isEs ? "Ventana de Google cerrada antes de terminar." : "Popup closed.",
+    "auth/invalid-email": state.lang === "es" ? "Email no válido." : "Invalid email.",
+    "auth/user-not-found": state.lang === "es" ? "Cuenta no encontrada." : "No account found.",
+    "auth/wrong-password": state.lang === "es" ? "Contraseña incorrecta." : "Wrong password.",
+    "auth/email-already-in-use": state.lang === "es" ? "Email en uso." : "Email in use.",
+    "auth/weak-password": state.lang === "es" ? "La contraseña es muy débil." : "Weak password.",
     "auth/requires-recent-login": t("reauthNeeded")
   };
-  return map[code] || t("genericError");
-}
+  return map[err?.code] || t("genericError");
+};
 
-export function processProfileImage(file, callback) {
+export const processProfileImage = (file, callback) => {
   const reader = new FileReader();
   reader.onload = (e) => {
     const img = new Image();
     img.onload = () => {
-      const SIZE = 150;
       const canvas = document.createElement("canvas");
-      canvas.width = SIZE; canvas.height = SIZE;
+      canvas.width = 150; canvas.height = 150;
       const ctx = canvas.getContext("2d");
       const minSize = Math.min(img.width, img.height);
-      const x = (img.width - minSize) / 2;
-      const y = (img.height - minSize) / 2;
-      ctx.drawImage(img, x, y, minSize, minSize, 0, 0, SIZE, SIZE);
+      ctx.drawImage(img, (img.width - minSize) / 2, (img.height - minSize) / 2, minSize, minSize, 0, 0, 150, 150);
       callback(canvas.toDataURL("image/jpeg", 0.85));
     };
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
-}
+};
 
-export function refreshLangTexts() {
+export const refreshLangTexts = () => {
   const tabLogin = document.getElementById("authTabLogin");
   if (!tabLogin) return;
   const loginLabel = document.getElementById("acctLoginLabel");
@@ -187,23 +170,19 @@ export function refreshLangTexts() {
 
   tabLogin.textContent = t("login");
   document.getElementById("authTabRegister").textContent = t("register");
+};
 
-  const googleBtn = document.getElementById("authGoogleBtn");
-  if (googleBtn && googleBtn.lastChild) googleBtn.lastChild.textContent = " " + t("google");
-}
+export const setupAuthUI = () => {
+  const overlay = document.getElementById("authModalOverlay");
+  if (!overlay) return;
 
-export function setupAuthUI() {
-  const authOverlay = document.getElementById("authModalOverlay");
-  if (!authOverlay) return;
-
-  const btnLogin = document.getElementById("btnAccountLogin");
-  btnLogin.addEventListener("click", () => {
-    authOverlay.hidden = false;
+  document.getElementById("btnAccountLogin").addEventListener("click", () => {
+    overlay.hidden = false;
     document.getElementById("authError").hidden = true;
     setTimeout(() => document.getElementById("authEmail").focus(), 50);
   });
 
-  document.getElementById("authModalClose").addEventListener("click", () => { authOverlay.hidden = true; });
+  document.getElementById("authModalClose").addEventListener("click", () => overlay.hidden = true);
 
   ["authTabLogin", "authTabRegister"].forEach((id) => {
     document.getElementById(id).addEventListener("click", (e) => {
@@ -219,31 +198,33 @@ export function setupAuthUI() {
     e.preventDefault();
     const errBox = document.getElementById("authError");
     errBox.hidden = true;
-    if (!auth) { errBox.hidden = false; errBox.textContent = firebaseInitError || "Error crítico."; return; }
+    if (!auth) { errBox.hidden = false; errBox.textContent = "Error crítico."; return; }
+    
     const isReg = document.getElementById("authTabRegister").classList.contains("is-active");
     const email = document.getElementById("authEmail").value;
-    const password = document.getElementById("authPassword").value;
-    const promise = isReg ? auth.createUserWithEmailAndPassword(email, password) : auth.signInWithEmailAndPassword(email, password);
-    promise.then(() => { authOverlay.hidden = true; }).catch((err) => { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); });
+    const pass = document.getElementById("authPassword").value;
+    
+    const promise = isReg ? auth.createUserWithEmailAndPassword(email, pass) : auth.signInWithEmailAndPassword(email, pass);
+    promise.then(() => overlay.hidden = true).catch(err => { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); });
   });
 
   document.getElementById("authGoogleBtn").addEventListener("click", () => {
     const errBox = document.getElementById("authError");
     errBox.hidden = true;
-    if (!auth) { errBox.hidden = false; errBox.textContent = firebaseInitError || "Error crítico."; return; }
+    if (!auth) return;
     auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
-      .then(() => { authOverlay.hidden = true; })
-      .catch((err) => { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); });
+      .then(() => overlay.hidden = true)
+      .catch(err => { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); });
   });
-}
+};
 
-export function setupProfileUI() {
-  const profOverlay = document.getElementById("profileModalOverlay");
-  if (!profOverlay) return;
+export const setupProfileUI = () => {
+  const overlay = document.getElementById("profileModalOverlay");
+  if (!overlay) return;
 
   document.getElementById("accountLogged").addEventListener("click", () => {
     const user = state.currentUser;
-    profOverlay.hidden = false;
+    overlay.hidden = false;
     document.getElementById("profNameTitle").textContent = user.displayName || t("account");
     document.getElementById("profEmailText").textContent = user.email || "";
     document.getElementById("profDisplayName").value = user.displayName || "";
@@ -258,23 +239,20 @@ export function setupProfileUI() {
     }
   });
 
-  document.getElementById("profileModalClose").addEventListener("click", () => { profOverlay.hidden = true; });
-
-  document.getElementById("btnAccountLogout").addEventListener("click", () => {
-    if (auth) auth.signOut();
-    profOverlay.hidden = true;
-  });
+  document.getElementById("profileModalClose").addEventListener("click", () => overlay.hidden = true);
+  document.getElementById("btnAccountLogout").addEventListener("click", () => { auth?.signOut(); overlay.hidden = true; });
 
   document.getElementById("profileForm").addEventListener("submit", (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
     btn.disabled = true;
+    
     const updates = { displayName: document.getElementById("profDisplayName").value };
     const fileInput = document.getElementById("profPhotoFile");
 
     const apply = () => {
       state.currentUser.updateProfile(updates)
-        .then(() => { updateAccountUI(); profOverlay.hidden = true; btn.disabled = false; })
+        .then(() => { updateAccountUI(); overlay.hidden = true; btn.disabled = false; })
         .catch((err) => { showToast(translateFirebaseError(err), 'error'); btn.disabled = false; });
     };
 
@@ -286,23 +264,24 @@ export function setupProfileUI() {
   });
 
   document.getElementById("btnDeleteAccount").addEventListener("click", async () => {
-    const isConfirmed = await showConfirm("Eliminar cuenta", "Se borrarán permanentemente todos tus datos y partituras de la nube.", "Eliminar cuenta", true);
+    const isConfirmed = await showConfirm("Eliminar cuenta", "Se borrarán permanentemente todos tus datos y partituras.", "Eliminar cuenta", true);
     if (!isConfirmed) return;
+    
     try {
       if (db) {
         const docs = await db.collection("users").doc(state.currentUser.uid).collection("scores").get();
         const batch = db.batch();
-        docs.forEach((d) => batch.delete(d.ref));
+        docs.forEach(d => batch.delete(d.ref));
         await batch.commit();
       }
       await state.currentUser.delete();
-      profOverlay.hidden = true;
+      overlay.hidden = true;
       localStorage.removeItem(STORAGE_KEY);
       window.location.hash = "#inicio";
     } catch (err) {
       showToast(translateFirebaseError(err), 'error');
     }
   });
-}
+};
 
 on("langchange", refreshLangTexts);

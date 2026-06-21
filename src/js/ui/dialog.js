@@ -1,4 +1,4 @@
-export function showConfirm(title, message, acceptText = "Aceptar", isDanger = false) {
+export const showConfirm = (title, message, acceptText = "Aceptar", isDanger = false) => {
   return new Promise((resolve) => {
     const overlay = document.getElementById('confirmModalOverlay');
     const btnAccept = document.getElementById('btnConfirmAccept');
@@ -7,7 +7,6 @@ export function showConfirm(title, message, acceptText = "Aceptar", isDanger = f
     document.getElementById('confirmTitle').textContent = title;
     document.getElementById('confirmMessage').textContent = message;
     btnAccept.textContent = acceptText;
-    
     btnAccept.className = isDanger ? 'btn btn-danger' : 'btn btn-primary';
 
     const cleanup = () => {
@@ -21,7 +20,6 @@ export function showConfirm(title, message, acceptText = "Aceptar", isDanger = f
 
     btnAccept.addEventListener('click', onAccept);
     btnCancel.addEventListener('click', onCancel);
-
     overlay.hidden = false;
   });
-}
+};

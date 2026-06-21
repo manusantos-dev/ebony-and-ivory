@@ -4,30 +4,30 @@ import { t } from '../ui/i18n.js';
 import { persistScore, measureNeededQuarters, quartersUsed, escapeHtml, plateLabel, trim } from '../core/storage.js';
 import { emit } from '../core/events.js';
 
-const MEASURES_PER_LINE = 4;
-const LINES_PER_PAGE = 4;
-const TOTAL_WIDTH = 990;
-const LEFT_MARGIN = 40;
-const RIGHT_MARGIN = 40;
-const FIRST_OF_LINE_WIDTH = 322;
-const REST_OF_LINE_WIDTH = 196;
-const STAVE_GAP = 92;
-const LINE_GAP = 180;
-const TOP_MARGIN = 20;
+const RENDER_CFG = {
+  MEASURES_PER_LINE: 4,
+  LINES_PER_PAGE: 4,
+  TOTAL_WIDTH: 990,
+  LEFT_MARGIN: 40,
+  FIRST_LINE_WIDTH: 322,
+  REST_LINE_WIDTH: 196,
+  STAVE_GAP: 92,
+  LINE_GAP: 180,
+  TOP_MARGIN: 20
+};
 
-function noteToVexKey(n) {
-  return n.letter.toLowerCase() + (n.accidental === "#" || n.accidental === "b" ? n.accidental : "") + "/" + n.octave;
-}
+const noteToVexKey = (n) => `${n.letter.toLowerCase()}${n.accidental === "#" || n.accidental === "b" ? n.accidental : ""}/${n.octave}`;
 
-function beamGroupsFor(num, den, VF) {
+const beamGroupsFor = (num, den) => {
   if (den === 8 && num % 3 === 0) return [new VF.Fraction(3, 8)];
   if (den === 8) return [new VF.Fraction(2, 8)];
   return [new VF.Fraction(1, 4)];
-}
+};
 
 export function renderScore() {
   const score = state.currentScore;
   if (!score) return;
+  
   persistScore(score);
 
   const container = document.getElementById("vexPagesContainer");
@@ -35,16 +35,16 @@ export function renderScore() {
   container.innerHTML = "";
 
   try {
-    const measures = score.measures;
-    const [num, den] = score.timeSig.split("/").map(Number);
-    const totalLines = Math.ceil(measures.length / MEASURES_PER_LINE);
-    const totalPages = Math.ceil(totalLines / LINES_PER_PAGE) || 1;
+    const { measures, timeSig, keySig, bpm } = score;
+    const [num, den] = timeSig.split("/").map(Number);
+    const totalLines = Math.ceil(measures.length / RENDER_CFG.MEASURES_PER_LINE);
+    const totalPages = Math.ceil(totalLines / RENDER_CFG.LINES_PER_PAGE) || 1;
 
     for (let p = 0; p < totalPages; p++) {
       const pageDiv = document.createElement("div");
       pageDiv.className = "paper-page";
 
-      let startY = TOP_MARGIN;
+      let startY = RENDER_CFG.TOP_MARGIN;
       if (p === 0) {
         const head = document.createElement("div");
         head.className = "score-letterhead";
@@ -60,29 +60,28 @@ export function renderScore() {
       printFooter.className = "print-footer-content";
       printFooter.innerHTML = `<span style="display:flex; align-items:center; gap:10px;"><img src="assets/isotipo-w.png" class="print-logo-isotipo"> <strong>${plateLabel(score.plate)}</strong></span> <span>${p + 1} / ${totalPages}</span>`;
       pageDiv.appendChild(printFooter);
-      
       container.appendChild(pageDiv);
       
-      const linesOnThisPage = Math.min(LINES_PER_PAGE, totalLines - p * LINES_PER_PAGE);
-      const pageHeight = startY + linesOnThisPage * LINE_GAP + 20;
+      const linesOnThisPage = Math.min(RENDER_CFG.LINES_PER_PAGE, totalLines - p * RENDER_CFG.LINES_PER_PAGE);
+      const pageHeight = startY + linesOnThisPage * RENDER_CFG.LINE_GAP + 20;
 
       const renderer = new VF.Renderer(svgWrap, VF.Renderer.Backends.SVG);
-      renderer.resize(TOTAL_WIDTH, pageHeight);
+      renderer.resize(RENDER_CFG.TOTAL_WIDTH, pageHeight);
       const ctx = renderer.getContext();
       const hitRects = [];
 
       for (let l = 0; l < linesOnThisPage; l++) {
-        const globalLineIdx = p * LINES_PER_PAGE + l;
-        for (let m = 0; m < MEASURES_PER_LINE; m++) {
-          const idx = globalLineIdx * MEASURES_PER_LINE + m;
+        const globalLineIdx = p * RENDER_CFG.LINES_PER_PAGE + l;
+        for (let m = 0; m < RENDER_CFG.MEASURES_PER_LINE; m++) {
+          const idx = globalLineIdx * RENDER_CFG.MEASURES_PER_LINE + m;
           if (idx >= measures.length) break;
 
           const measure = measures[idx];
           const isFirstOfLine = m === 0;
-          const width = isFirstOfLine ? FIRST_OF_LINE_WIDTH : REST_OF_LINE_WIDTH;
-          const x = LEFT_MARGIN + (isFirstOfLine ? 0 : FIRST_OF_LINE_WIDTH + REST_OF_LINE_WIDTH * (m - 1));
-          const yTreble = startY + l * LINE_GAP;
-          const yBass = yTreble + STAVE_GAP;
+          const width = isFirstOfLine ? RENDER_CFG.FIRST_LINE_WIDTH : RENDER_CFG.REST_LINE_WIDTH;
+          const x = RENDER_CFG.LEFT_MARGIN + (isFirstOfLine ? 0 : RENDER_CFG.FIRST_LINE_WIDTH + RENDER_CFG.REST_LINE_WIDTH * (m - 1));
+          const yTreble = startY + l * RENDER_CFG.LINE_GAP;
+          const yBass = yTreble + RENDER_CFG.STAVE_GAP;
 
           const staveTreble = new VF.Stave(x, yTreble, width);
           const staveBass = new VF.Stave(x, yBass, width);
@@ -90,16 +89,16 @@ export function renderScore() {
           if (isFirstOfLine) {
             staveTreble.addClef("treble");
             staveBass.addClef("bass");
-            if (score.keySig && score.keySig !== "C") {
-              staveTreble.addKeySignature(score.keySig);
-              staveBass.addKeySignature(score.keySig);
+            if (keySig && keySig !== "C") {
+              staveTreble.addKeySignature(keySig);
+              staveBass.addKeySignature(keySig);
             }
           }
 
           if (idx === 0) {
-            staveTreble.addTimeSignature(score.timeSig);
-            staveBass.addTimeSignature(score.timeSig);
-            staveTreble.setTempo({ duration: "q", dots: 0, bpm: score.bpm || 100 }, 0);
+            staveTreble.addTimeSignature(timeSig);
+            staveBass.addTimeSignature(timeSig);
+            staveTreble.setTempo({ duration: "q", dots: 0, bpm: bpm || 100 }, 0);
           }
 
           const noteStartOffset = isFirstOfLine ? 120 : 15;
@@ -110,19 +109,13 @@ export function renderScore() {
           staveBass.setBegBarType(measure.repeatStart ? VF.Barline.type.REPEAT_BEGIN : VF.Barline.type.SINGLE);
           
           let endType = VF.Barline.type.SINGLE;
-          if (measure.repeatEnd) {
-            endType = VF.Barline.type.REPEAT_END;
-          } else if (measure.directive === "Fine") {
-            endType = VF.Barline.type.DOUBLE; 
-          } else if (measure.directive && (measure.directive.includes("D.C.") || measure.directive.includes("D.S."))) {
-            endType = VF.Barline.type.END;
-          } else if (idx === measures.length - 1) {
-            endType = VF.Barline.type.END;
-          }
+          if (measure.repeatEnd) endType = VF.Barline.type.REPEAT_END;
+          else if (measure.directive === "Fine") endType = VF.Barline.type.DOUBLE; 
+          else if (measure.directive && /D\.(C|S)\./.test(measure.directive)) endType = VF.Barline.type.END;
+          else if (idx === measures.length - 1) endType = VF.Barline.type.END;
           
           staveTreble.setEndBarType(endType);
           staveBass.setEndBarType(endType);
-          
           staveTreble.setContext(ctx).draw();
           staveBass.setContext(ctx).draw();
 
@@ -132,21 +125,15 @@ export function renderScore() {
           }
           
           let rightConnectorType = VF.StaveConnector.type.SINGLE_RIGHT;
-          
-          if (endType === VF.Barline.type.DOUBLE) {
-            rightConnectorType = VF.StaveConnector.type.THIN_DOUBLE; 
-          } else if (endType === VF.Barline.type.END || endType === VF.Barline.type.REPEAT_END) {
-            rightConnectorType = VF.StaveConnector.type.BOLD_DOUBLE_RIGHT;
-          }
+          if (endType === VF.Barline.type.DOUBLE) rightConnectorType = VF.StaveConnector.type.THIN_DOUBLE; 
+          else if (endType === VF.Barline.type.END || endType === VF.Barline.type.REPEAT_END) rightConnectorType = VF.StaveConnector.type.BOLD_DOUBLE_RIGHT;
           
           new VF.StaveConnector(staveTreble, staveBass).setType(rightConnectorType).setContext(ctx).draw();
+
           const buildNotes = (staffNotes, clef, staffName) => {
-            const out = [];
-            const restKey = clef === "bass" ? "d/3" : "b/4";
-            staffNotes.forEach((n, nIdx) => {
+            return staffNotes.map((n, nIdx) => {
               const durStr = n.duration + (n.dotted ? "d" : "") + (n.rest ? "r" : "");
-              const keys = n.rest ? [restKey] : [noteToVexKey(n)];
-              
+              const keys = n.rest ? [clef === "bass" ? "d/3" : "b/4"] : [noteToVexKey(n)];
               const sn = new VF.StaveNote({ clef, keys, duration: durStr, auto_stem: true });
               
               sn.setAttribute("id", `vf-note-${idx}-${staffName}-${nIdx}`);
@@ -160,16 +147,13 @@ export function renderScore() {
                   0
                 );
               }
-              out.push(sn);
+              return sn;
             });
-            return out;
           };
 
-          let trebleNotes = [];
-          let bassNotes = [];
           try {
-            trebleNotes = buildNotes(measure.treble, "treble", "treble");
-            bassNotes = buildNotes(measure.bass, "bass", "bass");
+            const trebleNotes = buildNotes(measure.treble, "treble", "treble");
+            const bassNotes = buildNotes(measure.bass, "bass", "bass");
 
             const vTreble = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT);
             const vBass = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT);
@@ -185,7 +169,8 @@ export function renderScore() {
                 lastNote.addModifier(
                   new VF.Annotation(measure.directive)
                     .setFont("Times", 13, "italic bold")
-                    .setVerticalJustification(VF.Annotation.VerticalJustify.TOP),
+                    .setVerticalJustification(VF.Annotation.VerticalJustify.TOP)
+                    .setJustification(VF.Annotation.Justify.RIGHT),
                   0
                 );
               }
@@ -196,54 +181,37 @@ export function renderScore() {
               const formatter = new VF.Formatter();
               try {
                 formatter.joinVoices(voices).format(voices, innerWidth);
-              } catch (e) {
-                voices.forEach((v) => {
-                  const f = new VF.Formatter();
-                  f.joinVoices([v]).format([v], innerWidth);
-                });
+              } catch {
+                voices.forEach((v) => new VF.Formatter().joinVoices([v]).format([v], innerWidth));
               }
             }
             
-            let trebleBeams = [];
-            let bassBeams = [];
-            
             if (trebleNotes.length > 0) {
-              try {
-                trebleBeams = VF.Beam.generateBeams(trebleNotes, { groups: beamGroupsFor(num, den, VF), beam_rests: false });
-              } catch (e) { console.warn("Beam treble (measure " + (idx + 1) + ")", e); }
+              try { VF.Beam.generateBeams(trebleNotes, { groups: beamGroupsFor(num, den), beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch {}
+              vTreble.draw(ctx, staveTreble);
             }
 
             if (bassNotes.length > 0) {
-              try {
-                bassBeams = VF.Beam.generateBeams(bassNotes, { groups: beamGroupsFor(num, den, VF), beam_rests: false });
-              } catch (e) { console.warn("Beam bass (measure " + (idx + 1) + ")", e); }
+              try { VF.Beam.generateBeams(bassNotes, { groups: beamGroupsFor(num, den), beam_rests: false }).forEach(b => b.setContext(ctx).draw()); } catch {}
+              vBass.draw(ctx, staveBass);
             }
-
-            if (trebleNotes.length > 0) vTreble.draw(ctx, staveTreble);
-            if (bassNotes.length > 0) vBass.draw(ctx, staveBass);
-
-            trebleBeams.forEach((b) => b.setContext(ctx).draw());
-            bassBeams.forEach((b) => b.setContext(ctx).draw());
-
           } catch (measureErr) {
-            console.error("Error renderizando el compás " + (idx + 1), measureErr);
-            const ns = "http://www.w3.org/2000/svg";
-            const errText = document.createElementNS(ns, "text");
+            console.error(`Render Error (Measure ${idx + 1}):`, measureErr);
+            const errText = document.createElementNS("http://www.w3.org/2000/svg", "text");
             errText.setAttribute("x", x + 10);
             errText.setAttribute("y", yTreble + 20);
-            errText.setAttribute("fill", "#8C2F39");
+            errText.setAttribute("fill", "var(--color-danger)");
             errText.setAttribute("font-size", "11");
-            errText.textContent = "⚠ compás " + (idx + 1);
+            errText.textContent = `⚠ Error M${idx + 1}`;
             ctx.svg.appendChild(errText);
           }
 
           const hitX = staveTreble.getNoteStartX() - 8;
           const hitRight = staveTreble.getX() + staveTreble.getWidth(); 
-          const finalHitWidth = hitRight - hitX;
           
           hitRects.push({
             x: hitX, y: staveTreble.getYForLine(0) - 25,
-            width: finalHitWidth, height: staveBass.getYForLine(4) - staveTreble.getYForLine(0) + 50,
+            width: hitRight - hitX, height: staveBass.getYForLine(4) - staveTreble.getYForLine(0) + 50,
             startX: staveTreble.getNoteStartX(), endX: staveTreble.getNoteEndX(), idx
           });
         }
@@ -251,13 +219,14 @@ export function renderScore() {
 
       const svg = svgWrap.querySelector("svg");
       if (svg) {
-        svg.setAttribute("viewBox", `0 0 ${TOTAL_WIDTH} ${pageHeight}`);
+        svg.setAttribute("viewBox", `0 0 ${RENDER_CFG.TOTAL_WIDTH} ${pageHeight}`);
         svg.removeAttribute("width");
         svg.removeAttribute("height");
+        
         const ns = "http://www.w3.org/2000/svg";
         hitRects.forEach((hr) => {
           const g = document.createElementNS(ns, "g");
-          g.setAttribute("class", "measure-hit" + (hr.idx === state.editorState.activeMeasure ? " active" : ""));
+          g.setAttribute("class", `measure-hit${hr.idx === state.editorState.activeMeasure ? " active" : ""}`);
           g.setAttribute("data-measure-idx", hr.idx);
           g.setAttribute("data-start-x", hr.startX);
           g.setAttribute("data-end-x", hr.endX);
@@ -269,25 +238,27 @@ export function renderScore() {
           rect.setAttribute("width", hr.width); rect.setAttribute("height", hr.height);
           rect.setAttribute("fill", hr.idx === state.editorState.activeMeasure ? "rgba(179, 142, 80, 0.15)" : "transparent");
           rect.setAttribute("rx", "4");
+          
           g.appendChild(rect);
           g.addEventListener("click", () => {
             state.editorState.activeMeasure = hr.idx;
             emit("measureselected", hr.idx);
             renderScore();
           });
-          svg.insertBefore(g, svg.firstChild);
+          svg.appendChild(g);
         });
       }
     }
 
-    const needed = measureNeededQuarters(score.timeSig);
-    const m = score.measures[state.editorState.activeMeasure];
+    const needed = measureNeededQuarters(timeSig);
+    const m = measures[state.editorState.activeMeasure];
     const lbl = document.getElementById("activeMeasureLabel");
+    
     if (lbl) {
-      lbl.textContent = `${state.editorState.activeMeasure + 1}/${score.measures.length} · ♩ Sol ${trim(quartersUsed(m.treble))}/${trim(needed)} · Fa ${trim(quartersUsed(m.bass))}/${trim(needed)}`;
+      lbl.textContent = `${state.editorState.activeMeasure + 1}/${measures.length} · ♩ Sol ${trim(quartersUsed(m.treble))}/${trim(needed)} · Fa ${trim(quartersUsed(m.bass))}/${trim(needed)}`;
     }
   } catch (err) {
     console.error(err);
-    container.innerHTML = '<p style="padding:40px;color:#8C2F39;font-weight:bold;">Error de renderizado VexFlow.</p>';
+    container.innerHTML = '<p style="padding:40px;color:var(--color-danger);font-weight:bold;">Render Error.</p>';
   }
 }

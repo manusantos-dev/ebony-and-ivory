@@ -1,16 +1,7 @@
-/* =========================================================================
-   EBONY & IVORY — main.js
-   Punto de entrada: conecta todos los módulos, gestiona el enrutado por
-   hash y cablea los eventos del DOM con la lógica de cada módulo.
-   ========================================================================= */
 import { state, resetEditorState } from "./core/state.js";
 import { on, emit } from "./core/events.js";
 import { t, setLang } from "./ui/i18n.js";
-import {
-  loadAll, uid, nextPlateNumber, plateLabel, slugify, formatDate, escapeHtml,
-  measureNeededQuarters, quartersUsed, newMeasure, newScore, downloadBlob,
-  persistScore, deleteScoreById
-} from "./core/storage.js";
+import { loadAll, uid, nextPlateNumber, plateLabel, slugify, formatDate, escapeHtml, measureNeededQuarters, quartersUsed, newMeasure, newScore, downloadBlob, persistScore, deleteScoreById } from "./core/storage.js";
 import { DUR_Q } from "./core/config.js";
 import { renderCustomSelects, updateCustomSelectUI, setupCustomSelect } from "./ui/custom-select.js";
 import { getExampleScore } from "./features/example-score.js";
@@ -25,118 +16,88 @@ import { checkMaintenanceStatus } from './features/maintenance.js';
 import { initThemeControls } from './features/theme.js';
 import { showConfirm } from './ui/dialog.js';
 
-/* ----------------------------- Enrutado por Hash ----------------------------- */
-function handleNavigation() {
+const handleNavigation = () => {
   const hash = window.location.hash;
   document.body.classList.remove("is-home", "is-viewer", "is-example-score");
 
-  const vHome = document.getElementById("viewHome");
-  const vLib = document.getElementById("viewLibrary");
-  const vEdit = document.getElementById("viewEditor");
-  const lAct = document.getElementById("libraryActions");
-  const eAct = document.getElementById("editorActions");
-  const btnToggleV = document.getElementById("btnToggleViewer");
+  const views = {
+    home: document.getElementById("viewHome"),
+    lib: document.getElementById("viewLibrary"),
+    edit: document.getElementById("viewEditor"),
+    lAct: document.getElementById("libraryActions"),
+    eAct: document.getElementById("editorActions"),
+    btnV: document.getElementById("btnToggleViewer"),
+    btnB: document.getElementById("btnBackLibrary")
+  };
 
-  if (vHome) vHome.hidden = true;
-  if (vLib) vLib.hidden = true;
-  if (vEdit) vEdit.hidden = true;
-  if (lAct) lAct.hidden = true;
-  if (eAct) eAct.hidden = true;
-  if (btnToggleV) btnToggleV.hidden = false;
-
+  Object.values(views).forEach(v => { if (v) v.hidden = true; });
+  if (views.btnV) views.btnV.hidden = false;
   stopPlayback();
 
-  if (hash.startsWith("#editor/")) {
+  if (hash.startsWith("#editor/") || hash.startsWith("#viewer/")) {
     state.currentScore = loadAll()[hash.split("/")[1]];
-    if (state.currentScore) { document.body.classList.remove("is-viewer"); initEditor(); }
-    else window.location.hash = "#catalogo";
-  } else if (hash.startsWith("#viewer/")) {
-    state.currentScore = loadAll()[hash.split("/")[1]];
-    if (state.currentScore) { document.body.classList.add("is-viewer"); initEditor(); }
-    else window.location.hash = "#catalogo";
+    if (state.currentScore) {
+      if (hash.startsWith("#viewer/")) document.body.classList.add("is-viewer");
+      initEditor(views);
+    } else {
+      window.location.hash = "#catalogo";
+    }
   } else if (hash === "#ejemplo" || hash === "#example") {
     state.currentScore = getExampleScore(state.lang);
     document.body.classList.add("is-viewer", "is-example-score");
-    initEditor();
-    if (btnToggleV) btnToggleV.hidden = true;
+    initEditor(views);
+    if (views.btnV) views.btnV.hidden = true;
   } else if (hash === "#catalogo") {
     state.currentScore = null;
-    if (vLib) vLib.hidden = false;
-    if (lAct) lAct.hidden = false;
-    document.title = t("catalogTitle") + " — Ebony & Ivory";
+    if (views.lib) views.lib.hidden = false;
+    if (views.lAct) views.lAct.hidden = false;
+    document.title = `${t("catalogTitle")} — Ebony & Ivory`;
     renderLibrary();
     window.scrollTo(0, 0);
   } else {
     state.currentScore = null;
-    if (vHome) vHome.hidden = false;
+    if (views.home) views.home.hidden = false;
     document.body.classList.add("is-home");
     document.title = "Ebony & Ivory";
     window.scrollTo(0, 0);
   }
-  const btnBackLib = document.getElementById("btnBackLibrary");
-  if (btnBackLib) {
-    btnBackLib.hidden = (hash === "#inicio" || hash === "#catalogo" || !hash);
-  }
-}
+  
+  if (views.btnB) views.btnB.hidden = !["#editor/", "#viewer/", "#ejemplo"].some(h => hash.startsWith(h));
+};
 
-function syncEditorStickyOffset() {
+const syncEditorStickyOffset = () => {
   const header = document.getElementById("mainHeader");
-  
-  let offset = 0;
-  if (header) {
-    offset = header.getBoundingClientRect().height;
-  }
-  
+  const offset = header ? header.getBoundingClientRect().height : 0;
   const stickyTop = Math.round(offset + 16);
-  document.documentElement.style.setProperty("--editor-sticky-offset", stickyTop + "px");
+  document.documentElement.style.setProperty("--editor-sticky-offset", `${stickyTop}px`);
 
   const desk = document.getElementById("engraveDesk");
-  if (desk) {
-      desk.style.height = `calc(100vh - ${stickyTop}px)`;
-  }
-}
+  if (desk) desk.style.height = `calc(100vh - ${stickyTop}px)`;
+};
 
-function initEditorStickyOffsetSync() {
-  syncEditorStickyOffset();
-  const header = document.getElementById("mainHeader");
-  if (typeof ResizeObserver !== "undefined") {
-    const ro = new ResizeObserver(() => syncEditorStickyOffset());
-    if (header) ro.observe(header);
-  }
-  window.addEventListener("resize", syncEditorStickyOffset);
-}
-
-function initEditor() {
+const initEditor = (views) => {
   resetEditorState();
-  const vEdit = document.getElementById("viewEditor");
-  const eAct = document.getElementById("editorActions");
-  if (vEdit) vEdit.hidden = false;
-  if (eAct) eAct.hidden = false;
-  document.title = (state.currentScore.title || t("untitled")) + " — Ebony & Ivory";
+  if (views.edit) views.edit.hidden = false;
+  if (views.eAct) views.eAct.hidden = false;
+  document.title = `${state.currentScore.title || t("untitled")} — Ebony & Ivory`;
 
-  const elTitle = document.getElementById("scoreTitle");
-  const elComposer = document.getElementById("scoreComposer");
-  const elTimeSig = document.getElementById("timeSig");
-  const elBpm = document.getElementById("plBpm");
-  if (elTitle) elTitle.value = state.currentScore.title || "";
-  if (elComposer) elComposer.value = state.currentScore.composer || "";
-  if (elTimeSig) elTimeSig.value = state.currentScore.timeSig || "4/4";
+  const safeVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+  safeVal("scoreTitle", state.currentScore.title || "");
+  safeVal("scoreComposer", state.currentScore.composer || "");
+  safeVal("timeSig", state.currentScore.timeSig || "4/4");
+  safeVal("plBpm", state.currentScore.bpm || 100);
   updateCustomSelectUI("customKeySig", state.currentScore.keySig || "C");
-  if (elBpm) elBpm.value = state.currentScore.bpm || 100;
 
   syncMeasureControls();
   renderScore();
   syncEditorStickyOffset();
   window.scrollTo(0, 0);
-}
+};
 
-function syncMeasureControls() {
+const syncMeasureControls = () => {
   const score = state.currentScore;
   state.editorState.activeMeasure = Math.max(0, Math.min(state.editorState.activeMeasure, score.measures.length - 1));
   const m = score.measures[state.editorState.activeMeasure];
-
-  const lbl = document.getElementById("activeMeasureLabel");
-  if (lbl) lbl.textContent = `${state.editorState.activeMeasure + 1} / ${score.measures.length}`;
 
   const rs = document.getElementById("repeatStart");
   const re = document.getElementById("repeatEnd");
@@ -144,17 +105,16 @@ function syncMeasureControls() {
   if (rs) rs.checked = !!m.repeatStart;
   if (re) re.checked = !!m.repeatEnd;
   if (ds) ds.value = m.directive || "";
-}
+};
 
-/* ----------------------------- Catálogo ----------------------------- */
-function renderLibrary() {
+const renderLibrary = () => {
   const lib = state.libraryState;
   let scores = Object.values(loadAll());
 
   if (lib.query) {
-    scores = scores.filter((s) =>
-      (s.title || "").toLowerCase().includes(lib.query) ||
-      (s.composer || "").toLowerCase().includes(lib.query) ||
+    scores = scores.filter(s => 
+      (s.title || "").toLowerCase().includes(lib.query) || 
+      (s.composer || "").toLowerCase().includes(lib.query) || 
       plateLabel(s.plate).toLowerCase().includes(lib.query)
     );
   }
@@ -163,11 +123,11 @@ function renderLibrary() {
     if (lib.filterTime !== "all" && s.timeSig !== lib.filterTime) return false;
     if (lib.filterKey !== "all" && s.keySig !== lib.filterKey) return false;
     if (lib.filterHands !== "all") {
-      const hasTreble = s.measures.some((m) => m.treble && m.treble.length > 0);
-      const hasBass = s.measures.some((m) => m.bass && m.bass.length > 0);
-      if (lib.filterHands === "both" && (!hasTreble || !hasBass)) return false;
-      if (lib.filterHands === "treble" && hasBass) return false;
-      if (lib.filterHands === "bass" && hasTreble) return false;
+      const hasT = s.measures.some(m => m.treble?.length > 0);
+      const hasB = s.measures.some(m => m.bass?.length > 0);
+      if (lib.filterHands === "both" && (!hasT || !hasB)) return false;
+      if (lib.filterHands === "treble" && hasB) return false;
+      if (lib.filterHands === "bass" && hasT) return false;
     }
     return true;
   });
@@ -184,9 +144,9 @@ function renderLibrary() {
   });
 
   const grid = document.getElementById("libraryGrid");
+  const empty = document.getElementById("libraryEmpty");
   if (!grid) return;
   grid.innerHTML = "";
-  const empty = document.getElementById("libraryEmpty");
 
   if (scores.length === 0) {
     if (empty) empty.hidden = false;
@@ -200,9 +160,12 @@ function renderLibrary() {
   scores.forEach((score) => {
     const card = document.createElement("div");
     card.className = "score-card";
-    card.innerHTML = `<span class="card-eyebrow">${plateLabel(score.plate)} · ${score.timeSig}</span>
+    card.innerHTML = `
+      <span class="card-eyebrow">${plateLabel(score.plate)} · ${score.timeSig}</span>
       <button class="btn-pin ${score.pinned ? 'is-pinned' : ''}" data-action="pin">★</button>
-      <h3>${escapeHtml(score.title || t("untitled"))}</h3><p class="composer">${escapeHtml(score.composer || t("unknownAuthor"))}</p><div class="meta"><span>${score.measures.length} ${t("measuresTxt")}</span><span>${formatDate(score.updatedAt)}</span></div>
+      <h3>${escapeHtml(score.title || t("untitled"))}</h3>
+      <p class="composer">${escapeHtml(score.composer || t("unknownAuthor"))}</p>
+      <div class="meta"><span>${score.measures.length} ${t("measuresTxt")}</span><span>${formatDate(score.updatedAt)}</span></div>
       <div class="card-actions-row">
         <button class="btn-card" data-action="view">${t("viewBtn")}</button>
         <button class="btn-card" data-action="edit">${t("editBtn")}</button>
@@ -212,99 +175,40 @@ function renderLibrary() {
 
     card.addEventListener("click", async (e) => {
       const action = e.target.closest("[data-action]");
-      if (!action) { window.location.hash = "#viewer/" + score.id; return; }
+      if (!action) { window.location.hash = `#viewer/${score.id}`; return; }
       e.stopPropagation();
       
-      if (action.dataset.action === "pin") {
+      const act = action.dataset.action;
+      if (act === "pin") {
         score.pinned = !score.pinned;
         persistScore(score);
         renderLibrary();
-      } else if (action.dataset.action === "delete") {
-        const isConfirmed = await showConfirm("Eliminar partitura", "¿Seguro que quieres borrar esta obra? No se puede deshacer.", "Borrar", true);
-        if (isConfirmed) { 
-          deleteScoreById(score.id); 
-          renderLibrary(); 
+      } else if (act === "delete") {
+        if (await showConfirm("Eliminar partitura", "¿Seguro que quieres borrar esta obra?", "Borrar", true)) {
+          deleteScoreById(score.id); renderLibrary();
         }
-      } else if (action.dataset.action === "duplicate") {
-        const copy = JSON.parse(JSON.stringify(score));
-        copy.id = uid();
-        copy.plate = nextPlateNumber();
-        copy.title = (score.title || t("untitled")) + " " + t("copySuffix");
-        copy.createdAt = copy.updatedAt = Date.now();
-        persistScore(copy);
-        renderLibrary();
-      } else if (action.dataset.action === "edit") {
-        window.location.hash = "#editor/" + score.id;
-      } else if (action.dataset.action === "view") {
-        window.location.hash = "#viewer/" + score.id;
-      }
+      } else if (act === "duplicate") {
+        const copy = { ...score, id: uid(), plate: nextPlateNumber(), title: `${score.title || t("untitled")} ${t("copySuffix")}`, createdAt: Date.now(), updatedAt: Date.now() };
+        persistScore(copy); renderLibrary();
+      } else if (act === "edit") window.location.hash = `#editor/${score.id}`;
+      else if (act === "view") window.location.hash = `#viewer/${score.id}`;
     });
-
     grid.appendChild(card);
   });
-}
+};
 
-/* ----------------------------- Notas Flotantes (decoración Home) ----------------------------- */
-function spawnFloatingNotes() {
-  const wrap = document.getElementById("floatingNotes");
-  if (!wrap || wrap.childElementCount > 0) return;
-  const glyphs = ["♪", "♫", "♩", "𝄞"];
-  for (let i = 0; i < 12; i++) {
-    const span = document.createElement("span");
-    span.className = "note-anim";
-    span.textContent = glyphs[i % glyphs.length];
-    span.style.left = Math.random() * 100 + "%";
-    span.style.animationDuration = 14 + Math.random() * 12 + "s";
-    span.style.animationDelay = -(Math.random() * 20) + "s";
-    span.style.fontSize = 24 + Math.random() * 30 + "px";
-    wrap.appendChild(span);
-  }
-}
+const setupEventListeners = () => {
+  setupCustomSelect("customKeySig", "keySig", (val) => { if (state.currentScore) { state.currentScore.keySig = val; renderScore(); } });
+  setupCustomSelect("customFilterKeySig", "filterKeySig", (val) => { state.libraryState.filterKey = val; renderLibrary(); });
 
-/* ----------------------------- Wiring de eventos (DOM listo) ----------------------------- */
-document.addEventListener("DOMContentLoaded", async () => {
-  initFirebase();
-  await checkMaintenanceStatus();
-  initThemeControls();
-  setupAuthUI();
-  setupProfileUI();
-  initShortcuts();
-  initDragAndDrop();
+  document.querySelectorAll(".lang-btn").forEach(btn => btn.addEventListener("click", () => setLang(btn.dataset.lang)));
 
-  const paperWrap = document.getElementById('paperWrap');
-  if (paperWrap) {
-    let zoom = 1;
-    paperWrap.addEventListener('wheel', (e) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        zoom += e.deltaY < 0 ? 0.1 : -0.1;
-        zoom = Math.max(0.5, Math.min(zoom, 2));
-        paperWrap.style.setProperty('--zoom-level', zoom);
-      }
-    }, { passive: false });
-  }
-
-  setupCustomSelect("customKeySig", "keySig", (val) => {
-    if (state.currentScore) { state.currentScore.keySig = val; renderScore(); }
-  });
-  setupCustomSelect("customFilterKeySig", "filterKeySig", (val) => {
-    state.libraryState.filterKey = val;
-    renderLibrary();
-  });
-
-  document.querySelectorAll(".lang-btn").forEach((btn) => {
-    btn.addEventListener("click", () => setLang(btn.dataset.lang));
-  });
-
-  const btnExpJson = document.getElementById("btnExportJson");
-  if (btnExpJson) btnExpJson.addEventListener("click", (e) => {
+  document.getElementById("btnExportJson")?.addEventListener("click", (e) => {
     e.preventDefault();
-    if(!state.currentScore) return;
-    downloadBlob(slugify(state.currentScore.title) + ".json", JSON.stringify(state.currentScore, null, 2));
+    if(state.currentScore) downloadBlob(`${slugify(state.currentScore.title)}.json`, JSON.stringify(state.currentScore, null, 2));
   });
 
-  const btnExpPdf = document.getElementById("btnExportPdf");
-  if (btnExpPdf) btnExpPdf.addEventListener("click", (e) => {
+  document.getElementById("btnExportPdf")?.addEventListener("click", (e) => {
     e.preventDefault();
     if(!state.currentScore) return;
     const oTitle = document.title;
@@ -313,11 +217,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     setTimeout(() => { document.title = oTitle; }, 500);
   });
 
-  const btnImport = document.getElementById("btnImport");
-  if (btnImport) btnImport.addEventListener("click", () => document.getElementById("fileImport").click());
-
-  const fileImport = document.getElementById("fileImport");
-  if (fileImport) fileImport.addEventListener("change", (e) => {
+  document.getElementById("btnImport")?.addEventListener("click", () => document.getElementById("fileImport").click());
+  document.getElementById("fileImport")?.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -325,67 +226,40 @@ document.addEventListener("DOMContentLoaded", async () => {
       try {
         const data = JSON.parse(reader.result);
         if (!data.measures) throw new Error("Format error");
-        data.id = uid();
-        data.plate = nextPlateNumber();
-        data.updatedAt = Date.now();
-        data.createdAt = Date.now();
+        data.id = uid(); data.plate = nextPlateNumber(); data.updatedAt = Date.now(); data.createdAt = Date.now();
         delete data.isExample; 
         persistScore(data);
-        if (window.location.hash === "#catalogo") renderLibrary();
-        else window.location.hash = "#catalogo";
-      } catch (err) {
-        showToast("Error: " + err.message, 'error');
-      }
+        window.location.hash = window.location.hash === "#catalogo" ? "#catalogo" : "#catalogo";
+        renderLibrary();
+      } catch (err) { showToast(`Error: ${err.message}`, 'error'); }
       e.target.value = "";
     };
     reader.readAsText(file);
   });
 
-  const btnNewScore = document.getElementById("btnNewScore");
-  if (btnNewScore) btnNewScore.addEventListener("click", () => {
-    const score = newScore();
-    persistScore(score);
-    window.location.hash = "#editor/" + score.id;
+  document.getElementById("btnNewScore")?.addEventListener("click", () => {
+    const score = newScore(); persistScore(score); window.location.hash = `#editor/${score.id}`;
   });
 
-  const btnBackLib = document.getElementById("btnBackLibrary");
-  if (btnBackLib) btnBackLib.addEventListener("click", () => { window.location.hash = "#catalogo"; });
-
-  const brandHome = document.getElementById("brandHome");
-  if (brandHome) brandHome.addEventListener("click", () => { window.location.hash = "#inicio"; });
-
-  const btnGoCat = document.getElementById("btnGoCatalog");
-  if (btnGoCat) btnGoCat.addEventListener("click", () => { window.location.hash = "#catalogo"; });
-
-  const btnGoEx = document.getElementById("btnGoExample");
-  if (btnGoEx) btnGoEx.addEventListener("click", () => { window.location.hash = "#ejemplo"; });
-
-  const btnToggleV = document.getElementById("btnToggleViewer");
-  if (btnToggleV) btnToggleV.addEventListener("click", () => {
+  document.getElementById("btnBackLibrary")?.addEventListener("click", () => window.location.hash = "#catalogo");
+  document.getElementById("brandHome")?.addEventListener("click", () => window.location.hash = "#inicio");
+  document.getElementById("btnGoCatalog")?.addEventListener("click", () => window.location.hash = "#catalogo");
+  document.getElementById("btnGoExample")?.addEventListener("click", () => window.location.hash = "#ejemplo");
+  document.getElementById("btnToggleViewer")?.addEventListener("click", () => {
     window.location.hash = (document.body.classList.contains("is-viewer") ? "#editor/" : "#viewer/") + state.currentScore.id;
   });
 
-  const elSearch = document.getElementById("searchScores");
-  if (elSearch) elSearch.addEventListener("input", (e) => { state.libraryState.query = e.target.value.toLowerCase(); renderLibrary(); });
+  document.getElementById("searchScores")?.addEventListener("input", (e) => { state.libraryState.query = e.target.value.toLowerCase(); renderLibrary(); });
+  document.getElementById("sortScores")?.addEventListener("change", (e) => { state.libraryState.sortBy = e.target.value; renderLibrary(); });
+  document.getElementById("btnToggleFilters")?.addEventListener("click", () => {
+    const f = document.getElementById("catalogFilters"); if (f) f.hidden = !f.hidden;
+  });
+  document.getElementById("filterTimeSig")?.addEventListener("change", (e) => { state.libraryState.filterTime = e.target.value; renderLibrary(); });
+  document.getElementById("filterHands")?.addEventListener("change", (e) => { state.libraryState.filterHands = e.target.value; renderLibrary(); });
 
-  const elSort = document.getElementById("sortScores");
-  if (elSort) elSort.addEventListener("change", (e) => { state.libraryState.sortBy = e.target.value; renderLibrary(); });
-
-  const elBtnFilters = document.getElementById("btnToggleFilters");
-  const elFiltersPanel = document.getElementById("catalogFilters");
-  if (elBtnFilters && elFiltersPanel) elBtnFilters.addEventListener("click", () => { elFiltersPanel.hidden = !elFiltersPanel.hidden; });
-
-  const elFilterTime = document.getElementById("filterTimeSig");
-  if (elFilterTime) elFilterTime.addEventListener("change", (e) => { state.libraryState.filterTime = e.target.value; renderLibrary(); });
-
-  const elFilterHands = document.getElementById("filterHands");
-  if (elFilterHands) elFilterHands.addEventListener("change", (e) => { state.libraryState.filterHands = e.target.value; renderLibrary(); });
-
-  const elScoreTitle = document.getElementById("scoreTitle");
-  if (elScoreTitle) {
+  if (document.getElementById("scoreTitle")) {
     const debouncedRender = debounce(() => renderScore(), 300);
-
-    elScoreTitle.addEventListener("input", (e) => { state.currentScore.title = e.target.value; debouncedRender(); });
+    document.getElementById("scoreTitle").addEventListener("input", (e) => { state.currentScore.title = e.target.value; debouncedRender(); });
     document.getElementById("scoreComposer").addEventListener("input", (e) => { state.currentScore.composer = e.target.value; debouncedRender(); });
     document.getElementById("timeSig").addEventListener("change", (e) => { state.currentScore.timeSig = e.target.value; renderScore(); });
     
@@ -396,12 +270,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       state.editorState.activeMeasure = state.currentScore.measures.length - 1;
       syncMeasureControls(); renderScore();
     });
+    
     document.getElementById("btnDeleteMeasure").addEventListener("click", async () => {
       if (state.currentScore.measures.length <= 1) { showToast(t("minMeasureAlert"), 'error'); return; }
-      const isConfirmed = await showConfirm("Eliminar compás", "Se borrarán todas las notas de este compás.", "Eliminar", true);
-      if (!isConfirmed) return;
-      state.currentScore.measures.splice(state.editorState.activeMeasure, 1);
-      syncMeasureControls(); renderScore();
+      if (await showConfirm("Eliminar compás", "Se borrarán todas las notas de este compás.", "Eliminar", true)) {
+        state.currentScore.measures.splice(state.editorState.activeMeasure, 1);
+        syncMeasureControls(); renderScore();
+      }
     });
 
     document.getElementById("repeatStart").addEventListener("change", (e) => { state.currentScore.measures[state.editorState.activeMeasure].repeatStart = e.target.checked; renderScore(); });
@@ -419,14 +294,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("isRest").addEventListener("change", (e) => {
       const pitchFields = document.getElementById("pitchFields");
       pitchFields.style.opacity = e.target.checked ? 0.4 : 1;
-      pitchFields.querySelectorAll("select").forEach((s) => { s.disabled = e.target.checked; });
+      pitchFields.querySelectorAll("select").forEach(s => s.disabled = e.target.checked);
     });
 
     document.getElementById("durationGrid").addEventListener("click", (e) => {
       const btn = e.target.closest(".dur-btn");
       if (!btn) return;
       state.editorState.duration = btn.dataset.dur;
-      document.getElementById("durationGrid").querySelectorAll(".dur-btn").forEach((b) => b.classList.toggle("is-active", b === btn));
+      document.getElementById("durationGrid").querySelectorAll(".dur-btn").forEach(b => b.classList.toggle("is-active", b === btn));
     });
 
     document.getElementById("btnAddNote").addEventListener("click", () => {
@@ -436,14 +311,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       if (currentUsed + durQ > needed) {
         if (typeof Tone !== "undefined" && Tone.Synth) {
-          const errorSynth = new Tone.Synth({ oscillator: { type: "square" }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
-          errorSynth.volume.value = -10;
-          errorSynth.triggerAttackRelease("C2", "16n");
+          new Tone.Synth({ oscillator: { type: "square" }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } })
+            .toDestination().triggerAttackRelease("C2", "16n", undefined, 0.1);
         }
         const desk = document.getElementById("engraveDesk");
         desk.style.transform = "translateX(10px)";
-        setTimeout(() => { desk.style.transform = "translateX(-10px)"; }, 50);
-        setTimeout(() => { desk.style.transform = "translateX(0)"; }, 100);
+        setTimeout(() => desk.style.transform = "translateX(-10px)", 50);
+        setTimeout(() => desk.style.transform = "translateX(0)", 100);
         return;
       }
 
@@ -468,19 +342,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const btnPlay = document.getElementById("plBtnPlay");
   if (btnPlay) {
-    btnPlay.addEventListener("click", () => (isAudioPlaying() ? pauseAudio() : playAudio()));
-    document.getElementById("plBtnRewind").addEventListener("click", () => stopPlayback());
+    btnPlay.addEventListener("click", () => isAudioPlaying() ? pauseAudio() : playAudio());
+    document.getElementById("plBtnRewind").addEventListener("click", stopPlayback);
 
     document.querySelectorAll(".pl-speed-btn").forEach((b) => b.addEventListener("click", () => {
       const factor = parseFloat(b.dataset.speed);
       setSpeedFactor(factor);
-      document.querySelectorAll(".pl-speed-btn").forEach((btn) => btn.classList.toggle("is-active", parseFloat(btn.dataset.speed) === factor));
+      document.querySelectorAll(".pl-speed-btn").forEach(btn => btn.classList.toggle("is-active", parseFloat(btn.dataset.speed) === factor));
     }));
 
-    const elBpm = document.getElementById("plBpm");
-    if (elBpm) elBpm.addEventListener("change", (e) => {
-      const val = Math.max(20, Math.min(300, parseInt(e.target.value, 10) || 100));
-      e.target.value = val;
+    document.getElementById("plBpm")?.addEventListener("change", (e) => {
+      e.target.value = Math.max(20, Math.min(300, parseInt(e.target.value, 10) || 100));
       refreshAudioBPM(); 
     });
 
@@ -488,33 +360,66 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (isAudioPlaying() && (e.target.closest("#engraveDesk") || e.target.closest(".measure-hit"))) pauseAudio();
     });
   }
+};
 
-  spawnFloatingNotes();
-  initEditorStickyOffsetSync();
+document.addEventListener("DOMContentLoaded", async () => {
+  await checkMaintenanceStatus();
+  initThemeControls();
+  initFirebase();
+  setupAuthUI();
+  setupProfileUI();
+  initShortcuts();
+  initDragAndDrop();
+
+  const paperWrap = document.getElementById('paperWrap');
+  if (paperWrap) {
+    let zoom = 1;
+    paperWrap.addEventListener('wheel', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        zoom = Math.max(0.5, Math.min(zoom + (e.deltaY < 0 ? 0.1 : -0.1), 2));
+        paperWrap.style.setProperty('--zoom-level', zoom);
+      }
+    }, { passive: false });
+  }
+
+  setupEventListeners();
+
+  const wrapSpawn = document.getElementById("floatingNotes");
+  if (wrapSpawn && wrapSpawn.childElementCount === 0) {
+    const glyphs = ["♪", "♫", "♩", "𝄞"];
+    for (let i = 0; i < 12; i++) {
+      const s = document.createElement("span");
+      s.className = "note-anim"; s.textContent = glyphs[i % 4];
+      s.style.left = `${Math.random() * 100}%`;
+      s.style.animationDuration = `${14 + Math.random() * 12}s`;
+      s.style.animationDelay = `-${Math.random() * 20}s`;
+      s.style.fontSize = `${24 + Math.random() * 30}px`;
+      wrapSpawn.appendChild(s);
+    }
+  }
+
+  const header = document.getElementById("mainHeader");
+  if (header && typeof ResizeObserver !== "undefined") {
+    new ResizeObserver(syncEditorStickyOffset).observe(header);
+  }
+  window.addEventListener("resize", syncEditorStickyOffset);
 
   on("langchange", (lang) => {
     renderCustomSelects();
-    if (state.currentScore && state.currentScore.isExample) {
+    if (state.currentScore?.isExample) {
       state.currentScore.title = lang === "es" ? "Oda a la Alegría" : "Ode to Joy";
-      const elTitle = document.getElementById("scoreTitle");
-      if (elTitle) elTitle.value = state.currentScore.title;
+      const tEl = document.getElementById("scoreTitle"); if (tEl) tEl.value = state.currentScore.title;
     }
-     
-    const vLib = document.getElementById("viewLibrary");
-    const vEdit = document.getElementById("viewEditor");
-    if (vLib && !vLib.hidden) renderLibrary();
-    if (vEdit && !vEdit.hidden) renderScore();
+    if (!document.getElementById("viewLibrary")?.hidden) renderLibrary();
+    if (!document.getElementById("viewEditor")?.hidden) renderScore();
   });
   
-  on("scoreschanged", () => {
-    const vLib = document.getElementById("viewLibrary");
-    if (vLib && !vLib.hidden) renderLibrary();
-  });
-  
+  on("scoreschanged", () => { if (!document.getElementById("viewLibrary")?.hidden) renderLibrary(); });
   on("measureselected", syncMeasureControls);
 
-  const userLang = navigator.language || navigator.userLanguage;
-  setLang(userLang && userLang.toLowerCase().startsWith("es") ? "es" : "en");
+  const uLang = (navigator.language || navigator.userLanguage || "en").toLowerCase();
+  setLang(uLang.startsWith("es") ? "es" : "en");
 
   window.addEventListener("hashchange", handleNavigation);
   if (!window.location.hash || window.location.hash === "#") window.location.hash = "#inicio";

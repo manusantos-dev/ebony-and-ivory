@@ -1,8 +1,9 @@
-/* =========================================================
-   EBONY & IVORY — print.css
-   ========================================================= */
-@media print{
-  .topbar, .engrave-desk, .editor-subnav, .sitefooter, .paper-hint, .player-bar, .modal-overlay, .editor-top-controls, .back-pill, #viewHome, #viewLibrary { 
+@media print {
+  body { background: #fff !important; color: #000 !important; font-family: var(--font-display, Georgia, serif); }
+  
+  .topbar, .engrave-desk, .editor-subnav, .sitefooter, .paper-hint, 
+  .player-bar, .modal-overlay, .editor-top-controls, .back-pill, 
+  #viewHome, #viewLibrary, .custom-toast, .sync-indicator, .btn-exit-zen { 
     display: none !important; 
   }
   
@@ -13,10 +14,11 @@
     display: block !important; 
     overflow: visible !important;
     height: auto !important;
+    box-shadow: none !important;
+    border: none !important;
   }
   
   ::-webkit-scrollbar { display: none !important; }
-  
   .measure-hit { display: none !important; }
 
   @page { size: A4 portrait; margin: 15mm 10mm 20mm 10mm; }
@@ -27,21 +29,17 @@
     width: 100% !important;
     min-width: auto !important; 
     padding: 0 !important; 
-    margin: 0 !important; 
+    margin: 0 0 50px 0 !important; 
     page-break-after: always; 
     break-after: page; 
     position: relative; 
   }
   
-  .paper-page:last-child { page-break-after: auto; }
+  .paper-page:last-child { page-break-after: auto; break-after: auto; }
   
-  .paper-page svg {
-    width: 100% !important;
-    height: auto !important;
-    max-height: 275mm !important; 
-  }
+  .paper-page svg { width: 100% !important; height: auto !important; max-height: 275mm !important; }
   
-  .print-footer-content { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); border-top: 1px solid var(--line); padding-top: 8px; margin-top: 10px; }
-  
-.print-logo-isotipo { height: 16px; width: auto; object-fit: contain; }
+  .print-header-content { display: flex !important; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 30px; font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; }
+  .print-footer-content { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 10px; color: #000; border-top: 1px dashed #000; padding-top: 8px; margin-top: 10px; }
+  .print-logo-isotipo { height: 16px; width: auto; object-fit: contain; }
 }

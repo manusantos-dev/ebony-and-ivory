@@ -2,8 +2,8 @@ import { uid, nextPlateNumber, persistScore } from '../core/storage.js';
 import { showToast } from '../ui/toast.js';
 import { emit } from '../core/events.js';
 
-export function initDragAndDrop() {
-  const body = document.body;
+export const initDragAndDrop = () => {
+  const { body } = document;
 
   body.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -23,27 +23,31 @@ export function initDragAndDrop() {
 
     const file = e.dataTransfer.files[0];
     if (!file || !file.name.endsWith('.json')) {
-      showToast('Solo se admiten archivos .json', 'error');
-      return;
+      return showToast('Solo se admiten archivos .json', 'error');
     }
 
     const reader = new FileReader();
     reader.onload = () => {
       try {
         const data = JSON.parse(reader.result);
-        if (!data.measures) throw new Error("Formato inválido");
-        data.id = uid();
-        data.plate = nextPlateNumber();
-        data.updatedAt = Date.now();
-        data.createdAt = Date.now();
-        delete data.isExample;
-        persistScore(data);
+        if (!data.measures) throw new Error("Invalid format");
+        
+        const score = {
+          ...data,
+          id: uid(),
+          plate: nextPlateNumber(),
+          updatedAt: Date.now(),
+          createdAt: Date.now()
+        };
+        delete score.isExample;
+        
+        persistScore(score);
         showToast('Partitura importada con éxito', 'success');
         emit('scoreschanged');
-      } catch (err) {
+      } catch {
         showToast('Error al leer el archivo JSON', 'error');
       }
     };
     reader.readAsText(file);
   });
-}
+};
