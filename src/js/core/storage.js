@@ -70,3 +70,5 @@ export const deleteScoreById = (id) => {
   scores.forEach((s, index) => { s.plate = index + 1; newAll[s.id] = s; });
   saveAll(newAll);
 };
+
+export const trim = (n) => Number.isInteger(n) ? n : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
