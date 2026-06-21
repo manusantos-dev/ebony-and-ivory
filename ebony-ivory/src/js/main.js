@@ -263,9 +263,9 @@ function spawnFloatingNotes() {
 
 /* ----------------------------- Wiring de eventos (DOM listo) ----------------------------- */
 document.addEventListener("DOMContentLoaded", async () => {
+  initFirebase();
   await checkMaintenanceStatus();
   initThemeControls();
-  initFirebase();
   setupAuthUI();
   setupProfileUI();
   initShortcuts();
