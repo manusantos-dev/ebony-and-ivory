@@ -150,9 +150,56 @@ const initEditor = (views) => {
   window.scrollTo(0, 0);
 };
 
+const saveCurrentNote = () => {
+    if (state.editorState.editingNoteIdx === null || state.editorState.editingNoteIdx === undefined) return;
+    const staffNotes = state.currentScore.measures[state.editorState.activeMeasure]?.[state.editorState.activeStaff];
+    if (!staffNotes || !staffNotes[state.editorState.editingNoteIdx]) return;
+
+    staffNotes[state.editorState.editingNoteIdx] = {
+        rest: document.getElementById("isRest").checked,
+        letter: document.getElementById("pitchLetter").value,
+        accidental: document.getElementById("pitchAccidental").value,
+        octave: parseInt(document.getElementById("pitchOctave").value, 10),
+        duration: state.editorState.duration,
+        dotted: document.getElementById("isDotted").checked,
+        dynamic: document.getElementById("dynamicSelect").value,
+        fingering: document.getElementById("fingeringSelect").value,
+        lyric: document.getElementById("lyricInput").value
+    };
+};
+
+const loadNoteIntoForm = (n, idx) => {
+    state.editorState.editingNoteIdx = idx;
+    
+    const isRest = document.getElementById("isRest");
+    isRest.checked = n.rest;
+    isRest.dispatchEvent(new Event("change"));
+
+    if (!n.rest) {
+        document.getElementById("pitchLetter").value = n.letter;
+        document.getElementById("pitchAccidental").value = n.accidental || "";
+        document.getElementById("pitchOctave").value = n.octave;
+    }
+    
+    state.editorState.duration = n.duration;
+    document.querySelectorAll(".dur-btn").forEach(b => b.classList.toggle("is-active", b.dataset.dur === n.duration));
+    document.getElementById("isDotted").checked = !!n.dotted;
+    document.getElementById("dynamicSelect").value = n.dynamic || "";
+    document.getElementById("fingeringSelect").value = n.fingering || "";
+    document.getElementById("lyricInput").value = n.lyric || "";
+
+    const btnAdd = document.getElementById("btnAddNote");
+    if (btnAdd) {
+        btnAdd.textContent = "✓ Actualizar";
+        btnAdd.style.background = "var(--color-success)";
+        btnAdd.style.borderColor = "var(--color-success)";
+        btnAdd.style.color = "#FFF";
+    }
+};
+
 const syncMeasureControls = () => {
   const score = state.currentScore;
-  state.editorState.editingNoteIdx = null;
+  state.editorState.editingNoteIdx = null; 
   state.editorState.activeMeasure = Math.max(0, Math.min(state.editorState.activeMeasure, score.measures.length - 1));
   const m = score.measures[state.editorState.activeMeasure];
 
@@ -178,6 +225,7 @@ const renderNoteList = () => {
         btnAdd.textContent = t("btnAddNote");
         btnAdd.style.background = "";
         btnAdd.style.borderColor = "";
+        btnAdd.style.color = "";
     }
     
     let draggedIdx = null;
@@ -188,6 +236,11 @@ const renderNoteList = () => {
         tag.draggable = true;
         tag.style.cursor = "grab";
         
+        if (state.editorState.editingNoteIdx === idx) {
+            tag.style.background = "var(--color-brass)";
+            tag.style.color = "#FFF";
+        }
+
         const symbol = n.rest ? "Sil." : `${n.letter}${n.accidental || ""}${n.octave}`;
         tag.innerHTML = `<span class="note-text" style="cursor:pointer;" title="Clic para Editar">${symbol}</span> <span class="note-tag-del" data-idx="${idx}" title="Eliminar">✕</span>`;
         
@@ -201,14 +254,13 @@ const renderNoteList = () => {
             draggedIdx = null; 
         });
         tag.addEventListener("dragover", (e) => {
-            e.preventDefault(); 
+            e.preventDefault();
             e.dataTransfer.dropEffect = "move";
         });
         tag.addEventListener("drop", (e) => {
             e.preventDefault();
             if (draggedIdx === null || draggedIdx === idx) return;
             const staffNotes = state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff];
-            // Intercambio de posiciones
             const item = staffNotes.splice(draggedIdx, 1)[0];
             staffNotes.splice(idx, 0, item);
             state.editorState.editingNoteIdx = null; 
@@ -217,30 +269,11 @@ const renderNoteList = () => {
         });
 
         tag.querySelector('.note-text').addEventListener("click", () => {
-            state.editorState.editingNoteIdx = idx;
-            
-            const isRest = document.getElementById("isRest");
-            isRest.checked = n.rest;
-            isRest.dispatchEvent(new Event("change")); // Dispara el efecto de atenuar
-
-            if (!n.rest) {
-                document.getElementById("pitchLetter").value = n.letter;
-                document.getElementById("pitchAccidental").value = n.accidental || "";
-                document.getElementById("pitchOctave").value = n.octave;
+            if (state.editorState.editingNoteIdx !== null && state.editorState.editingNoteIdx !== idx) {
+                saveCurrentNote(); 
             }
-            
-            state.editorState.duration = n.duration;
-            document.querySelectorAll(".dur-btn").forEach(b => b.classList.toggle("is-active", b.dataset.dur === n.duration));
-            document.getElementById("isDotted").checked = !!n.dotted;
-            document.getElementById("dynamicSelect").value = n.dynamic || "";
-            document.getElementById("fingeringSelect").value = n.fingering || "";
-            document.getElementById("lyricInput").value = n.lyric || "";
-
-            if (btnAdd) {
-                btnAdd.textContent = "✓ Actualizar";
-                btnAdd.style.background = "var(--color-success)";
-                btnAdd.style.borderColor = "var(--color-success)";
-            }
+            loadNoteIntoForm(n, idx);
+            renderNoteList(); 
         });
 
         container.appendChild(tag);
@@ -633,23 +666,21 @@ const setupEventListeners = () => {
 
       clearRedoStack();
       
-      const newNote = {
-        rest: document.getElementById("isRest").checked,
-        letter: document.getElementById("pitchLetter").value,
-        accidental: document.getElementById("pitchAccidental").value,
-        octave: parseInt(document.getElementById("pitchOctave").value, 10),
-        duration: state.editorState.duration,
-        dotted: document.getElementById("isDotted").checked,
-        dynamic: document.getElementById("dynamicSelect").value,
-        fingering: document.getElementById("fingeringSelect").value,
-        lyric: document.getElementById("lyricInput").value
-      };
-
       if (isEditing) {
-          staffNotes[state.editorState.editingNoteIdx] = newNote;
-          state.editorState.editingNoteIdx = null;
+          saveCurrentNote();
+          state.editorState.editingNoteIdx = null; 
       } else {
-          staffNotes.push(newNote);
+          staffNotes.push({
+            rest: document.getElementById("isRest").checked,
+            letter: document.getElementById("pitchLetter").value,
+            accidental: document.getElementById("pitchAccidental").value,
+            octave: parseInt(document.getElementById("pitchOctave").value, 10),
+            duration: state.editorState.duration,
+            dotted: document.getElementById("isDotted").checked,
+            dynamic: document.getElementById("dynamicSelect").value,
+            fingering: document.getElementById("fingeringSelect").value,
+            lyric: document.getElementById("lyricInput").value
+          });
       }
       
       document.getElementById("dynamicSelect").value = "";
@@ -658,6 +689,84 @@ const setupEventListeners = () => {
       
       syncMeasureControls();
       renderScore();
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (document.getElementById("viewEditor").hidden) return;
+        if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || e.target.tagName === "TEXTAREA") return;
+
+        const score = state.currentScore;
+        if (!score || !score.measures) return;
+
+        let activeM = state.editorState.activeMeasure;
+        let staff = state.editorState.activeStaff;
+        let notes = score.measures[activeM]?.[staff] || [];
+
+        if (e.key === "ArrowRight") {
+            e.preventDefault();
+            if (state.editorState.editingNoteIdx !== null) {
+                saveCurrentNote();
+                let nextIdx = state.editorState.editingNoteIdx + 1;
+                
+                if (nextIdx >= notes.length) {
+                    if (activeM < score.measures.length - 1) {
+                        state.editorState.activeMeasure++;
+                        syncMeasureControls(); 
+                        
+                        const newNotes = score.measures[state.editorState.activeMeasure][staff] || [];
+                        if (newNotes.length > 0) {
+                            loadNoteIntoForm(newNotes[0], 0);
+                        }
+                        renderNoteList();
+                        renderScore();
+                    } else {
+                        state.editorState.editingNoteIdx = notes.length - 1;
+                        loadNoteIntoForm(notes[notes.length - 1], notes.length - 1);
+                        renderNoteList();
+                    }
+                } else {
+                    loadNoteIntoForm(notes[nextIdx], nextIdx);
+                    renderNoteList();
+                }
+            } else {
+                if (notes.length > 0) {
+                    loadNoteIntoForm(notes[0], 0);
+                    renderNoteList();
+                }
+            }
+        } else if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            if (state.editorState.editingNoteIdx !== null) {
+                saveCurrentNote();
+                let prevIdx = state.editorState.editingNoteIdx - 1;
+                
+                if (prevIdx < 0) {
+                    if (activeM > 0) {
+                        state.editorState.activeMeasure--;
+                        syncMeasureControls();
+                        
+                        const prevNotes = score.measures[state.editorState.activeMeasure][staff] || [];
+                        if (prevNotes.length > 0) {
+                            loadNoteIntoForm(prevNotes[prevNotes.length - 1], prevNotes.length - 1);
+                        }
+                        renderNoteList();
+                        renderScore();
+                    } else {
+                        state.editorState.editingNoteIdx = 0;
+                        loadNoteIntoForm(notes[0], 0);
+                        renderNoteList();
+                    }
+                } else {
+                    loadNoteIntoForm(notes[prevIdx], prevIdx);
+                    renderNoteList();
+                }
+            } else {
+                if (notes.length > 0) {
+                    loadNoteIntoForm(notes[notes.length - 1], notes.length - 1);
+                    renderNoteList();
+                }
+            }
+        }
     });
   }
 

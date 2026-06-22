@@ -53,8 +53,8 @@ export function renderScore() {
         const composersHtml = (score.composer || "").split(",").map(c => `<span>${escapeHtml(c.trim())}</span>`).join(" &middot; ");
         
         head.innerHTML = `
-          <div class="print-only" style="text-align: left; margin-bottom: 20px;">
-            <img src="/assets/ebony-ivory-wordmark.png" style="height: 24px; opacity: 0.8; filter: grayscale(100%);">
+          <div class="print-only" style="text-align: left; margin-bottom: 25px;">
+            <img src="assets/ebony-ivory-wordmark.png" style="height: 24px;">
           </div>
           <h2>${escapeHtml(score.title || t("untitled"))}</h2>
           <p>${composersHtml}</p>`;
@@ -108,7 +108,7 @@ export function renderScore() {
           if (idx === 0) {
             staveTreble.addTimeSignature(timeSig);
             staveBass.addTimeSignature(timeSig);
-            staveTreble.setTempo({ duration: "q", dots: 0, bpm: bpm || 100 }, 0);
+            staveTreble.setTempo({ duration: "q", dots: 0, bpm: bpm || 100 }, -25);
           }
 
           const noteStartOffset = isFirstOfLine ? 120 : 15;
