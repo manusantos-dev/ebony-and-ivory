@@ -398,16 +398,30 @@
   </div>
 </div>
 
-<footer class="sitefooter">
-  <p data-i18n="footerText">Ebony & Ivory es un proyecto creado por y para amantes de la música, diseñado para elevar la forma en que interactuamos con el pentagrama. Las obras musicales que transcribas siguen siendo propiedad de sus respectivos autores originales. Por favor, transcribe con responsabilidad.</p>
+<footer class="sitefooter print-only-hide" style="display: flex; flex-direction: column; gap: 24px;">
   
-  <div class="footer-controls" id="footerControls">
-    <div class="lang-switch" id="langSwitchContainer">
-      <button class="lang-btn active" data-lang="es">ES</button>
-      <button class="lang-btn" data-lang="en">EN</button>
+  <div style="display: flex; justify-content: space-between; align-items: center; gap: 24px;">
+    
+    <p data-i18n="footerText" style="margin: 0; text-align: left; flex: 1;">
+      Ebony & Ivory es un proyecto creado por y para amantes de la música, diseñado para elevar la forma en que interactuamos con el pentagrama. Las obras musicales que transcribas siguen siendo propiedad de sus respectivos autores originales. Por favor, transcribe con responsabilidad.
+    </p>
+    
+    <div class="footer-controls" id="footerControls" style="display: flex; align-items: center; gap: 12px; flex-shrink: 0; margin: 0;">
+      <div class="lang-switch" id="langSwitchContainer">
+        <button class="lang-btn active" data-lang="es">ES</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+      <button class="btn-ghost-small theme-toggle" id="themeToggleBtn">🌙</button>
     </div>
-    <button class="btn-ghost-small theme-toggle" id="themeToggleBtn">🌙</button>
+    
   </div>
+  
+  <div class="legal-links" style="display: flex; justify-content: center; gap: 20px; font-size: 12px; opacity: 0.8;">
+    <a href="#" id="btnShowTerms" style="color: var(--color-ink); text-decoration: underline;" data-i18n="termsLink">Términos y Condiciones</a>
+    
+    <a href="#" id="btnReportCopyright" style="color: var(--color-danger); text-decoration: underline;" data-i18n="reportLink">Reportar Copyright (DMCA)</a>
+  </div>
+
 </footer>
 
 <script type="module" src="/src/js/main.js"></script>

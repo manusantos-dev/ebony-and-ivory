@@ -561,6 +561,26 @@ const setupEventListeners = () => {
   setupCustomSelect("customFilterKeySig", "filterKeySig", (val) => { state.libraryState.filterKey = val; renderLibrary(); });
   setupCustomSelect("customFilterCodexKeySig", "filterCodexKeySig", (val) => { state.codexState.filterKey = val; fetchAndRenderCodex(); });
 
+  document.getElementById("btnShowTerms")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    showConfirm(
+      t("termsLink"), 
+      "Al usar Ebony & Ivory, confirmas que tienes los derechos para transcribir las obras que publicas o que estas pertenecen al Dominio Público. Nos reservamos el derecho a eliminar cualquier contenido que infrinja derechos de autor de terceros.", 
+      "Aceptar", 
+      false 
+    );
+  });
+
+  document.getElementById("btnReportCopyright")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    showConfirm(
+      t("reportLink"), 
+      "Para notificar una infracción de derechos de autor, por favor envía un correo detallando la obra y el enlace a:<br><br><strong>ebonyandivory.app@gmail.com</strong>", 
+      "Entendido", 
+      false
+    );
+  });
+
   document.querySelectorAll(".lang-btn").forEach(btn => btn.addEventListener("click", () => setLang(btn.dataset.lang)));
 
   document.getElementById("btnExportJson")?.addEventListener("click", (e) => {

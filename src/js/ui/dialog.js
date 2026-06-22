@@ -5,9 +5,13 @@ export const showConfirm = (title, message, acceptText = "Aceptar", isDanger = f
     const btnCancel = document.getElementById('btnConfirmCancel');
 
     document.getElementById('confirmTitle').textContent = title;
-    document.getElementById('confirmMessage').textContent = message;
+    
+    document.getElementById('confirmMessage').innerHTML = message;
+    
     btnAccept.textContent = acceptText;
     btnAccept.className = isDanger ? 'btn btn-danger' : 'btn btn-primary';
+
+    btnCancel.hidden = (acceptText === "Entendido" || acceptText === "Aceptar" && !isDanger && title !== "Borrar cuenta");
 
     const cleanup = () => {
       overlay.hidden = true;

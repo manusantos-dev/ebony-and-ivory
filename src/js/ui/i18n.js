@@ -35,7 +35,9 @@ const translations = {
     deleteAccount: "Borrar cuenta", deleteWarning: "Estás a punto de eliminar tu cuenta y todo tu catálogo privado. Esta acción es irreversible. ¿Deseas continuar?",
     sortLikes: "Más populares ❤️", sortRecent: "Más recientes", sortOldest: "Más antiguas", sortDateDesc: "Última edición (Reciente)", sortDateAsc: "Última edición (Antigua)", sortTitleAsc: "Título (A-Z)", sortAuthorAsc: "Autor (A-Z)",
     byPublisher: "por:", deletedUser: "usuario eliminado",
-    footerText: "Ebony & Ivory es un proyecto creado por y para amantes de la música, diseñado para elevar la forma en que interactuamos con el pentagrama. Las obras musicales que transcribas siguen siendo propiedad de sus respectivos autores originales. Por favor, transcribe con responsabilidad."
+    footerText: "Ebony & Ivory es un proyecto creado por y para amantes de la música, diseñado para elevar la forma en que interactuamos con el pentagrama. Las obras musicales que transcribas siguen siendo propiedad de sus respectivos autores originales. Por favor, transcribe con responsabilidad.",
+    termsLink: "Términos y Condiciones",
+    reportLink: "Reportar Copyright (DMCA)"
   },
   en: {
     importBtn: "Import .json", newScoreBtn: "+ New Score", backBtn: "← Back",
@@ -70,7 +72,9 @@ const translations = {
     deleteAccount: "Delete account", deleteWarning: "You are about to delete your account and all your private catalog. This action cannot be undone. Proceed?",
     sortLikes: "Most Popular ❤️", sortRecent: "Newest first", sortOldest: "Oldest first", sortDateDesc: "Last edited (Newest)", sortDateAsc: "Last edited (Oldest)", sortTitleAsc: "Title (A-Z)", sortAuthorAsc: "Author (A-Z)",
     byPublisher: "by:", deletedUser: "deleted user",
-    footerText: "Ebony & Ivory is a project built by and for music lovers, designed to elevate how we interact with the staff. The musical works you transcribe remain the property of their respective original authors. Please transcribe responsibly."
+    footerText: "Ebony & Ivory is a project built by and for music lovers, designed to elevate how we interact with the staff. The musical works you transcribe remain the property of their respective original authors. Please transcribe responsibly.",
+    termsLink: "Terms and Conditions",
+    reportLink: "Report Copyright (DMCA)"
   }
 };
 

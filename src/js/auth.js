@@ -263,33 +263,28 @@ export const setupProfileUI = () => {
     }
   });
 
-  document.getElementById("btnDeleteAccount")?.addEventListener("click", async () => {
-    if (confirm(t("deleteWarning"))) {
-      try {
-        const user = firebase.auth().currentUser;
-        if (user) {
-          const db = firebase.firestore();
-          const publicScores = await db.collection("public_scores").where("publisherUid", "==", user.uid).get();
-          const batch = db.batch();
-          publicScores.forEach(doc => {
-            batch.update(doc.ref, { publisherName: "usuario eliminado", publisherUid: "deleted" });
-          });
-          await batch.commit();
-          
-          await user.delete();
-          localStorage.clear();
-          window.location.reload();
-        }
-      } catch (err) {
-        if (err.code === 'auth/requires-recent-login') {
-          alert(t("reauthNeeded"));
-          firebase.auth().signOut();
-        } else {
-          alert(t("genericError"));
+  const btnDeleteAcc = document.getElementById("btnDeleteAccount");
+  if (btnDeleteAcc) {
+    btnDeleteAcc.addEventListener("click", async () => {
+      if (await showConfirm(t("deleteAccount"), t("deleteWarning"), "Eliminar", true)) {
+        try {
+          const user = firebase.auth().currentUser;
+          if (user) {
+            await user.delete();
+            showToast("Tu cuenta y tus datos han sido eliminados.", "success");
+            document.getElementById("profileModal").hidden = true;
+          }
+        } catch (error) {
+          console.error("Error al borrar cuenta:", error);
+          if (error.code === 'auth/requires-recent-login') {
+            showToast(t("reauthNeeded"), "error");
+          } else {
+            showToast(t("genericError"), "error");
+          }
         }
       }
-    }
-  });
+    });
+  }
 };
 
 on("langchange", refreshLangTexts);
