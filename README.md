@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/ebony-ivory-primary-logo-positive.png" alt="Ebony & Ivory Logo" width="400">
+<img src="public/assets/ebony-ivory-primary-logo-positive.png" alt="Ebony & Ivory Logo" width="400">
 
 <br>
 
@@ -24,7 +24,7 @@
 
 <br>
 
-### <img src="assets/ebony-ivory-brand-mark-positive.png" width="16" align="center"> The Origin Story
+### <img src="public/assets/ebony-ivory-brand-mark-positive.png" width="16" align="center"> The Origin Story
 I just wanted to learn how to play the piano. But instead of actually practicing, I got frustrated searching for ugly, poorly scanned sheet music with completely different aesthetics all over the internet.
 
 So, like anyone with their priorities "straight", I decided to postpone my musical journey to code my own browser-based sheet music editor and catalog from scratch. Maybe I should close my code editor, sit at the keyboard, and finally start practicing... but hey, at least my sheet music looks incredible now.
@@ -34,7 +34,7 @@ So, like anyone with their priorities "straight", I decided to postpone my music
 
 ---
 
-## <img src="assets/ebony-ivory-brand-mark-positive.png" width="20" align="center"> Technical Features
+## <img src="public/assets/ebony-ivory-brand-mark-positive.png" width="20" align="center"> Technical Features
 
 Built without any UI framework, as a set of vanilla ES Modules. The project demonstrates strong web fundamentals, focusing on performance, state management, and complex DOM/SVG manipulation.
 
@@ -46,19 +46,19 @@ Built without any UI framework, as a set of vanilla ES Modules. The project demo
 * **Custom Print Engine:** Uses advanced `@media print` CSS to hijack the browser's native print dialogue. It strips the UI, formats the SVG canvas into exact A4 pages, and injects custom headers/footers for a flawless PDF export.
 * **Vanilla SPA Architecture:** Hash-based URL routing, a Singleton EventBus pattern to decouple modules, State Proxies to prevent unwanted mutations, and real-time DOM filtering/sorting.
 
-## <img src="assets/ebony-ivory-brand-mark-positive.png" width="20" align="center"> Live Demo
+## <img src="public/assets/ebony-ivory-brand-mark-positive.png" width="20" align="center"> Live Demo
 
 Access the live tool hosted on GitHub Pages:
 **[https://manusantos-dev.github.io/ebony-and-ivory/](https://manusantos-dev.github.io/ebony-and-ivory/)**
 
-## <img src="assets/ebony-ivory-brand-mark-positive.png" width="20" align="center"> Feedback & Support
+## <img src="public/assets/ebony-ivory-brand-mark-positive.png" width="20" align="center"> Feedback & Support
 
 This is a completely open-source tool made *by* a music lover, *for* musicians and anyone who simply enjoys playing. I don't want to monetize this with ads or paywalls. 
 
 **The only thing I ask for in return is your feedback.**
 Have you found a bug? Is there a feature you desperately miss? Do you just want to share how you're using it? Please open an issue on GitHub or reach out to me. Let's make this tool better together!
 
-## <img src="assets/ebony-ivory-brand-mark-positive.png" width="20" align="center"> Disclaimer & Copyright
+## <img src="public/assets/ebony-ivory-brand-mark-positive.png" width="20" align="center"> Disclaimer & Copyright
 
 Ebony & Ivory is an open-source personal tool. The musical works you transcribe remain the property of their respective original authors. Please transcribe responsibly.
 
@@ -72,7 +72,7 @@ Ebony & Ivory is an open-source personal tool. The musical works you transcribe 
 
 <div align="center">
   
-<h1 id="español"><img src="assets/ebony-ivory-primary-logo-positive.png" alt="Ebony & Ivory Logo" width="400"></h1>
+<h1 id="español"><img src="public/assets/ebony-ivory-primary-logo-positive.png" alt="Ebony & Ivory Logo" width="400"></h1>
 
 > **El arte de preservar la música.**
 > El entorno profesional para la notación y el grabado musical. Transcribe, clasifica y eterniza tu repertorio con precisión absoluta.
@@ -90,7 +90,7 @@ Ebony & Ivory is an open-source personal tool. The musical works you transcribe 
 
 <br>
 
-### <img src="assets/ebony-ivory-brand-mark-positive.png" width="16" align="center"> La verdadera historia
+### <img src="public/assets/ebony-ivory-brand-mark-positive.png" width="16" align="center"> La verdadera historia
 Yo solo quería aprender a tocar el piano. Pero en lugar de ponerme a practicar, me frustré buscando partituras feas, mal escaneadas y con estéticas completamente distintas por todo internet.
 
 Así que, como cualquier persona con sus prioridades "claras", decidí posponer mi aprendizaje musical para programar mi propio editor y gestor de partituras en el navegador desde cero. Quizás debería cerrar el editor de código, sentarme frente al teclado y ponerme a practicar de una vez por todas... pero oye, al menos ahora mis partituras lucen increíbles.
@@ -100,7 +100,7 @@ Así que, como cualquier persona con sus prioridades "claras", decidí posponer 
 
 ---
 
-## <img src="assets/ebony-ivory-brand-mark-positive.png" width="20" align="center"> Características Técnicas
+## <img src="public/assets/ebony-ivory-brand-mark-positive.png" width="20" align="center"> Características Técnicas
 
 Construido sin ningún *framework* de UI, como un conjunto de módulos ES (ES Modules) en JavaScript puro. El proyecto demuestra fundamentos sólidos de desarrollo web, enfocándose en el rendimiento, la gestión del estado y la manipulación compleja del DOM/SVG.
 
@@ -111,19 +111,19 @@ Construido sin ningún *framework* de UI, como un conjunto de módulos ES (ES Mo
 * **Almacenamiento Local con Sync en la Nube:** Las partituras se guardan al instante en el `localStorage` (100% offline). Conectar una cuenta gratuita (vía Firebase) sincroniza tu catálogo de forma segura con Firestore en tiempo real entre dispositivos.
 * **SPA de Arquitectura Vanilla:** Enrutamiento de URLs mediante Hash, un patrón de EventBus (Singleton) para desacoplar módulos, Proxies de estado para prevenir mutaciones indeseadas y filtrado del DOM en tiempo real.
 
-## <img src="assets/ebony-ivory-brand-mark-positive.png" width="20" align="center"> Live Demo
+## <img src="public/assets/ebony-ivory-brand-mark-positive.png" width="20" align="center"> Live Demo
 
 Accede a la herramienta en vivo alojada en GitHub Pages:
 **[https://manusantos-dev.github.io/ebony-and-ivory/](https://manusantos-dev.github.io/ebony-and-ivory/)**
 
-## <img src="assets/ebony-ivory-brand-mark-positive.png" width="20" align="center"> Feedback y Contribuciones
+## <img src="public/assets/ebony-ivory-brand-mark-positive.png" width="20" align="center"> Feedback y Contribuciones
 
 Esta es una herramienta de código abierto hecha *por* un aficionado a la música *para* músicos y cualquiera que disfrute tocando. No tengo intención de monetizarla con anuncios ni versiones de pago.
 
 **Lo único que me gustaría recibir a cambio es vuestro *feedback*.**
 ¿Has encontrado un fallo? ¿Echas en falta alguna funcionalidad? ¿O simplemente quieres contarme qué te parece? Por favor, abre un *issue* en GitHub o escríbeme directamente. ¡Ayúdame a mejorarla!
 
-## <img src="assets/ebony-ivory-brand-mark-positive.png" width="20" align="center"> Aviso Legal y Copyright
+## <img src="public/assets/ebony-ivory-brand-mark-positive.png" width="20" align="center"> Aviso Legal y Copyright
 
 Ebony & Ivory es una herramienta de uso personal. Las obras musicales que transcribas siguen siendo propiedad de sus respectivos autores originales. Por favor, transcribe con responsabilidad.
 
