@@ -68,7 +68,7 @@ export function renderScore() {
 
       const printFooter = document.createElement("div");
       printFooter.className = "print-footer-content print-only";
-      printFooter.innerHTML = `<span><strong>${plateLabel(score.plate)}</strong></span> <span>${p + 1} / ${totalPages}</span>`;
+      printFooter.innerHTML = `<span><strong>Ebony & Ivory</strong></span> <span>${p + 1} / ${totalPages}</span>`;
       pageDiv.appendChild(printFooter);
       container.appendChild(pageDiv);
       
@@ -153,9 +153,18 @@ export function renderScore() {
               if (n.lyric) {
                   sn.addModifier(new VF.Annotation(n.lyric).setFont("Times", 12).setVerticalJustification(3), 0);
               }
+              
               if (n.fingering) {
-                  sn.addModifier(new VF.FretHandFinger(n.fingering).setPosition(3), 0);
+                  const isBass = clef === "bass";
+                  sn.addModifier(
+                      new VF.Annotation(n.fingering)
+                          .setFont("Times", 12, "bold")
+                          .setVerticalJustification(isBass ? 3 : 1) 
+                          .setYShift(isBass ? 5 : -5),
+                      0
+                  );
               }
+
               if (n.dynamic) {
                 sn.addModifier(
                   new VF.Annotation(n.dynamic)
@@ -164,6 +173,12 @@ export function renderScore() {
                   0
                 );
               }
+
+              const isEditingThisNote = (state.editorState.editingNoteIdx === nIdx && state.editorState.activeStaff === staffName && state.editorState.activeMeasure === idx);
+              if (isEditingThisNote) {
+                  sn.setStyle({ fillStyle: '#B38E50', strokeStyle: '#B38E50' });
+              }
+
               return sn;
             });
           };

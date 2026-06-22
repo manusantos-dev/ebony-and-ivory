@@ -51,14 +51,9 @@ a { color: var(--color-accent); text-decoration: none; }
   z-index: 9999 !important;
 }
 
-#btnGoCatalog {
+#btnGoCatalog, #btnGoCodexHero {
   background-color: #121212 !important;
   color: #FFFFFF !important;
-  border: 1px solid #121212 !important;
-}
-#btnGoCodexHero {
-  background-color: #FFFFFF !important;
-  color: #121212 !important;
   border: 1px solid #121212 !important;
 }
 
@@ -76,7 +71,6 @@ body.dark-theme {
 }
 
 body.dark-theme .paper-wrap {
-  filter: invert(1) hue-rotate(180deg) contrast(1.3) brightness(1.6) !important;
   background: transparent;
 }
 
@@ -87,9 +81,25 @@ body.dark-theme .logo-modal {
   transition: filter 0.3s ease;
 }
 
+body.dark-theme #paperWrap svg path,
+body.dark-theme #paperWrap svg rect,
+body.dark-theme #paperWrap svg line,
 body.dark-theme #paperWrap svg text {
   fill: #EAEAEA !important;
+  stroke: #EAEAEA !important;
+}
+
+body.dark-theme #paperWrap svg text {
   stroke: none !important;
+}
+
+body.dark-theme #paperWrap svg .measure-hit rect {
+  fill: transparent !important;
+  stroke: none !important;
+}
+body.dark-theme #paperWrap svg .measure-hit.active rect {
+  fill: rgba(212, 175, 55, 0.15) !important;
+  stroke: var(--color-brass) !important;
 }
 
 body.dark-theme #paperWrap h1,
@@ -139,14 +149,10 @@ body.dark-theme .custom-select .select-selected {
   border-color: #4A4A4A !important;
 }
 
-body.dark-theme #btnGoCatalog {
+body.dark-theme #btnGoCatalog, 
+body.dark-theme #btnGoCodexHero {
   background-color: #EAEAEA !important;
   color: #121212 !important;
-  border: 1px solid #EAEAEA !important;
-}
-body.dark-theme #btnGoCodexHero {
-  background-color: #1A1A1A !important;
-  color: #EAEAEA !important;
   border: 1px solid #EAEAEA !important;
 }
 

@@ -57,7 +57,7 @@ const handleNavigation = () => {
       state.isViewingPublic = true; 
       const publicScore = state.publicScores.find(s => s.id === hash.split("/")[1]);
       if (publicScore) {
-          state.currentScore = publicScore;
+          state.currentScore = JSON.parse(JSON.stringify(publicScore));
           if (hash.startsWith("#viewer/")) document.body.classList.add("is-viewer");
           initEditor(views);
           if (navTop) navTop.hidden = true; 
@@ -141,6 +141,7 @@ const initEditor = (views) => {
   safeVal("scoreTitle", state.currentScore.title || "");
   safeVal("scoreComposer", state.currentScore.composer || "");
   safeVal("timeSig", state.currentScore.timeSig || "4/4");
+  safeVal("scoreDifficulty", state.currentScore.difficulty || "beginner"); 
   safeVal("plBpm", state.currentScore.bpm || 100);
   updateCustomSelectUI("customKeySig", state.currentScore.keySig || "C");
 
@@ -290,7 +291,6 @@ const renderNoteList = () => {
     });
 };
 
-/* --- Catálogo Público (El Códice) --- */
 const fetchAndRenderCodex = async () => {
   const grid = document.getElementById("codexGrid");
   if (!grid) return;
@@ -361,10 +361,22 @@ const fetchAndRenderCodex = async () => {
       
       const publisherLabel = escapeHtml(score.publisherName || t("unknownAuthor")).toLowerCase();
 
+      const diffColors = { beginner: "var(--color-success)", intermediate: "#E67E22", advanced: "var(--color-danger)" };
+      const dColor = diffColors[score.difficulty || "beginner"];
+      const dDot = `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background-color:${dColor}; margin-right:6px;" title="Dificultad"></span>`;
+
+      const likesArray = score.likedBy || [];
+      const likesCount = likesArray.length > 0 ? likesArray.length : (score.likes || 0);
+      const hasLiked = state.currentUser && likesArray.includes(state.currentUser.uid);
+      const heartFill = hasLiked ? "❤️" : "🤍";
+
       card.innerHTML = `
         <span class="card-eyebrow" style="text-transform: lowercase;">${t("byPublisher")} ${publisherLabel}</span>
-        <button class="btn-pin" style="color:var(--color-danger);" title="Me gusta">❤ ${score.likes || 0}</button>
-        <h3>${escapeHtml(score.title || t("untitled"))}</h3>
+        <div style="position:absolute; top: 12px; right: 12px; display:flex; gap: 8px;">
+          <button class="btn-pin" data-action="like-codex" style="color:var(--color-danger);" title="Me gusta">${heartFill} ${likesCount}</button>
+          <span style="font-size: 11px; color: var(--color-ink-soft); display:flex; align-items:center;" title="Veces guardada">⎘ ${score.copies || 0}</span>
+        </div>
+        <h3>${dDot}${escapeHtml(score.title || t("untitled"))}</h3>
         <p class="composer">${escapeHtml(score.composer || t("unknownAuthor"))}</p>
         <div class="meta"><span>${score.measures?.length || 0} ${t("measuresTxt")}</span></div>
         <div class="card-actions-row">
@@ -380,11 +392,32 @@ const fetchAndRenderCodex = async () => {
         if (action && action.dataset.action === "clone-codex") {
            e.stopPropagation();
            const copy = { ...score, id: uid(), plate: nextPlateNumber(), createdAt: Date.now(), updatedAt: Date.now() };
-           delete copy.publisherName; delete copy.publisherUid; delete copy.likes; delete copy.views;
+           delete copy.publisherName; delete copy.publisherUid; delete copy.likes; delete copy.views; delete copy.copies;
            persistScore(copy);
            showToast(t("savedToCatalog"), "success");
+           
+           firebase.firestore().collection("public_scores").doc(score.id).update({ copies: firebase.firestore.FieldValue.increment(1) });
            return;
         } 
+        if (action && action.dataset.action === "like-codex") {
+           e.stopPropagation();
+           if (!state.currentUser) return showToast("Inicia sesión para dar Me Gusta", "error");
+           
+           const db = firebase.firestore();
+           const docRef = db.collection("public_scores").doc(score.id);
+           const u = state.currentUser.uid;
+           
+           if (score.likedBy && score.likedBy.includes(u)) {
+               docRef.update({ likedBy: firebase.firestore.FieldValue.arrayRemove(u) });
+               score.likedBy = score.likedBy.filter(id => id !== u);
+           } else {
+               docRef.update({ likedBy: firebase.firestore.FieldValue.arrayUnion(u) });
+               score.likedBy = score.likedBy || [];
+               score.likedBy.push(u);
+           }
+           fetchAndRenderCodex(); 
+           return;
+        }
         if (action && action.dataset.action === "delete-codex") {
            e.stopPropagation();
            if (await showConfirm(t("deleteBtn"), "¿Eliminar definitivamente esta obra pública?", "Eliminar", true)) {
@@ -423,7 +456,6 @@ const publishToCodex = async (score) => {
   }
 };
 
-/* --- Mi Catálogo --- */
 const renderLibrary = () => {
   const lib = state.libraryState;
   let scores = Object.values(loadAll());
@@ -431,8 +463,7 @@ const renderLibrary = () => {
   if (lib.query) {
     scores = scores.filter(s => 
       (s.title || "").toLowerCase().includes(lib.query) || 
-      (s.composer || "").toLowerCase().includes(lib.query) || 
-      plateLabel(s.plate).toLowerCase().includes(lib.query)
+      (s.composer || "").toLowerCase().includes(lib.query)
     );
   }
 
@@ -478,15 +509,21 @@ const renderLibrary = () => {
     const card = document.createElement("div");
     card.className = "score-card";
     const composersHtml = (score.composer || t("unknownAuthor")).split(",").map(c => escapeHtml(c.trim())).join(", ");
+    
+    const diffColors = { beginner: "var(--color-success)", intermediate: "#E67E22", advanced: "var(--color-danger)" };
+    const dColor = diffColors[score.difficulty || "beginner"];
+    const dDot = `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background-color:${dColor}; margin-right:6px;" title="Dificultad"></span>`;
+
     card.innerHTML = `
-      <span class="card-eyebrow">${plateLabel(score.plate)} · ${score.timeSig}</span>
+      <span class="card-eyebrow">${score.timeSig}</span>
       <button class="btn-pin ${score.pinned ? 'is-pinned' : ''}" data-action="pin">★</button>
-      <h3>${escapeHtml(score.title || t("untitled"))}</h3>
+      <h3>${dDot}${escapeHtml(score.title || t("untitled"))}</h3>
       <p class="composer">${composersHtml}</p>
       <div class="meta"><span>${score.measures.length} ${t("measuresTxt")}</span><span>${formatDate(score.updatedAt)}</span></div>
       <div class="card-actions-row">
         <button class="btn-card" data-action="view">${t("viewBtn")}</button>
         <button class="btn-card" data-action="edit">${t("editBtn")}</button>
+        <button class="btn-card" data-action="clone-private">${t("cloneBtn")}</button>
         <button class="btn-card" data-action="publish" title="Publicar en El Códice">${t("publishBtn")}</button>
         <button class="btn-card btn-danger-card" data-action="delete">🗑</button>
       </div>`;
@@ -501,6 +538,11 @@ const renderLibrary = () => {
         score.pinned = !score.pinned;
         persistScore(score);
         renderLibrary();
+      } else if (act === "clone-private") {
+        const copy = { ...score, id: uid(), plate: nextPlateNumber(), title: `${score.title} (Copia)`, createdAt: Date.now(), updatedAt: Date.now() };
+        persistScore(copy);
+        renderLibrary();
+        showToast("Partitura duplicada", "success");
       } else if (act === "delete") {
         if (await showConfirm("Eliminar partitura", "¿Seguro que quieres borrar esta obra?", "Borrar", true)) {
           deleteScoreById(score.id); renderLibrary();
@@ -595,6 +637,7 @@ const setupEventListeners = () => {
     document.getElementById("scoreTitle").addEventListener("input", (e) => { state.currentScore.title = e.target.value; debouncedRender(); });
     document.getElementById("scoreComposer").addEventListener("input", (e) => { state.currentScore.composer = e.target.value; debouncedRender(); });
     document.getElementById("timeSig").addEventListener("change", (e) => { state.currentScore.timeSig = e.target.value; renderScore(); });
+    document.getElementById("scoreDifficulty")?.addEventListener("change", (e) => { state.currentScore.difficulty = e.target.value; renderScore(); });
     
     document.getElementById("btnPrevMeasure").addEventListener("click", () => { state.editorState.activeMeasure--; syncMeasureControls(); renderScore(); });
     document.getElementById("btnNextMeasure").addEventListener("click", () => { state.editorState.activeMeasure++; syncMeasureControls(); renderScore(); });

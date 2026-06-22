@@ -7,11 +7,12 @@ const translations = {
     exportJsonBtn: "Descargar .json", exportPdfBtn: "Exportar PDF",
     heroTitle: "El arte de preservar la música",
     heroSub: "Tu repertorio merece un hogar a su altura. Un ecosistema digital diseñado para transcribir con precisión absoluta, practicar de forma interactiva y construir el archivo musical de tu vida.",
-    goToCatalog: "Mi Catálogo", catalogTitle: "Mi Catálogo",
-    searchPlaceholder: "Buscar por título...", searchCodexPlaceholder: "Buscar en El Códice...", filterBtn: "Filtros ⧨",
+    goToCatalog: "Mi Catálogo", catalogTitle: "Mi Catálogo", codexTitle: "El Códice 📜",
+    searchPlaceholder: "Buscar por título, autor...", searchCodexPlaceholder: "Buscar en El Códice...", filterBtn: "Filtros ⧨",
     lblHands: "Manos / Pentagramas", optAll: "Cualquiera", optBothHands: "Ambas manos", optTrebleOnly: "Solo Clave de Sol", optBassOnly: "Solo Clave de Fa",
     emptyLibraryTitle: "Tu catálogo está vacío", emptyLibrary: "Pulsa «Nueva partitura» en la esquina superior derecha o cambia los filtros de búsqueda para empezar.",
-    lblTitle: "Título", lblComposer: "Compositor/es", lblTimeSig: "Compás", lblKeySig: "Tonalidad",
+    lblTitle: "Título", lblComposer: "Compositor/es", lblTimeSig: "Compás", lblKeySig: "Tonalidad", lblDifficulty: "Nivel",
+    diffBeginner: "🟢 Principiante", diffIntermediate: "🟠 Intermedio", diffAdvanced: "🔴 Avanzado",
     lblActiveMeasure: "Compás", btnPrev: "‹", btnNext: "›",
     btnAddMeasure: "+ compás", btnDelMeasure: "eliminar", lblTreble: "Sol", lblBass: "Fa",
     lblNote: "Nota", lblRest: "Silencio", lblPitch: "Nota", lblAccidental: "Alt.",
@@ -20,7 +21,7 @@ const translations = {
     btnAddNote: "Añadir nota", btnUndoNote: "Deshacer",
     lblMeasureDetails: "Indicaciones", lblRepStart: "Inicio ‖:", lblRepEnd: "Fin :‖",
     lblDirective: "Salto/Fin", untitled: "Sin título", unknownAuthor: "Desconocido", measuresTxt: "compases",
-    editBtn: "✎ Editar", viewBtn: "👁 Examinar", copyBtn: "⎘ Copiar", deleteBtn: "🗑️ Borrar", saveCopyBtn: "Guardar una copia", savedToCatalog: "Partitura guardada en Mi Catálogo",
+    editBtn: "✎ Editar", viewBtn: "👁 Ver", copyBtn: "⎘ Copiar", deleteBtn: "🗑️ Borrar", saveCopyBtn: "Guardar una copia", savedToCatalog: "Partitura guardada en Mi Catálogo", cloneBtn: "⎘ Duplicar",
     delConfirm: "¿Eliminar?", delMeasureConfirm: "¿Eliminar compás?",
     minMeasureAlert: "Mínimo un compás.", toggleViewBtn: "Alternar Visor", viewMode: "👁️ Ver Partitura", editMode: "✎ Editar Partitura", 
     practiceBtn: "🎤 Modo Práctica", practiceDemo: "Modo práctica (DEMO) iniciado. ¡Toca la nota indicada!", practiceWin: "¡Enhorabuena! Has completado la partitura.", practiceErr: "No hay notas en la Clave de Sol para practicar.", practiceMicErr: "Error de micrófono: Da permisos en el navegador.",
@@ -31,9 +32,9 @@ const translations = {
     subtitleLogin: "Inicia sesión para sincronizar tu catálogo con la nube y publicar en El Códice.", subtitleRegister: "Crea una cuenta gratuita.",
     logout: "Cerrar sesión", google: "Google", genericError: "Error.",
     lblPassword: "Password", displayName: "Nombre", photoUrl: "Foto (Opcional)", saveProfile: "Guardar",
-    deleteAccount: "Borrar cuenta", deleteWarning: "¿Borrar datos?", reauthNeeded: "Re-autentícate.",
-    sortLikes: "Más populares ❤️", sortRecent: "Más recientes", sortOldest: "Más antiguas", sortNumAsc: "Número (asc.)", sortNumDesc: "Número (desc.)", sortTitleAsc: "Título (A-Z)", sortAuthorAsc: "Autor (A-Z)",
-    byPublisher: "por:",
+    deleteAccount: "Borrar cuenta", deleteWarning: "Estás a punto de eliminar tu cuenta y todo tu catálogo privado. Esta acción es irreversible. ¿Deseas continuar?",
+    sortLikes: "Más populares ❤️", sortRecent: "Más recientes", sortOldest: "Más antiguas", sortDateDesc: "Última edición (Reciente)", sortDateAsc: "Última edición (Antigua)", sortTitleAsc: "Título (A-Z)", sortAuthorAsc: "Autor (A-Z)",
+    byPublisher: "por:", deletedUser: "usuario eliminado",
     footerText: "Ebony & Ivory es un proyecto creado por y para amantes de la música, diseñado para elevar la forma en que interactuamos con el pentagrama. Las obras musicales que transcribas siguen siendo propiedad de sus respectivos autores originales. Por favor, transcribe con responsabilidad."
   },
   en: {
@@ -41,11 +42,12 @@ const translations = {
     exportJsonBtn: "Download .json", exportPdfBtn: "Export PDF",
     heroTitle: "The art of preserving music",
     heroSub: "Your repertoire deserves a fitting home. A digital ecosystem designed to transcribe with absolute precision, practice interactively, and build the musical archive of your life.",
-    goToCatalog: "My Catalog", catalogTitle: "My Catalog",
-    searchPlaceholder: "Search...", searchCodexPlaceholder: "Search in The Codex...", filterBtn: "Filters ⧨",
+    goToCatalog: "My Catalog", catalogTitle: "My Catalog", codexTitle: "The Codex 📜",
+    searchPlaceholder: "Search by title or author...", searchCodexPlaceholder: "Search in The Codex...", filterBtn: "Filters ⧨",
     lblHands: "Staves", optAll: "Any", optBothHands: "Both staves", optTrebleOnly: "Treble only (Right)", optBassOnly: "Bass only (Left)",
     emptyLibraryTitle: "Empty catalog", emptyLibrary: "Click «New Score» in the top right or change your search filters to start.",
-    lblTitle: "Title", lblComposer: "Composer(s)", lblTimeSig: "Time Sig.", lblKeySig: "Key",
+    lblTitle: "Title", lblComposer: "Composer(s)", lblTimeSig: "Time Sig.", lblKeySig: "Key", lblDifficulty: "Level",
+    diffBeginner: "🟢 Beginner", diffIntermediate: "🟠 Intermediate", diffAdvanced: "🔴 Advanced",
     lblActiveMeasure: "Measure", btnPrev: "‹", btnNext: "›",
     btnAddMeasure: "+ measure", btnDelMeasure: "delete", lblTreble: "Treble", lblBass: "Bass",
     lblNote: "Note", lblRest: "Rest", lblPitch: "Pitch", lblAccidental: "Acc.",
@@ -54,7 +56,7 @@ const translations = {
     btnAddNote: "Add note", btnUndoNote: "Undo",
     lblMeasureDetails: "Directives", lblRepStart: "Start ‖:", lblRepEnd: "End :‖",
     lblDirective: "Jump/Fine", untitled: "Untitled", unknownAuthor: "Unknown", measuresTxt: "measures",
-    editBtn: "✎ Edit", viewBtn: "👁 View", copyBtn: "⎘ Copy", deleteBtn: "🗑️ Delete", saveCopyBtn: "Save a copy", savedToCatalog: "Score saved to My Catalog",
+    editBtn: "✎ Edit", viewBtn: "👁 View", copyBtn: "⎘ Copy", deleteBtn: "🗑️ Delete", saveCopyBtn: "Save a copy", savedToCatalog: "Score saved to My Catalog", cloneBtn: "⎘ Clone",
     delConfirm: "Delete?", delMeasureConfirm: "Delete measure?",
     minMeasureAlert: "Minimum one measure.", toggleViewBtn: "Toggle Viewer", viewMode: "👁️ View Score", editMode: "✎ Edit Score",
     practiceBtn: "🎤 Practice Mode", practiceDemo: "Practice mode (DEMO) started. Play the highlighted note!", practiceWin: "Congratulations! You completed the score.", practiceErr: "No notes found in Treble clef to practice.", practiceMicErr: "Microphone error: Please grant browser permissions.",
@@ -65,9 +67,9 @@ const translations = {
     subtitleLogin: "Sign in to sync your catalog with the cloud and publish to The Codex.", subtitleRegister: "Create free account.",
     logout: "Sign out", google: "Google", genericError: "Error.",
     lblPassword: "Password", displayName: "Name", photoUrl: "Photo (Optional)", saveProfile: "Save",
-    deleteAccount: "Delete account", deleteWarning: "Delete data?", reauthNeeded: "Re-authenticate.",
-    sortLikes: "Most Popular ❤️", sortRecent: "Newest first", sortOldest: "Oldest first", sortNumAsc: "Number (asc.)", sortNumDesc: "Number (desc.)", sortTitleAsc: "Title (A-Z)", sortAuthorAsc: "Author (A-Z)",
-    byPublisher: "by:",
+    deleteAccount: "Delete account", deleteWarning: "You are about to delete your account and all your private catalog. This action cannot be undone. Proceed?",
+    sortLikes: "Most Popular ❤️", sortRecent: "Newest first", sortOldest: "Oldest first", sortDateDesc: "Last edited (Newest)", sortDateAsc: "Last edited (Oldest)", sortTitleAsc: "Title (A-Z)", sortAuthorAsc: "Author (A-Z)",
+    byPublisher: "by:", deletedUser: "deleted user",
     footerText: "Ebony & Ivory is a project built by and for music lovers, designed to elevate how we interact with the staff. The musical works you transcribe remain the property of their respective original authors. Please transcribe responsibly."
   }
 };
@@ -84,6 +86,9 @@ export const setLang = (lang) => {
   
   const searchCodex = document.getElementById("searchCodex");
   if (searchCodex) searchCodex.placeholder = t("searchCodexPlaceholder");
+  
+  const searchScores = document.getElementById("searchScores");
+  if (searchScores) searchScores.placeholder = t("searchPlaceholder");
   
   const codexSub = document.getElementById("codexSubtitle");
   if (codexSub) codexSub.textContent = t("codexSubtitle");

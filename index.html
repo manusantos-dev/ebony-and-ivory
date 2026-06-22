@@ -24,8 +24,8 @@
       <img src="/assets/ebony-ivory-wordmark.png" alt="Ebony & Ivory" class="logo-wordmark">
     </div>
     <nav class="topbar-nav" id="topNavLinks" hidden style="display: flex; gap: 8px; margin-left: 24px; padding-left: 24px; border-left: 1px solid var(--color-line);">
-      <button class="btn-ghost-small" id="btnTopCodex" onclick="window.location.hash='#codice'">El Códice</button>
-      <button class="btn-ghost-small" id="btnTopCatalog" hidden onclick="window.location.hash='#catalogo'">Mi Catálogo</button>
+      <button class="btn-ghost-small" id="btnTopCodex" data-i18n="codexBtn" onclick="window.location.hash='#codice'">El Códice</button>
+      <button class="btn-ghost-small" id="btnTopCatalog" hidden data-i18n="catalogTitle" onclick="window.location.hash='#catalogo'">Mi Catálogo</button>
     </nav>
   </div>
 
@@ -117,7 +117,7 @@
 
 <main id="viewCodex" class="view" hidden>
   <div class="catalog-header">
-    <h2>El Códice 📜</h2>
+    <h2 data-i18n="codexTitle">El Códice 📜</h2>
     <p id="codexSubtitle" style="color:var(--color-ink-soft); margin-top:-10px;">La Biblioteca de Alejandría de las partituras. Explora, roba (con cariño) y estudia las obras maestras de la comunidad.</p>
     <div class="catalog-toolbar">
       <input type="text" id="searchCodex" class="field-input search-input" placeholder="Buscar en el Códice...">
@@ -208,6 +208,14 @@
               <div class="select-items" id="customKeySigOptions"></div>
             </div>
             <input type="hidden" id="keySig" value="C">
+          </div>
+          <div>
+            <label class="field-label" data-i18n="lblDifficulty">Dificultad</label>
+            <select id="scoreDifficulty" class="field-input">
+              <option value="beginner" data-i18n="diffBeginner">🟢 Principiante</option>
+              <option value="intermediate" data-i18n="diffIntermediate">🟠 Intermedio</option>
+              <option value="advanced" data-i18n="diffAdvanced">🔴 Avanzado</option>
+            </select>
           </div>
         </div>
       </div>
