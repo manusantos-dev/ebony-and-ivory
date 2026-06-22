@@ -22,6 +22,12 @@ export const renderCustomSelects = () => {
     filterOptions.innerHTML = optionsHtml(true);
     updateCustomSelectUI("customFilterKeySig", document.getElementById("filterKeySig").value);
   }
+
+  const codexFilterOptions = document.getElementById("customFilterCodexKeyOptions");
+  if (codexFilterOptions) {
+    codexFilterOptions.innerHTML = optionsHtml(true);
+    updateCustomSelectUI("customFilterCodexKeySig", document.getElementById("filterCodexKeySig").value);
+  }
 };
 
 export const updateCustomSelectUI = (wrapperId, val) => {

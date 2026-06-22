@@ -121,7 +121,13 @@ body.dark-theme .home-hero { background: rgba(30, 30, 30, 0.95); }
 @keyframes floatUp { 0% { transform: translateY(100vh) rotate(0deg); } 100% { transform: translateY(-100px) rotate(360deg); } }
 @keyframes pulse { from { opacity: 0.4; transform: scale(0.8); } to { opacity: 1; transform: scale(1.2); } }
 
-.sitefooter { max-width: 1180px; margin: 0 auto; padding: 24px 28px 40px; color: var(--color-ink-soft); font-size: 12px; border-top: 1px solid var(--color-line); text-align: center; margin-top: auto; }
+.sitefooter { width: 100%; padding: 24px 40px; color: var(--color-ink-soft); font-size: 13px; border-top: 1px solid var(--color-line); display: flex; justify-content: space-between; align-items: center; background: transparent; }
+
+.footer-controls { display: flex; align-items: center; gap: 16px; }
+
+.cloud-save-indicator, #firebaseSaveIndicator { position: fixed; bottom: 24px; right: 180px !important; z-index: 100; }
+
+.paper-wrap { padding-bottom: 20px !important; }
 
 .print-footer-content, .print-header-content { display: none; }
 

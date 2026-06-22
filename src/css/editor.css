@@ -7,7 +7,8 @@ body.is-viewer .paper-wrap { margin: 0 auto; padding-top: 20px; border: 1px soli
 body.is-viewer .measure-hit { pointer-events: none; }
 body.is-viewer .measure-hit rect { stroke: none !important; fill: transparent !important; }
 
-.engrave-desk { width: 380px; min-width: 380px; background: transparent; padding: 0 0 60px; height: calc(100vh - var(--editor-sticky-offset, 120px)); overflow-y: auto; position: sticky; top: var(--editor-sticky-offset, 120px); display: flex; flex-direction: column; gap: 16px; }
+.engrave-desk { width: 380px; min-width: 380px; background: transparent; padding: 0 16px 40px 0; height: calc(100vh - var(--editor-sticky-offset, 120px) - 100px); overflow-y: auto; position: sticky; top: var(--editor-sticky-offset, 120px); display: flex; flex-direction: column; gap: 16px; }
+
 .desk-section { background: var(--color-paper); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: 20px; border: 1px solid var(--color-line); }
 .desk-title { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-ink); font-weight: 600; margin: 0 0 16px 0; border-bottom: 1px solid var(--color-line); padding-bottom: 8px; }
 .desk-divider { display: none; }
@@ -37,12 +38,9 @@ body.is-viewer .measure-hit rect { stroke: none !important; fill: transparent !i
 .playback-line-svg { pointer-events: none; will-change: transform; stroke-linecap: round; z-index: 100;}
 .note-playing path, .note-playing rect { fill: var(--color-brass) !important; stroke: var(--color-brass) !important; }
 
-#practiceFloatingOverlay { position: sticky; top: 20px; z-index: 900; display: flex; justify-content: center; margin-bottom: -50px; pointer-events: none; }
+#practiceFloatingOverlay { position: fixed; bottom: 40px; left: 0; right: 0; z-index: 900; display: flex; justify-content: center; pointer-events: none; }
 .practice-pill { background: var(--color-ink); color: #fff; padding: 12px 24px; border-radius: 50px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 12px; font-family: var(--font-mono); font-size: 13px; pointer-events: all; border: 1px solid var(--color-brass); }
 .practice-pulse { width: 10px; height: 10px; background: var(--color-danger); border-radius: 50%; animation: pulse 1s infinite alternate; }
-
-.playback-line-svg { pointer-events: none; will-change: transform; stroke-linecap: round; z-index: 100;}
-.note-playing path, .note-playing rect { fill: var(--color-brass) !important; stroke: var(--color-brass) !important; }
 
 .score-letterhead { text-align: center; margin-bottom: 14px; } 
 .score-letterhead h2 { font-family: var(--font-display); font-weight: 700; font-size: 52px; margin: 0; line-height: 1.2; }
@@ -70,6 +68,6 @@ body.is-viewer .measure-hit rect { stroke: none !important; fill: transparent !i
 .measure-controls-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 
 @media (max-width: 720px) {
-  .engrave-desk { position: static; height: auto; width: 100%; min-width: 0; }
+  .engrave-desk { position: static; height: auto; width: 100%; min-width: 0; padding-right: 0; }
   .editor-layout { flex-direction: column; }
 }

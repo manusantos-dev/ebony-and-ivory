@@ -1,6 +1,5 @@
 import * as Tone from 'tone';
 import { state } from '../core/state.js';
-import { DUR_Q } from '../core/config.js';
 import { measureNeededQuarters } from '../core/storage.js';
 
 let acousticPiano = null;
@@ -11,6 +10,7 @@ let measurePart = null;
 let builtForScoreKey = null;
 let totalQuarters = 0;
 let speedFactor = 1;
+let lastProgress = 0; 
 const noteTimeouts = new Map();
 
 const ensureAcousticPiano = () => {
@@ -89,6 +89,11 @@ const teardownAudio = () => {
   if (measurePart) { measurePart.dispose(); measurePart = null; }
 };
 
+const getBaseDuration = (durStr) => {
+  const map = { "w": 4, "h": 2, "q": 1, "8": 0.5, "16": 0.25 };
+  return map[durStr] || 1; 
+};
+
 const buildTimeline = () => {
   const score = state.currentScore;
   if (!score) return false;
@@ -107,7 +112,9 @@ const buildTimeline = () => {
     ["treble", "bass"].forEach((staffName) => {
       let cursor = pos;
       (measure[staffName] || []).forEach((n, nIdx) => {
-        const durQ = (DUR_Q[n.duration] || 0) * (n.dotted ? 1.5 : 1);
+        const baseDur = getBaseDuration(n.duration);
+        const durQ = baseDur * (n.dotted ? 1.5 : 1);
+        
         if (!n.rest && durQ > 0) {
           events.push({
             time: quarterToBBS(cursor),
@@ -135,7 +142,7 @@ const buildTimeline = () => {
     Tone.Draw.schedule(() => highlightMeasureSweep(ev.idx, durationSec), time);
   }, measureEvents).start(0);
 
-  Tone.Transport.scheduleOnce(() => Tone.Draw.schedule(() => stopPlayback(true), Tone.now()), quarterToBBS(totalQuarters));
+  Tone.Transport.scheduleOnce(() => Tone.Draw.schedule(() => stopPlayback(), Tone.now()), quarterToBBS(totalQuarters));
 
   builtForScoreKey = scoreKeyOf(score);
   return true;
@@ -180,10 +187,10 @@ const highlightMeasureSweep = (idx, durationSec) => {
 
   line.style.transition = "none";
   line.style.transform = `translateX(0px)`;
-  line.setAttribute("x1", startX); line.setAttribute("y1", y);
-  line.setAttribute("x2", startX); line.setAttribute("y2", y + h);
+  line.setAttribute("x1", startX); line.setAttribute("y1", y - 10);
+  line.setAttribute("x2", startX); line.setAttribute("y2", y + h + 10);
   
-  void line.offsetWidth; // Force Reflow (Fix bug line)
+  line.getBoundingClientRect();
   
   line.style.transition = `transform ${durationSec}s linear`;
   line.style.transform = `translateX(${endX - startX}px)`;
@@ -204,10 +211,13 @@ const formatTime = (sec) => {
 const tickProgress = () => {
   if (!isPlaying) return;
   const elapsedQ = Tone.Transport.seconds * (Tone.Transport.bpm.value / 60);
-  const frac = totalQuarters > 0 ? Math.min(1, elapsedQ / totalQuarters) : 0;
+  const frac = totalQuarters > 0 ? Math.min(1, Math.max(0, elapsedQ / totalQuarters)) : 0;
   
   const prog = document.getElementById("plProgressFill");
-  if (prog) prog.style.width = `${(frac * 100).toFixed(2)}%`;
+  if (prog && frac >= lastProgress) {
+      prog.style.width = `${(frac * 100).toFixed(2)}%`;
+      lastProgress = frac;
+  }
   
   const secPerQ = 60 / Tone.Transport.bpm.value;
   const lbl = document.getElementById("plTimeLabel");
@@ -227,17 +237,27 @@ const updatePlayerUI = () => {
   if (bar) bar.classList.toggle("is-playing", isPlaying);
 };
 
-export const playAudio = () => {
+export const playAudio = async () => {
   if (!state.currentScore) return;
-  Tone.start().then(() => {
+  try {
+    await Tone.start();
+    
     if (scoreKeyOf(state.currentScore) !== builtForScoreKey) {
       if (!buildTimeline()) return;
     }
-    Tone.Transport.start("+0.12");
+    
+    Tone.Transport.stop();
+    lastProgress = 0;
+    
+    Tone.Transport.start("+0.1");
     isPlaying = true;
     updatePlayerUI();
+    
+    cancelAnimationFrame(rafId);
     tickProgress();
-  });
+  } catch (e) {
+    console.error("Error al iniciar el reproductor:", e);
+  }
 };
 
 export const pauseAudio = () => {
@@ -250,6 +270,7 @@ export const pauseAudio = () => {
 export const stopPlayback = () => {
   Tone.Transport.stop();
   isPlaying = false;
+  lastProgress = 0;
   updatePlayerUI();
   cancelAnimationFrame(rafId);
   clearHighlight();

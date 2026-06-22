@@ -263,23 +263,31 @@ export const setupProfileUI = () => {
     }
   });
 
-  document.getElementById("btnDeleteAccount").addEventListener("click", async () => {
-    const isConfirmed = await showConfirm("Eliminar cuenta", "Se borrarán permanentemente todos tus datos y partituras.", "Eliminar cuenta", true);
-    if (!isConfirmed) return;
-    
-    try {
-      if (db) {
-        const docs = await db.collection("users").doc(state.currentUser.uid).collection("scores").get();
-        const batch = db.batch();
-        docs.forEach(d => batch.delete(d.ref));
-        await batch.commit();
+  document.getElementById("btnDeleteAccount")?.addEventListener("click", async () => {
+    if (confirm(t("deleteWarning"))) {
+      try {
+        const user = firebase.auth().currentUser;
+        if (user) {
+          const db = firebase.firestore();
+          const publicScores = await db.collection("public_scores").where("publisherUid", "==", user.uid).get();
+          const batch = db.batch();
+          publicScores.forEach(doc => {
+            batch.update(doc.ref, { publisherName: "usuario eliminado", publisherUid: "deleted" });
+          });
+          await batch.commit();
+          
+          await user.delete();
+          localStorage.clear();
+          window.location.reload();
+        }
+      } catch (err) {
+        if (err.code === 'auth/requires-recent-login') {
+          alert(t("reauthNeeded"));
+          firebase.auth().signOut();
+        } else {
+          alert(t("genericError"));
+        }
       }
-      await state.currentUser.delete();
-      overlay.hidden = true;
-      localStorage.removeItem(STORAGE_KEY);
-      window.location.hash = "#inicio";
-    } catch (err) {
-      showToast(translateFirebaseError(err), 'error');
     }
   });
 };

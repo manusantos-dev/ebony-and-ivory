@@ -4,7 +4,6 @@ import { t, setLang } from "./ui/i18n.js";
 import { loadAll, uid, nextPlateNumber, plateLabel, slugify, formatDate, escapeHtml, measureNeededQuarters, quartersUsed, newMeasure, newScore, downloadBlob, persistScore, deleteScoreById } from "./core/storage.js";
 import { DUR_Q } from "./core/config.js";
 import { renderCustomSelects, updateCustomSelectUI, setupCustomSelect } from "./ui/custom-select.js";
-import { getExampleScore } from "./features/example-score.js";
 import { renderScore } from "./features/notation-renderer.js";
 import { playAudio, pauseAudio, stopPlayback, isAudioPlaying, setSpeedFactor, refreshAudioBPM } from "./features/player.js";
 import { startPracticeMode, stopPracticeMode } from "./features/practice.js";
@@ -20,9 +19,13 @@ import { showConfirm } from './ui/dialog.js';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
 
+state.codexState = { query: "", sortBy: "likesDesc", filterTime: "all", filterKey: "all", filterHands: "all" };
+state.publicScores = []; 
+state.isViewingPublic = false;
+
 const handleNavigation = () => {
   const hash = window.location.hash;
-  document.body.classList.remove("is-home", "is-viewer", "is-example-score");
+  document.body.classList.remove("is-home", "is-viewer");
 
   const views = {
     home: document.getElementById("viewHome"),
@@ -34,6 +37,10 @@ const handleNavigation = () => {
     btnV: document.getElementById("btnToggleViewer"),
     btnB: document.getElementById("btnBackLibrary")
   };
+  
+  const navTop = document.getElementById("topNavLinks");
+  const btnTopCodex = document.getElementById("btnTopCodex");
+  const btnTopCatalog = document.getElementById("btnTopCatalog");
 
   Object.values(views).forEach(v => { if (v) v.hidden = true; });
   if (views.btnV) views.btnV.hidden = false;
@@ -45,36 +52,51 @@ const handleNavigation = () => {
     if (state.currentScore) {
       if (hash.startsWith("#viewer/")) document.body.classList.add("is-viewer");
       initEditor(views);
+      if (navTop) navTop.hidden = true; 
     } else {
-      window.location.hash = "#catalogo";
+      state.isViewingPublic = true; 
+      const publicScore = state.publicScores.find(s => s.id === hash.split("/")[1]);
+      if (publicScore) {
+          state.currentScore = publicScore;
+          if (hash.startsWith("#viewer/")) document.body.classList.add("is-viewer");
+          initEditor(views);
+          if (navTop) navTop.hidden = true; 
+      } else {
+          window.location.hash = "#catalogo";
+      }
     }
-  } else if (hash === "#ejemplo" || hash === "#example") {
-    state.currentScore = getExampleScore(state.lang);
-    document.body.classList.add("is-viewer", "is-example-score");
-    initEditor(views);
-    if (views.btnV) views.btnV.hidden = true;
   } else if (hash === "#catalogo") {
     state.currentScore = null;
+    state.isViewingPublic = false; 
     if (views.lib) views.lib.hidden = false;
     if (views.lAct) views.lAct.hidden = false;
+    if (navTop) navTop.hidden = false;
+    if (btnTopCodex) btnTopCodex.hidden = false;
+    if (btnTopCatalog) btnTopCatalog.hidden = true;
     document.title = `${t("catalogTitle")} — Ebony & Ivory`;
     renderLibrary();
     window.scrollTo(0, 0);
   } else if (hash === "#codice") {
     state.currentScore = null;
+    state.isViewingPublic = true;
     if (views.codex) views.codex.hidden = false;
-    document.title = `El Códice — Ebony & Ivory`;
-    renderCodex();
+    if (navTop) navTop.hidden = false;
+    if (btnTopCodex) btnTopCodex.hidden = true;
+    if (btnTopCatalog) btnTopCatalog.hidden = false;
+    document.title = `${t("codexBtn")} — Ebony & Ivory`;
+    fetchAndRenderCodex(); 
     window.scrollTo(0, 0);
   } else {
     state.currentScore = null;
+    state.isViewingPublic = false;
     if (views.home) views.home.hidden = false;
+    if (navTop) navTop.hidden = true; 
     document.body.classList.add("is-home");
     document.title = "Ebony & Ivory";
     window.scrollTo(0, 0);
   }
   
-  if (views.btnB) views.btnB.hidden = !["#editor/", "#viewer/", "#ejemplo"].some(h => hash.startsWith(h));
+  if (views.btnB) views.btnB.hidden = !["#editor/", "#viewer/"].some(h => hash.startsWith(h));
   updateViewerButtonText();
 };
 
@@ -90,7 +112,23 @@ const syncEditorStickyOffset = () => {
 const updateViewerButtonText = () => {
     const btn = document.getElementById("btnToggleViewer");
     if (!btn) return;
-    btn.textContent = document.body.classList.contains("is-viewer") ? t("editMode") : t("viewMode");
+    
+    if (state.isViewingPublic) {
+        btn.innerHTML = `⎘ ${t("saveCopyBtn")}`;
+        btn.onclick = () => {
+            const copy = { ...state.currentScore, id: uid(), plate: nextPlateNumber(), createdAt: Date.now(), updatedAt: Date.now() };
+            delete copy.publisherName; delete copy.publisherUid; delete copy.likes; delete copy.views;
+            persistScore(copy);
+            showToast(t("savedToCatalog"), "success");
+            state.isViewingPublic = false;
+            window.location.hash = `#editor/${copy.id}`;
+        };
+    } else {
+        btn.textContent = document.body.classList.contains("is-viewer") ? t("editMode") : t("viewMode");
+        btn.onclick = () => {
+            window.location.hash = (document.body.classList.contains("is-viewer") ? "#editor/" : "#viewer/") + state.currentScore.id;
+        };
+    }
 };
 
 const initEditor = (views) => {
@@ -114,6 +152,7 @@ const initEditor = (views) => {
 
 const syncMeasureControls = () => {
   const score = state.currentScore;
+  state.editorState.editingNoteIdx = null;
   state.editorState.activeMeasure = Math.max(0, Math.min(state.editorState.activeMeasure, score.measures.length - 1));
   const m = score.measures[state.editorState.activeMeasure];
 
@@ -134,11 +173,76 @@ const renderNoteList = () => {
     const notes = state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff] || [];
     container.innerHTML = "";
     
+    const btnAdd = document.getElementById("btnAddNote");
+    if (btnAdd && state.editorState.editingNoteIdx == null) {
+        btnAdd.textContent = t("btnAddNote");
+        btnAdd.style.background = "";
+        btnAdd.style.borderColor = "";
+    }
+    
+    let draggedIdx = null;
+
     notes.forEach((n, idx) => {
         const tag = document.createElement("div");
         tag.className = "note-tag";
+        tag.draggable = true;
+        tag.style.cursor = "grab";
+        
         const symbol = n.rest ? "Sil." : `${n.letter}${n.accidental || ""}${n.octave}`;
-        tag.innerHTML = `<span>${symbol}</span> <span class="note-tag-del" data-idx="${idx}">✕</span>`;
+        tag.innerHTML = `<span class="note-text" style="cursor:pointer;" title="Clic para Editar">${symbol}</span> <span class="note-tag-del" data-idx="${idx}" title="Eliminar">✕</span>`;
+        
+        tag.addEventListener("dragstart", (e) => {
+            draggedIdx = idx;
+            tag.style.opacity = "0.4";
+            e.dataTransfer.effectAllowed = "move";
+        });
+        tag.addEventListener("dragend", () => { 
+            tag.style.opacity = "1"; 
+            draggedIdx = null; 
+        });
+        tag.addEventListener("dragover", (e) => {
+            e.preventDefault(); 
+            e.dataTransfer.dropEffect = "move";
+        });
+        tag.addEventListener("drop", (e) => {
+            e.preventDefault();
+            if (draggedIdx === null || draggedIdx === idx) return;
+            const staffNotes = state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff];
+            // Intercambio de posiciones
+            const item = staffNotes.splice(draggedIdx, 1)[0];
+            staffNotes.splice(idx, 0, item);
+            state.editorState.editingNoteIdx = null; 
+            syncMeasureControls();
+            renderScore();
+        });
+
+        tag.querySelector('.note-text').addEventListener("click", () => {
+            state.editorState.editingNoteIdx = idx;
+            
+            const isRest = document.getElementById("isRest");
+            isRest.checked = n.rest;
+            isRest.dispatchEvent(new Event("change")); // Dispara el efecto de atenuar
+
+            if (!n.rest) {
+                document.getElementById("pitchLetter").value = n.letter;
+                document.getElementById("pitchAccidental").value = n.accidental || "";
+                document.getElementById("pitchOctave").value = n.octave;
+            }
+            
+            state.editorState.duration = n.duration;
+            document.querySelectorAll(".dur-btn").forEach(b => b.classList.toggle("is-active", b.dataset.dur === n.duration));
+            document.getElementById("isDotted").checked = !!n.dotted;
+            document.getElementById("dynamicSelect").value = n.dynamic || "";
+            document.getElementById("fingeringSelect").value = n.fingering || "";
+            document.getElementById("lyricInput").value = n.lyric || "";
+
+            if (btnAdd) {
+                btnAdd.textContent = "✓ Actualizar";
+                btnAdd.style.background = "var(--color-success)";
+                btnAdd.style.borderColor = "var(--color-success)";
+            }
+        });
+
         container.appendChild(tag);
     });
 
@@ -146,6 +250,7 @@ const renderNoteList = () => {
         btn.addEventListener("click", (e) => {
             const idx = parseInt(e.target.dataset.idx, 10);
             state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff].splice(idx, 1);
+            if (state.editorState.editingNoteIdx === idx) state.editorState.editingNoteIdx = null;
             syncMeasureControls();
             renderScore();
         });
@@ -153,53 +258,118 @@ const renderNoteList = () => {
 };
 
 /* --- Catálogo Público (El Códice) --- */
-const renderCodex = async () => {
+const fetchAndRenderCodex = async () => {
   const grid = document.getElementById("codexGrid");
   if (!grid) return;
-  grid.innerHTML = "<p style='text-align:center; grid-column: 1/-1;'>Cargando el Códice...</p>";
+  
+  if (state.publicScores.length === 0) {
+      grid.innerHTML = `<p style='text-align:center; grid-column: 1/-1;'>${t("codexLoading")}</p>`;
+      try {
+        const db = firebase.firestore();
+        const snap = await db.collection("public_scores").limit(100).get();
+        if (snap.empty) {
+           grid.innerHTML = `<p style='text-align:center; grid-column: 1/-1;'>${t("codexEmpty")}</p>`;
+           return;
+        }
+        state.publicScores = [];
+        snap.forEach(doc => state.publicScores.push(doc.data()));
+      } catch (err) {
+        console.error("🔥 Error de Firebase al conectar con El Códice:", err);
+        grid.innerHTML = `<p style='text-align:center; color:var(--color-danger); grid-column: 1/-1;'>${t("codexError")}</p>`;
+        return;
+      }
+  }
 
-  try {
-    const db = firebase.firestore();
-    const snap = await db.collection("public_scores").limit(50).get();
-    grid.innerHTML = "";
-    if (snap.empty) {
-       grid.innerHTML = "<p style='text-align:center; grid-column: 1/-1;'>Aún no hay partituras públicas.</p>";
-       return;
+  let scores = [...state.publicScores];
+  const cState = state.codexState;
+
+  if (cState.query) {
+    scores = scores.filter(s => 
+      (s.title || "").toLowerCase().includes(cState.query) || 
+      (s.composer || "").toLowerCase().includes(cState.query) || 
+      (s.publisherName || "").toLowerCase().includes(cState.query)
+    );
+  }
+
+  scores = scores.filter((s) => {
+    if (cState.filterTime !== "all" && s.timeSig !== cState.filterTime) return false;
+    if (cState.filterKey !== "all" && s.keySig !== cState.filterKey) return false;
+    if (cState.filterHands !== "all") {
+      const hasT = s.measures.some(m => m.treble?.length > 0);
+      const hasB = s.measures.some(m => m.bass?.length > 0);
+      if (cState.filterHands === "both" && (!hasT || !hasB)) return false;
+      if (cState.filterHands === "treble" && hasB) return false;
+      if (cState.filterHands === "bass" && hasT) return false;
     }
+    return true;
+  });
 
-    snap.forEach(doc => {
-      const score = doc.data();
+  scores.sort((a, b) => {
+    if (cState.sortBy === "likesDesc") return (b.likes || 0) - (a.likes || 0);
+    if (cState.sortBy === "dateDesc") return b.updatedAt - a.updatedAt;
+    if (cState.sortBy === "dateAsc") return a.updatedAt - b.updatedAt;
+    if (cState.sortBy === "titleAsc") return (a.title || "").localeCompare(b.title || "");
+    if (cState.sortBy === "authorAsc") return (a.composer || "").localeCompare(b.composer || "");
+    return 0;
+  });
+
+  grid.innerHTML = "";
+  if (scores.length === 0) {
+     grid.innerHTML = `<p style='text-align:center; grid-column: 1/-1;'>${t("codexFilterEmpty")}</p>`;
+     return;
+  }
+
+  scores.forEach(score => {
       const card = document.createElement("div");
       card.className = "score-card";
+      
+      const isAdmin = state.currentUser?.email === "manu.santos.zone@gmail.com";
+      const deleteBtnHtml = isAdmin ? `<button class="btn-card btn-danger-card" data-action="delete-codex" title="${t("deleteBtn")}">🗑</button>` : '';
+      
+      const publisherLabel = escapeHtml(score.publisherName || t("unknownAuthor")).toLowerCase();
+
       card.innerHTML = `
-        <span class="card-eyebrow">Por: ${escapeHtml(score.publisherName || "Anónimo")}</span>
-        <button class="btn-pin" style="color:var(--color-danger);">❤ ${score.likes || 0}</button>
+        <span class="card-eyebrow" style="text-transform: lowercase;">${t("byPublisher")} ${publisherLabel}</span>
+        <button class="btn-pin" style="color:var(--color-danger);" title="Me gusta">❤ ${score.likes || 0}</button>
         <h3>${escapeHtml(score.title || t("untitled"))}</h3>
         <p class="composer">${escapeHtml(score.composer || t("unknownAuthor"))}</p>
-        <div class="meta"><span>${score.measures?.length || 0} compases</span></div>
+        <div class="meta"><span>${score.measures?.length || 0} ${t("measuresTxt")}</span></div>
         <div class="card-actions-row">
-          <button class="btn-card" data-action="view-codex">Examinar obra</button>
-          <button class="btn-card" data-action="clone-codex">Guardar en mi Catálogo</button>
+          <button class="btn-card" data-action="view-codex">${t("viewBtn")}</button>
+          <button class="btn-card" data-action="clone-codex">${t("cloneCodexBtn")}</button>
+          ${deleteBtnHtml}
         </div>`;
       
-      card.addEventListener("click", (e) => {
+      card.style.cursor = "pointer"; 
+      card.addEventListener("click", async (e) => {
         const action = e.target.closest("[data-action]");
-        if (!action) return;
-        if (action.dataset.action === "clone-codex") {
+        
+        if (action && action.dataset.action === "clone-codex") {
+           e.stopPropagation();
            const copy = { ...score, id: uid(), plate: nextPlateNumber(), createdAt: Date.now(), updatedAt: Date.now() };
-           delete copy.publisherName; delete copy.likes; delete copy.views;
+           delete copy.publisherName; delete copy.publisherUid; delete copy.likes; delete copy.views;
            persistScore(copy);
-           showToast("Partitura guardada en Mi Catálogo", "success");
-        } else if (action.dataset.action === "view-codex") {
-           state.currentScore = score;
-           window.location.hash = `#viewer/${score.id}`; 
+           showToast(t("savedToCatalog"), "success");
+           return;
+        } 
+        if (action && action.dataset.action === "delete-codex") {
+           e.stopPropagation();
+           if (await showConfirm(t("deleteBtn"), "¿Eliminar definitivamente esta obra pública?", "Eliminar", true)) {
+              try {
+                await firebase.firestore().collection("public_scores").doc(score.id).delete();
+                state.publicScores = state.publicScores.filter(s => s.id !== score.id);
+                fetchAndRenderCodex();
+              } catch (err) { }
+           }
+           return;
         }
+        
+        state.isViewingPublic = true;
+        state.currentScore = score;
+        window.location.hash = `#viewer/${score.id}`;
       });
       grid.appendChild(card);
-    });
-  } catch (err) {
-    grid.innerHTML = "<p style='text-align:center; color:var(--color-danger); grid-column: 1/-1;'>No se pudo conectar con El Códice.</p>";
-  }
+  });
 };
 
 const publishToCodex = async (score) => {
@@ -213,6 +383,7 @@ const publishToCodex = async (score) => {
       likes: 0,
       views: 0
     });
+    state.publicScores = []; 
     showToast("¡Partitura inmortalizada en El Códice!", "success");
   } catch(e) {
     showToast("Error al publicar: " + e.message, "error");
@@ -283,7 +454,7 @@ const renderLibrary = () => {
       <div class="card-actions-row">
         <button class="btn-card" data-action="view">${t("viewBtn")}</button>
         <button class="btn-card" data-action="edit">${t("editBtn")}</button>
-        <button class="btn-card" data-action="publish" title="Publicar en El Códice">🌍 Publicar</button>
+        <button class="btn-card" data-action="publish" title="Publicar en El Códice">${t("publishBtn")}</button>
         <button class="btn-card btn-danger-card" data-action="delete">🗑</button>
       </div>`;
 
@@ -313,6 +484,7 @@ const renderLibrary = () => {
 const setupEventListeners = () => {
   setupCustomSelect("customKeySig", "keySig", (val) => { if (state.currentScore) { state.currentScore.keySig = val; renderScore(); } });
   setupCustomSelect("customFilterKeySig", "filterKeySig", (val) => { state.libraryState.filterKey = val; renderLibrary(); });
+  setupCustomSelect("customFilterCodexKeySig", "filterCodexKeySig", (val) => { state.codexState.filterKey = val; fetchAndRenderCodex(); });
 
   document.querySelectorAll(".lang-btn").forEach(btn => btn.addEventListener("click", () => setLang(btn.dataset.lang)));
 
@@ -340,7 +512,6 @@ const setupEventListeners = () => {
         const data = JSON.parse(reader.result);
         if (!data.measures) throw new Error("Format error");
         data.id = uid(); data.plate = nextPlateNumber(); data.updatedAt = Date.now(); data.createdAt = Date.now();
-        delete data.isExample; 
         persistScore(data);
         window.location.hash = window.location.hash === "#catalogo" ? "#catalogo" : "#catalogo";
         renderLibrary();
@@ -354,11 +525,13 @@ const setupEventListeners = () => {
     const score = newScore(); persistScore(score); window.location.hash = `#editor/${score.id}`;
   });
 
-  document.getElementById("btnBackLibrary")?.addEventListener("click", () => window.location.hash = "#catalogo");
+  document.getElementById("btnBackLibrary")?.addEventListener("click", () => {
+    window.location.hash = state.isViewingPublic ? "#codice" : "#catalogo";
+  });
   document.getElementById("brandHome")?.addEventListener("click", () => window.location.hash = "#inicio");
   document.getElementById("btnGoCatalog")?.addEventListener("click", () => window.location.hash = "#catalogo");
-  document.getElementById("btnGoExample")?.addEventListener("click", () => window.location.hash = "#ejemplo");
   document.getElementById("btnGoCodex")?.addEventListener("click", () => window.location.hash = "#codice");
+  document.getElementById("btnGoCodexHero")?.addEventListener("click", () => window.location.hash = "#codice");
   document.getElementById("btnBackToMyCatalog")?.addEventListener("click", () => window.location.hash = "#catalogo");
   
   document.getElementById("btnToggleViewer")?.addEventListener("click", () => {
@@ -375,6 +548,14 @@ const setupEventListeners = () => {
   });
   document.getElementById("filterTimeSig")?.addEventListener("change", (e) => { state.libraryState.filterTime = e.target.value; renderLibrary(); });
   document.getElementById("filterHands")?.addEventListener("change", (e) => { state.libraryState.filterHands = e.target.value; renderLibrary(); });
+
+  document.getElementById("searchCodex")?.addEventListener("input", (e) => { state.codexState.query = e.target.value.toLowerCase(); fetchAndRenderCodex(); });
+  document.getElementById("sortCodex")?.addEventListener("change", (e) => { state.codexState.sortBy = e.target.value; fetchAndRenderCodex(); });
+  document.getElementById("btnToggleCodexFilters")?.addEventListener("click", () => {
+    const f = document.getElementById("codexFilters"); if (f) f.hidden = !f.hidden;
+  });
+  document.getElementById("filterCodexTimeSig")?.addEventListener("change", (e) => { state.codexState.filterTime = e.target.value; fetchAndRenderCodex(); });
+  document.getElementById("filterCodexHands")?.addEventListener("change", (e) => { state.codexState.filterHands = e.target.value; fetchAndRenderCodex(); });
 
   if (document.getElementById("scoreTitle")) {
     const debouncedRender = debounce(() => renderScore(), 300);
@@ -425,9 +606,18 @@ const setupEventListeners = () => {
     });
 
     document.getElementById("btnAddNote").addEventListener("click", () => {
+      const isEditing = state.editorState.editingNoteIdx !== null && state.editorState.editingNoteIdx !== undefined;
+      const staffNotes = state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff];
+      
       const needed = measureNeededQuarters(state.currentScore.timeSig);
       const durQ = (DUR_Q[state.editorState.duration] || 0) * (document.getElementById("isDotted").checked ? 1.5 : 1);
-      const currentUsed = quartersUsed(state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff]);
+      let currentUsed = quartersUsed(staffNotes);
+      
+      if (isEditing) {
+          const oldNote = staffNotes[state.editorState.editingNoteIdx];
+          const oldDurQ = (DUR_Q[oldNote.duration] || 0) * (oldNote.dotted ? 1.5 : 1);
+          currentUsed -= oldDurQ; 
+      }
 
       if (currentUsed + durQ > needed) {
         if (typeof Tone !== "undefined" && Tone.Synth) {
@@ -442,7 +632,8 @@ const setupEventListeners = () => {
       }
 
       clearRedoStack();
-      state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff].push({
+      
+      const newNote = {
         rest: document.getElementById("isRest").checked,
         letter: document.getElementById("pitchLetter").value,
         accidental: document.getElementById("pitchAccidental").value,
@@ -452,10 +643,19 @@ const setupEventListeners = () => {
         dynamic: document.getElementById("dynamicSelect").value,
         fingering: document.getElementById("fingeringSelect").value,
         lyric: document.getElementById("lyricInput").value
-      });
+      };
+
+      if (isEditing) {
+          staffNotes[state.editorState.editingNoteIdx] = newNote;
+          state.editorState.editingNoteIdx = null;
+      } else {
+          staffNotes.push(newNote);
+      }
+      
       document.getElementById("dynamicSelect").value = "";
       document.getElementById("fingeringSelect").value = "";
       document.getElementById("lyricInput").value = "";
+      
       syncMeasureControls();
       renderScore();
     });
@@ -487,18 +687,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   await checkMaintenanceStatus();
   
   const savedTheme = localStorage.getItem('theme') || 'light';
-  if (savedTheme === 'dark') document.body.classList.add('dark-theme');
-  const themeBtn = document.createElement('button');
-  themeBtn.className = 'btn btn-ghost theme-toggle';
-  themeBtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
-  themeBtn.onclick = () => {
-    document.body.classList.toggle('dark-theme');
-    const isDark = document.body.classList.contains('dark-theme');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    themeBtn.textContent = isDark ? '☀️' : '🌙';
-  };
-  const langSwitch = document.querySelector('.lang-switch');
-  if (langSwitch) langSwitch.before(themeBtn);
+  const themeBtn = document.getElementById('themeToggleBtn');
+  
+  if (savedTheme === 'dark') {
+    document.body.classList.add('dark-theme');
+    if (themeBtn) themeBtn.textContent = '☀️';
+  }
+
+  if (themeBtn) {
+    themeBtn.onclick = () => {
+      document.body.classList.toggle('dark-theme');
+      const isDark = document.body.classList.contains('dark-theme');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      themeBtn.textContent = isDark ? '☀️' : '🌙';
+    };
+  }
 
   initFirebase();
   setupAuthUI();
@@ -542,11 +745,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   on("langchange", (lang) => {
     renderCustomSelects();
-    if (state.currentScore?.isExample) {
-      state.currentScore.title = lang === "es" ? "Oda a la Alegría" : "Ode to Joy";
-      const tEl = document.getElementById("scoreTitle"); if (tEl) tEl.value = state.currentScore.title;
-    }
     if (!document.getElementById("viewLibrary")?.hidden) renderLibrary();
+    if (!document.getElementById("viewCodex")?.hidden) fetchAndRenderCodex();
     if (!document.getElementById("viewEditor")?.hidden) renderScore();
     updateViewerButtonText();
   });

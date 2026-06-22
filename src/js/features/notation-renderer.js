@@ -18,12 +18,12 @@ const RENDER_CFG = {
 
 const noteToVexKey = (n) => `${n.letter.toLowerCase()}${n.accidental === "#" || n.accidental === "b" ? n.accidental : ""}/${n.octave}`;
 
-const safeBeam = (notes, ctx) => {
-  if (!notes.some(n => n.getIntrinsicTicks() < 4096)) return;
+const safeBeam = (notes) => {
+  if (!notes || notes.length === 0) return [];
   try { 
-    VF.Beam.generateBeams(notes, { beam_rests: false }).forEach(b => b.setContext(ctx).draw()); 
+    return VF.Beam.generateBeams(notes, { beam_rests: false }); 
   } catch (e) {
-    console.warn("VexFlow Beaming skipped:", e);
+    return [];
   }
 };
 
@@ -51,7 +51,14 @@ export function renderScore() {
         const head = document.createElement("div");
         head.className = "score-letterhead";
         const composersHtml = (score.composer || "").split(",").map(c => `<span>${escapeHtml(c.trim())}</span>`).join(" &middot; ");
-        head.innerHTML = `<h2>${escapeHtml(score.title || t("untitled"))}</h2><p>${composersHtml}</p>`;
+        
+        head.innerHTML = `
+          <div class="print-only" style="text-align: left; margin-bottom: 20px;">
+            <img src="/assets/ebony-ivory-wordmark.png" style="height: 24px; opacity: 0.8; filter: grayscale(100%);">
+          </div>
+          <h2>${escapeHtml(score.title || t("untitled"))}</h2>
+          <p>${composersHtml}</p>`;
+          
         pageDiv.appendChild(head);
         startY += 85;
       }
@@ -61,7 +68,7 @@ export function renderScore() {
 
       const printFooter = document.createElement("div");
       printFooter.className = "print-footer-content print-only";
-      printFooter.innerHTML = `<span style="display:flex; align-items:center; gap:10px;"><img src="assets/ebony-ivory-brand-mark.png" class="print-logo-isotipo"> <strong>${plateLabel(score.plate)}</strong></span> <span>${p + 1} / ${totalPages}</span>`;
+      printFooter.innerHTML = `<span><strong>${plateLabel(score.plate)}</strong></span> <span>${p + 1} / ${totalPages}</span>`;
       pageDiv.appendChild(printFooter);
       container.appendChild(pageDiv);
       
@@ -165,6 +172,9 @@ export function renderScore() {
             const trebleNotes = buildNotes(measure.treble, "treble", "treble");
             const bassNotes = buildNotes(measure.bass, "bass", "bass");
 
+            const trebleBeams = safeBeam(trebleNotes);
+            const bassBeams = safeBeam(bassNotes);
+
             const vTreble = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT);
             const vBass = new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT);
 
@@ -176,13 +186,16 @@ export function renderScore() {
               const targetNotes = trebleNotes.length ? trebleNotes : bassNotes;
               const lastNote = targetNotes[targetNotes.length - 1];
               if (lastNote) {
-                lastNote.addModifier(
-                  new VF.Annotation(measure.directive)
-                    .setFont("Times", 13, "italic bold")
-                    .setVerticalJustification(3) 
-                    .setJustification(VF.Annotation.Justify.RIGHT),
-                  0
-                );
+                try {
+                  lastNote.addModifier(
+                    new VF.Annotation(measure.directive)
+                      .setFont("Times", 12, "italic bold")
+                      .setVerticalJustification(3) 
+                      .setJustification(2)         
+                      .setYShift(15),              
+                    0
+                  );
+                } catch(e) {}
               }
             }
 
@@ -197,13 +210,13 @@ export function renderScore() {
             }
             
             if (trebleNotes.length > 0) {
-              safeBeam(trebleNotes, ctx);
               vTreble.draw(ctx, staveTreble);
+              trebleBeams.forEach(b => b.setContext(ctx).draw());
             }
 
             if (bassNotes.length > 0) {
-              safeBeam(bassNotes, ctx);
               vBass.draw(ctx, staveBass);
+              bassBeams.forEach(b => b.setContext(ctx).draw());
             }
           } catch (measureErr) {
             console.error(`Render Error (Measure ${idx + 1}):`, measureErr);

@@ -12,43 +12,41 @@
 <link rel="stylesheet" href="/src/css/components.css">
 <link rel="stylesheet" href="/src/css/editor.css">
 <link rel="stylesheet" href="/src/css/print.css">
+<style>
+  body.is-home #btnGoCodex { display: none !important; }
+</style>
 </head>
 <body class="is-home">
 
 <header class="topbar" id="mainHeader">
-  <div class="topbar-left">
+  <div class="topbar-left" style="display: flex; align-items: center;">
     <div class="brand" id="brandHome" style="cursor:pointer;" title="Inicio">
       <img src="/assets/ebony-ivory-wordmark.png" alt="Ebony & Ivory" class="logo-wordmark">
     </div>
+    <nav class="topbar-nav" id="topNavLinks" hidden style="display: flex; gap: 8px; margin-left: 24px; padding-left: 24px; border-left: 1px solid var(--color-line);">
+      <button class="btn-ghost-small" id="btnTopCodex" onclick="window.location.hash='#codice'">El Códice</button>
+      <button class="btn-ghost-small" id="btnTopCatalog" hidden onclick="window.location.hash='#catalogo'">Mi Catálogo</button>
+    </nav>
   </div>
 
   <div class="topbar-right">
     <span id="saveIndicator" class="save-indicator" data-i18n="savedIndicator" hidden>Guardado ✓</span>
-
-    <button class="btn btn-ghost-small" id="btnGoCodex" title="Catálogo Público">🌍 El Códice</button>
-
-    <div class="lang-switch">
-      <button class="lang-btn active" data-lang="es">ES</button>
-      <button class="lang-btn" data-lang="en">EN</button>
-    </div>
-
     <div class="account-logged" id="accountLogged" hidden title="Abrir Perfil">
       <span class="account-avatar" id="acctAvatar">?</span>
       <span class="account-email" id="acctEmail"></span>
     </div>
-
-    <button class="btn btn-ghost" id="btnAccountLogin">👤 <span id="acctLoginLabel">Cuenta</span></button>
+    <button class="btn-ghost-small" id="btnAccountLogin">👤 <span id="acctLoginLabel" data-i18n="account">Cuenta</span></button>
 
     <nav class="topbar-actions" id="libraryActions" hidden>
-      <button class="btn btn-ghost" id="btnImport" data-i18n="importBtn">Importar .json</button>
+      <button class="btn-ghost-small" id="btnImport" data-i18n="importBtn">Importar .json</button>
       <input type="file" id="fileImport" accept="application/json" hidden>
       <button class="btn btn-primary" id="btnNewScore" data-i18n="newScoreBtn">+ Nueva partitura</button>
     </nav>
 
     <nav class="topbar-actions" id="editorActions" hidden>
       <button class="btn-ghost-small" id="btnTogglePractice" data-i18n="practiceBtn">🎤 Modo Práctica</button>
-      <button class="btn-ghost-small" id="btnToggleViewer" data-i18n="toggleViewBtn">Alternar Visor</button>
-      <button class="btn btn-ghost" id="btnExportJson" data-i18n="exportJsonBtn">Descargar .json</button>
+      <button class="btn-ghost-small" id="btnToggleViewer">👁️ Ver Partitura</button>
+      <button class="btn-ghost-small" id="btnExportJson" data-i18n="exportJsonBtn">Descargar .json</button>
       <button class="btn btn-primary" id="btnExportPdf" data-i18n="exportPdfBtn">Exportar PDF</button>
     </nav>
   </div>
@@ -59,10 +57,10 @@
   <div class="home-hero">
     <img src="/assets/ebony-ivory-primary-logo.png" alt="Ebony & Ivory" class="logo-primary">
     <h1 class="home-subtitle" data-i18n="heroTitle">El arte de preservar la música</h1>
-    <p class="hero-sub" data-i18n="heroSub">El entorno profesional para la notación y el grabado musical. Transcribe, clasifica y eterniza tu repertorio con precisión absoluta.</p>
+    <p class="hero-sub" data-i18n="heroSub">Tu repertorio merece un hogar a su altura. Un ecosistema digital diseñado para transcribir con precisión absoluta, practicar de forma interactiva y construir el archivo musical de tu vida.</p>
     <div class="hero-actions">
-      <button class="btn btn-primary btn-huge" id="btnGoCatalog" data-i18n="goToCatalog">Abrir mi Catálogo</button>
-      <button class="btn btn-ghost btn-huge" id="btnGoExample">🎵 <span data-i18n="viewExample">Ver partitura de ejemplo</span></button>
+      <button class="btn btn-primary btn-huge" id="btnGoCatalog" onclick="window.location.hash='#catalogo'" data-i18n="goToCatalog">Mi Catálogo</button>
+      <button class="btn btn-ghost btn-huge" id="btnGoCodexHero" onclick="window.location.hash='#codice'" data-i18n="codexBtn">El Códice</button>
     </div>
   </div>
 </main>
@@ -104,26 +102,60 @@
         <select id="filterHands" class="field-input">
           <option value="all" data-i18n="optAll">Cualquiera</option>
           <option value="both" data-i18n="optBothHands">Ambas manos</option>
-          <option value="treble" data-i18n="optTrebleOnly">Solo derecha</option>
-          <option value="bass" data-i18n="optBassOnly">Solo izquierda</option>
+          <option value="treble" data-i18n="optTrebleOnly">Solo Clave de Sol</option>
+          <option value="bass" data-i18n="optBassOnly">Solo Clave de Fa</option>
         </select>
       </div>
     </div>
   </div>
   <section class="library-grid" id="libraryGrid"></section>
   <div class="library-empty" id="libraryEmpty" hidden>
-    <h3 data-i18n="emptyLibraryTitle">Tu catálogo está vacío (o sin resultados)</h3>
+    <h3 data-i18n="emptyLibraryTitle">Tu catálogo está vacío</h3>
     <p data-i18n="emptyLibrary">Pulsa «Nueva partitura» en la esquina superior derecha o cambia los filtros de búsqueda.</p>
   </div>
 </main>
 
 <main id="viewCodex" class="view" hidden>
   <div class="catalog-header">
-    <h2>El Códice 🌍</h2>
-    <p style="color:var(--color-ink-soft); margin-top:-10px;">El gran archivo público. Descubre y estudia las transcripciones de la comunidad.</p>
+    <h2>El Códice 📜</h2>
+    <p id="codexSubtitle" style="color:var(--color-ink-soft); margin-top:-10px;">La Biblioteca de Alejandría de las partituras. Explora, roba (con cariño) y estudia las obras maestras de la comunidad.</p>
     <div class="catalog-toolbar">
       <input type="text" id="searchCodex" class="field-input search-input" placeholder="Buscar en el Códice...">
-      <button class="btn btn-ghost" id="btnBackToMyCatalog">Volver a Mi Catálogo</button>
+      <button class="btn btn-ghost" id="btnToggleCodexFilters" data-i18n="filterBtn">Filtros ⧨</button>
+      <select id="sortCodex" class="field-input sort-select">
+        <option value="likesDesc" data-i18n="sortLikes">Más populares (Corazones)</option>
+        <option value="dateDesc" data-i18n="sortRecent">Más recientes</option>
+        <option value="dateAsc" data-i18n="sortOldest">Más antiguas</option>
+        <option value="titleAsc" data-i18n="sortTitleAsc">Título (A-Z)</option>
+        <option value="authorAsc" data-i18n="sortAuthorAsc">Autor (A-Z)</option>
+      </select>
+    </div>
+    <div class="catalog-filters" id="codexFilters" hidden>
+      <div class="filter-group">
+        <label class="field-label" data-i18n="lblTimeSig">Compás</label>
+        <select id="filterCodexTimeSig" class="field-input">
+          <option value="all" data-i18n="optAll">Cualquiera</option>
+          <option value="4/4">4/4</option><option value="3/4">3/4</option><option value="2/4">2/4</option>
+          <option value="6/8">6/8</option><option value="9/8">9/8</option><option value="12/8">12/8</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="field-label" data-i18n="lblKeySig">Tonalidad</label>
+        <div class="custom-select" id="customFilterCodexKeySig" tabindex="0">
+          <div class="select-selected" id="customFilterCodexKeySelected"></div>
+          <div class="select-items" id="customFilterCodexKeyOptions"></div>
+        </div>
+        <input type="hidden" id="filterCodexKeySig" value="all">
+      </div>
+      <div class="filter-group">
+        <label class="field-label" data-i18n="lblHands">Manos / Pentagramas</label>
+        <select id="filterCodexHands" class="field-input">
+          <option value="all" data-i18n="optAll">Cualquiera</option>
+          <option value="both" data-i18n="optBothHands">Ambas manos</option>
+          <option value="treble" data-i18n="optTrebleOnly">Solo Clave de Sol</option>
+          <option value="bass" data-i18n="optBassOnly">Solo Clave de Fa</option>
+        </select>
+      </div>
     </div>
   </div>
   <section class="library-grid" id="codexGrid"></section>
@@ -359,7 +391,15 @@
 </div>
 
 <footer class="sitefooter">
-  <p data-i18n="footerText">Ebony & Ivory es un lienzo digital de grado profesional para archivística musical. Los derechos de las obras transcritas pertenecen a sus respectivos creadores.</p>
+  <p data-i18n="footerText">Ebony & Ivory es un proyecto creado por y para amantes de la música, diseñado para elevar la forma en que interactuamos con el pentagrama. Las obras musicales que transcribas siguen siendo propiedad de sus respectivos autores originales. Por favor, transcribe con responsabilidad.</p>
+  
+  <div class="footer-controls" id="footerControls">
+    <div class="lang-switch" id="langSwitchContainer">
+      <button class="lang-btn active" data-lang="es">ES</button>
+      <button class="lang-btn" data-lang="en">EN</button>
+    </div>
+    <button class="btn-ghost-small theme-toggle" id="themeToggleBtn">🌙</button>
+  </div>
 </footer>
 
 <script type="module" src="/src/js/main.js"></script>

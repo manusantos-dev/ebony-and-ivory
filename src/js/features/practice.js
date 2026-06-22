@@ -2,6 +2,7 @@ import { showToast } from "../ui/toast.js";
 import { state } from "../core/state.js";
 import { renderScore } from "./notation-renderer.js";
 import { emit } from "../core/events.js";
+import { t } from "../ui/i18n.js";
 
 let audioCtx = null;
 let analyser = null;
@@ -92,7 +93,7 @@ const buildPracticeSequence = () => {
 const advanceSequence = () => {
     practiceCursor++;
     if (practiceCursor >= practiceSequence.length) {
-        showToast("¡Enhorabuena! Has completado la partitura.", "success");
+        showToast(t("practiceWin"), "success");
         stopPracticeMode();
         return;
     }
@@ -143,7 +144,7 @@ const tick = () => {
 
 export const startPracticeMode = async () => {
     if (!state.currentScore || state.currentScore.measures.length === 0) {
-        showToast("No hay partitura para practicar.", "error");
+        showToast(t("practiceErr"), "error");
         return;
     }
 
@@ -156,7 +157,7 @@ export const startPracticeMode = async () => {
         
         buildPracticeSequence();
         if (practiceSequence.length === 0) {
-            showToast("No se encontraron notas en la Clave de Sol para practicar.", "error");
+            showToast(t("practiceErr"), "error");
             stopPracticeMode();
             return;
         }
@@ -176,9 +177,9 @@ export const startPracticeMode = async () => {
         if (uiExpected) uiExpected.textContent = firstTarget.displayStr;
         
         tick();
-        showToast("Modo práctica (DEMO) iniciado. ¡Toca la nota indicada!", "success");
+        showToast(t("practiceDemo"), "success");
     } catch (e) {
-        showToast("Error de micrófono: Da permisos en el navegador.", "error");
+        showToast(t("practiceMicErr"), "error");
         stopPracticeMode();
     }
 };
