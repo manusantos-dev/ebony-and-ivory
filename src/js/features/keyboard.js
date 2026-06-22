@@ -1,57 +1,68 @@
+/**
+ * Global Keyboard Shortcuts & History Module
+ * Manages editor history stack (Undo/Redo) and transport keybindings.
+ */
+
 import { state } from '../core/state.js';
 import { isAudioPlaying, playAudio, pauseAudio } from './player.js';
 import { renderScore } from './notation-renderer.js';
 import { showToast } from '../ui/toast.js';
 import { emit } from '../core/events.js';
 
+// -- Editor Clipboard & History --
 let clipboard = null;
 export let redoStack = [];
 
 export const clearRedoStack = () => { redoStack = []; };
 
+// -- Event Listeners --
 export const initShortcuts = () => {
   document.addEventListener('keydown', (e) => {
     if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
 
+    const isCtrl = e.ctrlKey || e.metaKey;
+    const key = e.key.toLowerCase();
+
     if (e.code === 'Space') {
       e.preventDefault();
       if (state.currentScore) isAudioPlaying() ? pauseAudio() : playAudio();
+      return;
     }
 
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+    if (!state.currentScore) return;
+    const { activeMeasure, activeStaff } = state.editorState;
+
+    if (isCtrl && key === 'c') {
       e.preventDefault();
-      if (!state.currentScore) return;
-      clipboard = JSON.parse(JSON.stringify(state.currentScore.measures[state.editorState.activeMeasure]));
+      clipboard = JSON.parse(JSON.stringify(state.currentScore.measures[activeMeasure]));
       showToast("Compás copiado", "success");
     }
 
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+    if (isCtrl && key === 'v') {
       e.preventDefault();
-      if (!state.currentScore || !clipboard) return;
-      state.currentScore.measures[state.editorState.activeMeasure] = JSON.parse(JSON.stringify(clipboard));
+      if (!clipboard) return;
+      state.currentScore.measures[activeMeasure] = JSON.parse(JSON.stringify(clipboard));
       renderScore();
-      emit("measureselected", state.editorState.activeMeasure);
+      emit("measureselected", activeMeasure);
       showToast("Compás pegado", "success");
     }
 
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'z') {
+    if (isCtrl && key === 'z') {
       e.preventDefault();
-      if (!state.currentScore || redoStack.length === 0) return;
-      const { activeMeasure, activeStaff } = state.editorState;
-      state.currentScore.measures[activeMeasure][activeStaff].push(redoStack.pop());
-      renderScore();
-      emit("measureselected", activeMeasure);
-    } 
-    else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
-      e.preventDefault();
-      if (!state.currentScore) return;
-      const { activeMeasure, activeStaff } = state.editorState;
-      const staff = state.currentScore.measures[activeMeasure]?.[activeStaff];
+      const staffNotes = state.currentScore.measures[activeMeasure]?.[activeStaff];
       
-      if (staff?.length > 0) { 
-        redoStack.push(staff.pop()); 
-        renderScore(); 
-        emit("measureselected", activeMeasure);
+      if (e.shiftKey) {
+        if (redoStack.length > 0) {
+          staffNotes.push(redoStack.pop());
+          renderScore();
+          emit("measureselected", activeMeasure);
+        }
+      } else {
+        if (staffNotes?.length > 0) {
+          redoStack.push(staffNotes.pop());
+          renderScore();
+          emit("measureselected", activeMeasure);
+        }
       }
     }
   });

@@ -1,3 +1,10 @@
+/**
+ * Global Application State
+ * Implements a reactive Proxy with automated Pub/Sub event distribution.
+ */
+
+import { emit } from './events.js';
+
 const initialState = {
   lang: "en",
   currentScore: null,
@@ -6,7 +13,8 @@ const initialState = {
     activeMeasure: 0, 
     activeStaff: "treble", 
     duration: "q", 
-    dotted: false 
+    dotted: false,
+    editingNoteIdx: null
   },
   libraryState: { 
     query: "", 
@@ -18,9 +26,15 @@ const initialState = {
 };
 
 export const state = new Proxy(initialState, {
-  set(target, property, value) {
-    target[property] = value;
-    return true;
+  set(target, property, value, receiver) {
+    const oldValue = target[property];
+    const success = Reflect.set(target, property, value, receiver);
+    
+    if (success && oldValue !== value) {
+      // Broadcast state mutation to reactive components
+      emit(`state:${property}`, { value, oldValue });
+    }
+    return success;
   }
 });
 
@@ -29,6 +43,7 @@ export function resetEditorState() {
     activeMeasure: 0, 
     activeStaff: "treble", 
     duration: "q", 
-    dotted: false 
+    dotted: false,
+    editingNoteIdx: null
   };
 }

@@ -2,19 +2,31 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    // -- Auth Helpers --
+    function isAuthenticated() { return request.auth != null; }
+    function isOwner(uid) { return isAuthenticated() && request.auth.uid == uid; }
+    function isAdmin() { return isAuthenticated() && request.auth.token.email == "jm.santos.dev@gmail.com"; }
+
+    // -- Schema Validation --
+    function isValidScore() {
+      let payload = request.resource.data;
+      return payload.keys().hasAll(['bpm', 'composer', 'id', 'keySig', 'measures', 'createdAt']) &&
+             payload.bpm is number && payload.bpm > 0 && payload.bpm <= 300 &&
+             payload.composer is string && payload.composer.size() < 100 &&
+             payload.id is string &&
+             payload.keySig is string;
+    }
+
+    // -- Access Rules --
     match /users/{userId}/scores/{scoreId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && isValidScore();
     }
     
     match /public_scores/{scoreId} {
       allow read: if true;
-      
-      allow create: if request.auth != null && request.resource.data.publisherUid == request.auth.uid;
-      
-      allow update, delete: if request.auth != null && (
-        request.auth.uid == resource.data.publisherUid ||
-        request.auth.token.email == "manu.santos.zone@gmail.com"
-      );
+      allow create: if isAuthenticated() && request.resource.data.publisherUid == request.auth.uid && isValidScore();
+      allow update, delete: if isOwner(resource.data.publisherUid) || isAdmin();
     }
   }
 }

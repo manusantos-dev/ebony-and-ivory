@@ -1,126 +1,85 @@
+/**
+ * Polyphonic Audio Engine
+ * Handles WebAudio timeline scheduling, polyphony, and UI synchronization.
+ */
+
 import * as Tone from 'tone';
 import { state } from '../core/state.js';
 import { measureNeededQuarters } from '../core/storage.js';
 
-let acousticPiano = null;
-let isPlaying = false;
-let rafId = null;
-let part = null;
-let measurePart = null;
-let builtForScoreKey = null;
-let totalQuarters = 0;
-let speedFactor = 1;
-let lastProgress = 0; 
-const noteTimeouts = new Map();
+// -- Engine State --
+const AUDIO_CFG = { pianoUrl: "https://tonejs.github.io/audio/salamander/", baseVol: -2 };
+const engine = { piano: null, isPlaying: false, rafId: null, part: null, measurePart: null, lastKey: null, quarters: 0, speed: 1, progress: 0 };
+const activeTimeouts = new Map();
 
-const ensureAcousticPiano = () => {
-  if (acousticPiano) return;
-  acousticPiano = new Tone.Sampler({
+// -- Core Audio --
+const initPiano = () => {
+  if (engine.piano) return;
+  engine.piano = new Tone.Sampler({
     urls: { A0: "A0.mp3", C2: "C2.mp3", C4: "C4.mp3", C6: "C6.mp3" },
     release: 1.2,
-    baseUrl: "https://tonejs.github.io/audio/salamander/"
+    baseUrl: AUDIO_CFG.pianoUrl
   }).toDestination();
-  acousticPiano.volume.value = -2;
+  engine.piano.volume.value = AUDIO_CFG.baseVol;
 };
 
-const quarterToBBS = (q) => {
-  const bars = Math.floor(q / 4);
-  const beatsFloat = q - bars * 4;
-  const beat = Math.floor(beatsFloat);
-  return `${bars}:${beat}:${((beatsFloat - beat) * 4).toFixed(3)}`;
+// -- Time & Layout Utils --
+const formatBBS = (q) => {
+  const bars = Math.floor(q / 4), beatFloat = q - bars * 4, beat = Math.floor(beatFloat);
+  return `${bars}:${beat}:${((beatFloat - beat) * 4).toFixed(3)}`;
 };
 
-const scoreKeyOf = (score) => {
-  const sig = score.measures.map((m) => `${m.treble?.length || 0},${m.bass?.length || 0},${m.repeatStart ? 1 : 0}${m.repeatEnd ? 1 : 0}:${m.directive || ""}`).join("|");
-  return `${score.id}:${score.timeSig}:${score.bpm}:${sig}`;
-};
+const formatTime = (sec) => isFinite(sec) && sec >= 0 ? `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}` : "0:00";
+const getBaseDuration = (durStr) => ({ "w": 4, "h": 2, "q": 1, "8": 0.5, "16": 0.25 }[durStr] || 1);
+const getScoreSignature = (s) => `${s.id}:${s.timeSig}:${s.bpm}:` + s.measures.map(m => `${m.treble?.length||0},${m.bass?.length||0},${m.repeatStart?1:0}${m.repeatEnd?1:0}:${m.directive||""}`).join("|");
 
+// -- Timeline Compiler --
 const buildPlayOrder = (measures) => {
-  const order = [];
-  const n = measures.length;
-  if (n === 0) return order;
-
-  const repeatedEnds = new Set();
-  let jumped = false;
-  let lastRepeatStart = 0;
-  const segnoIdx = measures.findIndex((m) => /segno/i.test(m.directive || ""));
-
-  let i = 0;
-  let guard = 0;
-  const maxIterations = n * 4 + 20;
-
-  while (i < n && guard < maxIterations) {
-    guard++;
+  const order = [], repeatedEnds = new Set();
+  let jumped = false, lastRepeatStart = 0;
+  const segnoIdx = measures.findIndex(m => /segno/i.test(m.directive || ""));
+  
+  for (let i = 0, guard = 0; i < measures.length && guard < measures.length * 5; guard++) {
     order.push(i);
     const m = measures[i];
     if (m.repeatStart) lastRepeatStart = i;
-
-    if (m.repeatEnd && !repeatedEnds.has(i) && !jumped) {
-      repeatedEnds.add(i);
-      i = lastRepeatStart;
-      continue;
-    }
-
+    
+    if (m.repeatEnd && !repeatedEnds.has(i) && !jumped) { repeatedEnds.add(i); i = lastRepeatStart; continue; }
+    
     const dir = m.directive || "";
-    const isFine = /fine/i.test(dir) && !/D\.C\.|D\.S\./i.test(dir);
-    const isDC = /^D\.C\./i.test(dir);
-    const isDS = /^D\.S\./i.test(dir);
-
-    if (jumped && isFine) break;
-
-    if (!jumped && (isDC || isDS)) {
-      jumped = true;
-      i = isDS && segnoIdx >= 0 ? segnoIdx : 0;
-      continue;
+    if (jumped && /fine/i.test(dir) && !/D\.C\.|D\.S\./i.test(dir)) break;
+    
+    if (!jumped && (/^D\.C\./i.test(dir) || /^D\.S\./i.test(dir))) {
+      jumped = true; i = /^D\.S\./i.test(dir) && segnoIdx >= 0 ? segnoIdx : 0; continue;
     }
     i++;
   }
   return order;
 };
 
-const updateAudioBPM = () => {
-  const inputBpm = document.getElementById("plBpm");
-  const activeBpm = inputBpm ? parseInt(inputBpm.value, 10) : (state.currentScore.bpm || 100);
-  Tone.Transport.bpm.value = activeBpm * speedFactor;
-};
-
-const teardownAudio = () => {
-  if (part) { part.dispose(); part = null; }
-  if (measurePart) { measurePart.dispose(); measurePart = null; }
-};
-
-const getBaseDuration = (durStr) => {
-  const map = { "w": 4, "h": 2, "q": 1, "8": 0.5, "16": 0.25 };
-  return map[durStr] || 1; 
-};
-
 const buildTimeline = () => {
   const score = state.currentScore;
   if (!score) return false;
   
-  ensureAcousticPiano();
-  teardownAudio();
+  initPiano();
+  if (engine.part) { engine.part.dispose(); engine.part = null; }
+  if (engine.measurePart) { engine.measurePart.dispose(); engine.measurePart = null; }
 
-  const events = [];
-  const measureEvents = [];
+  const events = [], measureEvents = [];
   let pos = 0;
 
   buildPlayOrder(score.measures).forEach((idx) => {
-    const measure = score.measures[idx];
-    measureEvents.push({ time: quarterToBBS(pos), idx });
-    
-    ["treble", "bass"].forEach((staffName) => {
+    measureEvents.push({ time: formatBBS(pos), idx });
+    ["treble", "bass"].forEach(staff => {
       let cursor = pos;
-      (measure[staffName] || []).forEach((n, nIdx) => {
-        const baseDur = getBaseDuration(n.duration);
-        const durQ = baseDur * (n.dotted ? 1.5 : 1);
-        
-        if (!n.rest && durQ > 0) {
+      (score.measures[idx][staff] || []).forEach((n, nIdx) => {
+        const durQ = getBaseDuration(n.duration) * (n.dotted ? 1.5 : 1);
+        if (!n.rest && durQ > 0 && n.keys?.length > 0) {
           events.push({
-            time: quarterToBBS(cursor),
-            note: `${n.letter.toUpperCase()}${n.accidental || ""}${n.octave}`,
+            time: formatBBS(cursor),
+            notes: n.keys.map(k => `${k.letter.toUpperCase()}${k.accidental || ""}${k.octave}`),
             durQ,
-            id: `vf-note-${idx}-${staffName}-${nIdx}`
+            id: `vf-note-${idx}-${staff}-${nIdx}`
           });
         }
         cursor += durQ;
@@ -129,51 +88,40 @@ const buildTimeline = () => {
     pos += measureNeededQuarters(score.timeSig);
   });
 
-  totalQuarters = pos;
-  updateAudioBPM();
+  engine.quarters = pos;
+  Tone.Transport.bpm.value = (document.getElementById("plBpm")?.value || score.bpm || 100) * engine.speed;
 
-  part = new Tone.Part((time, ev) => {
-    acousticPiano.triggerAttackRelease(ev.note, Math.max(0.05, ev.durQ * (60 / Tone.Transport.bpm.value) * 0.92), time);
+  engine.part = new Tone.Part((time, ev) => {
+    engine.piano.triggerAttackRelease(ev.notes, Math.max(0.05, ev.durQ * (60 / Tone.Transport.bpm.value) * 0.92), time);
     Tone.Draw.schedule(() => highlightNote(ev), time);
   }, events).start(0);
 
-  measurePart = new Tone.Part((time, ev) => {
-    const durationSec = measureNeededQuarters(score.timeSig) * (60 / Tone.Transport.bpm.value);
-    Tone.Draw.schedule(() => highlightMeasureSweep(ev.idx, durationSec), time);
+  engine.measurePart = new Tone.Part((time, ev) => {
+    const sec = measureNeededQuarters(score.timeSig) * (60 / Tone.Transport.bpm.value);
+    Tone.Draw.schedule(() => highlightSweep(ev.idx, sec), time);
   }, measureEvents).start(0);
 
-  Tone.Transport.scheduleOnce(() => Tone.Draw.schedule(() => stopPlayback(), Tone.now()), quarterToBBS(totalQuarters));
-
-  builtForScoreKey = scoreKeyOf(score);
+  Tone.Transport.scheduleOnce(() => Tone.Draw.schedule(stopPlayback, Tone.now()), formatBBS(engine.quarters));
+  engine.lastKey = getScoreSignature(score);
   return true;
 };
 
+// -- UI Synchronization --
 const highlightNote = (ev) => {
   const el = document.getElementById(ev.id);
   if (!el) return;
-  if (noteTimeouts.has(ev.id)) clearTimeout(noteTimeouts.get(ev.id));
-  
+  if (activeTimeouts.has(ev.id)) clearTimeout(activeTimeouts.get(ev.id));
   el.classList.add("note-playing");
-  const durationMs = Math.max(160, ev.durQ * (60 / Tone.Transport.bpm.value) * 1000);
-  
-  const timeoutId = setTimeout(() => {
-    el.classList.remove("note-playing");
-    noteTimeouts.delete(ev.id);
-  }, durationMs);
-  
-  noteTimeouts.set(ev.id, timeoutId);
+  activeTimeouts.set(ev.id, setTimeout(() => {
+    el.classList.remove("note-playing"); 
+    activeTimeouts.delete(ev.id); 
+  }, Math.max(160, ev.durQ * (60 / Tone.Transport.bpm.value) * 1000)));
 };
 
-const highlightMeasureSweep = (idx, durationSec) => {
+const highlightSweep = (idx, sec) => {
   const g = document.querySelector(`.measure-hit[data-measure-idx="${idx}"]`);
   if (!g) return;
-
-  const startX = parseFloat(g.getAttribute("data-start-x"));
-  const endX = parseFloat(g.getAttribute("data-end-x"));
-  const y = parseFloat(g.getAttribute("data-y"));
-  const h = parseFloat(g.getAttribute("data-h"));
   const svg = g.closest("svg");
-  
   let line = svg.querySelector(".playback-line-svg");
   if (!line) {
     line = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -182,109 +130,72 @@ const highlightMeasureSweep = (idx, durationSec) => {
     line.setAttribute("stroke-width", "2");
     svg.appendChild(line);
   }
-  
   document.querySelectorAll(".playback-line-svg").forEach(l => l.style.display = l === line ? "block" : "none");
-
+  
+  const startX = parseFloat(g.getAttribute("data-start-x")), endX = parseFloat(g.getAttribute("data-end-x"));
+  const y = parseFloat(g.getAttribute("data-y")), h = parseFloat(g.getAttribute("data-h"));
+  
   line.style.transition = "none";
   line.style.transform = `translateX(0px)`;
   line.setAttribute("x1", startX); line.setAttribute("y1", y - 10);
   line.setAttribute("x2", startX); line.setAttribute("y2", y + h + 10);
-  
-  line.getBoundingClientRect();
-  
-  line.style.transition = `transform ${durationSec}s linear`;
+  line.getBoundingClientRect(); // Reflow boundary
+  line.style.transition = `transform ${sec}s linear`;
   line.style.transform = `translateX(${endX - startX}px)`;
 };
 
-const clearHighlight = () => {
-  document.querySelectorAll(".playback-line-svg").forEach(l => l.style.display = "none");
-  document.querySelectorAll(".note-playing").forEach(n => n.classList.remove("note-playing"));
-  noteTimeouts.forEach(clearTimeout);
-  noteTimeouts.clear();
+const updateUI = () => {
+  const btn = document.getElementById("plBtnPlay");
+  if (btn) btn.innerHTML = engine.isPlaying ? '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+  document.getElementById("playerBar")?.classList.toggle("is-playing", engine.isPlaying);
 };
 
-const formatTime = (sec) => {
-  if (!isFinite(sec) || sec < 0) sec = 0;
-  return `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
-};
-
-const tickProgress = () => {
-  if (!isPlaying) return;
-  const elapsedQ = Tone.Transport.seconds * (Tone.Transport.bpm.value / 60);
-  const frac = totalQuarters > 0 ? Math.min(1, Math.max(0, elapsedQ / totalQuarters)) : 0;
+const tick = () => {
+  if (!engine.isPlaying) return;
+  const bpm = Tone.Transport.bpm.value;
+  const frac = engine.quarters > 0 ? Math.min(1, Math.max(0, (Tone.Transport.seconds * (bpm / 60)) / engine.quarters)) : 0;
   
   const prog = document.getElementById("plProgressFill");
-  if (prog && frac >= lastProgress) {
-      prog.style.width = `${(frac * 100).toFixed(2)}%`;
-      lastProgress = frac;
-  }
+  if (prog && frac >= engine.progress) { prog.style.width = `${(frac * 100).toFixed(2)}%`; engine.progress = frac; }
   
-  const secPerQ = 60 / Tone.Transport.bpm.value;
   const lbl = document.getElementById("plTimeLabel");
-  if (lbl) lbl.textContent = `${formatTime(frac * totalQuarters * secPerQ)} / ${formatTime(totalQuarters * secPerQ)}`;
+  if (lbl) lbl.textContent = `${formatTime(frac * engine.quarters * (60 / bpm))} / ${formatTime(engine.quarters * (60 / bpm))}`;
   
-  rafId = requestAnimationFrame(tickProgress);
+  engine.rafId = requestAnimationFrame(tick);
 };
 
-const updatePlayerUI = () => {
-  const btn = document.getElementById("plBtnPlay");
-  if (!btn) return;
-  btn.innerHTML = isPlaying
-    ? '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'
-    : '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-    
-  const bar = document.getElementById("playerBar");
-  if (bar) bar.classList.toggle("is-playing", isPlaying);
-};
-
+// -- API --
 export const playAudio = async () => {
   if (!state.currentScore) return;
-  try {
-    await Tone.start();
-    
-    if (scoreKeyOf(state.currentScore) !== builtForScoreKey) {
-      if (!buildTimeline()) return;
-    }
-    
-    Tone.Transport.stop();
-    lastProgress = 0;
-    
-    Tone.Transport.start("+0.1");
-    isPlaying = true;
-    updatePlayerUI();
-    
-    cancelAnimationFrame(rafId);
-    tickProgress();
-  } catch (e) {
-    console.error("Error al iniciar el reproductor:", e);
-  }
+  await Tone.start();
+  if (getScoreSignature(state.currentScore) !== engine.lastKey && !buildTimeline()) return;
+  
+  Tone.Transport.stop();
+  engine.progress = 0;
+  Tone.Transport.start("+0.1");
+  engine.isPlaying = true;
+  updateUI();
+  cancelAnimationFrame(engine.rafId);
+  tick();
 };
 
-export const pauseAudio = () => {
-  Tone.Transport.pause();
-  isPlaying = false;
-  updatePlayerUI();
-  cancelAnimationFrame(rafId);
-};
+export const pauseAudio = () => { Tone.Transport.pause(); engine.isPlaying = false; updateUI(); cancelAnimationFrame(engine.rafId); };
 
 export const stopPlayback = () => {
   Tone.Transport.stop();
-  isPlaying = false;
-  lastProgress = 0;
-  updatePlayerUI();
-  cancelAnimationFrame(rafId);
-  clearHighlight();
+  engine.isPlaying = false;
+  engine.progress = 0;
+  updateUI();
+  cancelAnimationFrame(engine.rafId);
+  
+  document.querySelectorAll(".playback-line-svg").forEach(l => l.style.display = "none");
+  document.querySelectorAll(".note-playing").forEach(n => n.classList.remove("note-playing"));
+  activeTimeouts.forEach(clearTimeout);
+  activeTimeouts.clear();
   const prog = document.getElementById("plProgressFill");
   if (prog) prog.style.width = "0%";
 };
 
-export const isAudioPlaying = () => isPlaying;
-
-export const setSpeedFactor = (factor) => {
-  speedFactor = factor;
-  updateAudioBPM();
-};
-
-export const refreshAudioBPM = () => {
-  if (state.currentScore) updateAudioBPM();
-};
+export const isAudioPlaying = () => engine.isPlaying;
+export const setSpeedFactor = (f) => { engine.speed = f; if(state.currentScore) Tone.Transport.bpm.value = (state.currentScore.bpm||100) * engine.speed; };
+export const refreshAudioBPM = () => { if(state.currentScore) Tone.Transport.bpm.value = (document.getElementById("plBpm")?.value || state.currentScore.bpm || 100) * engine.speed; };
