@@ -1,3 +1,9 @@
+/**
+ * @file base.css
+ * @description Core typography, color variables, layout resets, and theme handling.
+ * Resolves CSS specificity overrides for viewer states in dark mode context.
+ */
+
 :root {
   --color-paper: #FAF8F5;
   --color-paper-edge: #EBE5D9;
@@ -20,7 +26,10 @@
   --shadow-paper: 0 4px 8px rgba(18, 18, 18, 0.05), 0 32px 64px -24px rgba(18, 18, 18, 0.25);
 }
 
-@media (prefers-reduced-motion: reduce) { * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+@media (prefers-reduced-motion: reduce) { 
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } 
+}
+
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; height: 100%; }
 
@@ -51,12 +60,9 @@ a { color: var(--color-accent); text-decoration: none; }
   z-index: 9999 !important;
 }
 
-#btnGoCatalog, #btnGoCodexHero {
-  background-color: #121212 !important;
-  color: #FFFFFF !important;
-  border: 1px solid #121212 !important;
-}
+#btnGoCatalog, #btnGoCodexHero { background-color: #121212 !important; color: #FFFFFF !important; border: 1px solid #121212 !important; }
 
+/* -- Theme: Dark Mode -- */
 body.dark-theme {
   --color-paper: #1A1A1A;
   --color-paper-edge: #121212;
@@ -70,120 +76,36 @@ body.dark-theme {
   background-color: var(--color-paper-edge);
 }
 
-body.dark-theme .paper-wrap {
-  background: transparent;
-}
+body.dark-theme .paper-wrap { background: transparent; }
+body.dark-theme .logo-wordmark, body.dark-theme .logo-primary, body.dark-theme .logo-modal { filter: invert(0.92) hue-rotate(180deg) brightness(1.2); transition: filter 0.3s ease; }
+body.dark-theme #paperWrap svg path, body.dark-theme #paperWrap svg rect, body.dark-theme #paperWrap svg line, body.dark-theme #paperWrap svg text { fill: #EAEAEA !important; stroke: #EAEAEA !important; }
+body.dark-theme #paperWrap svg text { stroke: none !important; }
+body.dark-theme #paperWrap svg .measure-hit rect { fill: transparent !important; stroke: none !important; }
+body.dark-theme #paperWrap svg .measure-hit.active rect { fill: rgba(212, 175, 55, 0.15) !important; stroke: var(--color-brass) !important; }
+body.dark-theme #paperWrap h1, body.dark-theme #paperWrap h2, body.dark-theme #paperWrap h3, body.dark-theme #paperWrap p, body.dark-theme #paperWrap .composer, body.dark-theme .score-letterhead h2, body.dark-theme .score-letterhead p, body.dark-theme .score-letterhead span { color: #FFFFFF !important; }
+body.dark-theme .player-bar .pl-time, body.dark-theme .player-bar .pl-bpm-label, body.dark-theme .player-bar .pl-bpm-symbol, body.dark-theme .player-bar .pl-bpm-eq { color: #EAEAEA !important; }
+body.dark-theme .pl-btn { color: #EAEAEA !important; }
+body.dark-theme .pl-btn svg { fill: #EAEAEA !important; }
+body.dark-theme .pl-btn:hover { color: var(--color-brass) !important; }
+body.dark-theme .pl-btn:hover svg { fill: var(--color-brass) !important; }
+body.dark-theme .field-label, body.dark-theme .desk-title, body.dark-theme .check-inline, body.dark-theme .measure-controls-header span { color: #EAEAEA !important; }
+body.dark-theme .field-input, body.dark-theme .custom-select .select-selected { background-color: #2A2A2A !important; color: #FFFFFF !important; border-color: #4A4A4A !important; }
+body.dark-theme #btnGoCatalog, body.dark-theme #btnGoCodexHero { background-color: #EAEAEA !important; color: #121212 !important; border: 1px solid #EAEAEA !important; }
 
-body.dark-theme .logo-wordmark,
-body.dark-theme .logo-primary,
-body.dark-theme .logo-modal {
-  filter: invert(0.92) hue-rotate(180deg) brightness(1.2);
-  transition: filter 0.3s ease;
-}
+/* -- Editor Interaction States -- */
+.measure-hit rect { fill: transparent; cursor: pointer; pointer-events: all; }
+.measure-hit.active rect { fill: rgba(179, 142, 80, 0.15); }
 
-body.dark-theme #paperWrap svg path,
-body.dark-theme #paperWrap svg rect,
-body.dark-theme #paperWrap svg line,
-body.dark-theme #paperWrap svg text {
-  fill: #EAEAEA !important;
-  stroke: #EAEAEA !important;
-}
+/* -- Specificity Overrides: Viewer Mode Killswitch -- */
+body.is-viewer .measure-hit,
+body.is-home .measure-hit { pointer-events: none !important; }
 
-body.dark-theme #paperWrap svg text {
-  stroke: none !important;
-}
-
-body.dark-theme #paperWrap svg .measure-hit rect {
+body.is-viewer #paperWrap svg .measure-hit.active rect,
+body.is-home #paperWrap svg .measure-hit.active rect,
+body.dark-theme.is-viewer #paperWrap svg .measure-hit.active rect {
   fill: transparent !important;
   stroke: none !important;
-}
-body.dark-theme #paperWrap svg .measure-hit.active rect {
-  fill: rgba(212, 175, 55, 0.15) !important;
-  stroke: var(--color-brass) !important;
-}
-
-body.dark-theme #paperWrap h1,
-body.dark-theme #paperWrap h2,
-body.dark-theme #paperWrap h3,
-body.dark-theme #paperWrap p,
-body.dark-theme #paperWrap .composer,
-body.dark-theme .score-letterhead h2,
-body.dark-theme .score-letterhead p,
-body.dark-theme .score-letterhead span {
-  color: #FFFFFF !important;
-}
-
-body.dark-theme .player-bar .pl-time,
-body.dark-theme .player-bar .pl-bpm-label,
-body.dark-theme .player-bar .pl-bpm-symbol,
-body.dark-theme .player-bar .pl-bpm-eq {
-  color: #EAEAEA !important;
-}
-
-body.dark-theme .pl-btn {
-  color: #EAEAEA !important;
-}
-
-body.dark-theme .pl-btn svg {
-  fill: #EAEAEA !important;
-}
-
-body.dark-theme .pl-btn:hover {
-  color: var(--color-brass) !important;
-}
-body.dark-theme .pl-btn:hover svg {
-  fill: var(--color-brass) !important;
-}
-
-body.dark-theme .field-label, 
-body.dark-theme .desk-title, 
-body.dark-theme .check-inline,
-body.dark-theme .measure-controls-header span {
-  color: #EAEAEA !important;
-}
-
-body.dark-theme .field-input,
-body.dark-theme .custom-select .select-selected {
-  background-color: #2A2A2A !important;
-  color: #FFFFFF !important;
-  border-color: #4A4A4A !important;
-}
-
-body.dark-theme #btnGoCatalog, 
-body.dark-theme #btnGoCodexHero {
-  background-color: #EAEAEA !important;
-  color: #121212 !important;
-  border: 1px solid #EAEAEA !important;
+  display: none !important;
 }
 
 .print-only { display: none; }
-@media print { 
-  .print-only { display: block !important; } 
-  
-  html, body {
-    height: auto !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #FFFFFF !important;
-    overflow: visible !important;
-  }
-  
-  .paper-wrap { padding: 0 !important; margin: 0 !important; box-shadow: none !important; border: none !important; }
-  .paper-page { margin: 0 !important; padding: 0 !important; page-break-after: avoid !important; page-break-inside: avoid !important; }
-  
-  #mainHeader, .engrave-desk, .editor-top-controls, .sitefooter, .floating-notes, #practiceFloatingOverlay { 
-    display: none !important; 
-  }
-
-  .print-footer-content { 
-    display: flex !important; 
-    flex-direction: row !important;
-    justify-content: space-between !important; 
-    align-items: center !important; 
-    border-top: 1px dashed var(--color-line-strong) !important;
-    padding-top: 10px !important;
-    margin-top: 20px !important;
-    font-family: var(--font-mono);
-    font-size: 11px;
-  }
-}

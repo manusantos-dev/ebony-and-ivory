@@ -30,7 +30,7 @@
   </div>
 
   <div class="topbar-right">
-    <span id="saveIndicator" class="save-indicator" data-i18n="savedIndicator" hidden>Guardado ✓</span>
+    <span id="saveIndicator" class="save-indicator" data-i18n="savedCloud" hidden>☁️✓ Guardado en la nube</span>
     <div class="account-logged" id="accountLogged" hidden title="Abrir Perfil">
       <span class="account-avatar" id="acctAvatar">?</span>
       <span class="account-email" id="acctEmail"></span>
@@ -72,8 +72,6 @@
       <input type="text" id="searchScores" class="field-input search-input" placeholder="Buscar por título, autor o E&I..." data-i18n-placeholder="searchPlaceholder">
       <button class="btn btn-ghost" id="btnToggleFilters" data-i18n="filterBtn">Filtros ⧨</button>
       <select id="sortScores" class="field-input sort-select">
-        <option value="numAsc" data-i18n="sortNumAsc">Número (E&I asc.)</option>
-        <option value="numDesc" data-i18n="sortNumDesc">Número (E&I desc.)</option>
         <option value="dateDesc" data-i18n="sortDateDesc">Última edición (Reciente)</option>
         <option value="dateAsc" data-i18n="sortDateAsc">Última edición (Antigua)</option>
         <option value="titleAsc" data-i18n="sortTitleAsc">Título (A-Z)</option>
@@ -162,46 +160,33 @@
 </main>
 
 <main id="viewEditor" class="view" hidden>
-  <div class="editor-top-controls">
-    <button class="back-pill" id="btnBackLibrary" data-i18n="backBtn" hidden>← Volver</button>
-    <div class="player-bar" id="playerBar">
-      <button class="pl-btn" id="plBtnRewind" title="Volver al inicio" aria-label="Volver al inicio"><svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg></button>
-      <button class="pl-btn pl-btn--play" id="plBtnPlay" title="Reproducir / Pausar" aria-label="Reproducir"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
-      <div class="pl-progress" id="plProgressWrap"><div class="pl-progress-fill" id="plProgressFill"></div></div>
-      <span class="pl-time" id="plTimeLabel">0:00 / 0:00</span>
-      <span class="pl-divider"></span>
-      <div class="pl-speeds" id="plSpeeds">
-        <button class="pl-speed-btn" data-speed="0.5">0.5×</button>
-        <button class="pl-speed-btn" data-speed="0.75">0.75×</button>
-        <button class="pl-speed-btn is-active" data-speed="1">1×</button>
-        <button class="pl-speed-btn" data-speed="1.5">1.5×</button>
-        <button class="pl-speed-btn" data-speed="2">2×</button>
-      </div>
-      <span class="pl-divider"></span>
-      <label class="pl-bpm-label" title="Tempo"><span class="pl-bpm-symbol">♩</span><span class="pl-bpm-eq">=</span><input type="number" id="plBpm" class="pl-bpm-input" min="20" max="300" value="100"></label>
-    </div>
-  </div>
-
   <div class="editor-layout" id="editorLayout">
+    
     <aside class="engrave-desk" id="engraveDesk">
       <div class="desk-section">
-        <label class="field-label" data-i18n="lblTitle">Título de la Obra</label>
-        <input type="text" id="scoreTitle" class="field-input field-input--title">
-        <label class="field-label" data-i18n="lblComposer">Compositor/es</label>
-        <input type="text" id="scoreComposer" class="field-input">
+        <p class="desk-title" data-i18n="lblScoreMeta">Metadatos de la Obra</p>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div>
+            <label class="field-label" data-i18n="lblTitle">Título</label>
+            <input type="text" id="scoreTitle" class="field-input field-input--title" placeholder="Ej: Claro de Luna" data-i18n-placeholder="plhTitle">
+          </div>
+          <div>
+            <label class="field-label" data-i18n="lblComposer">Compositor/es</label>
+            <input type="text" id="scoreComposer" class="field-input" placeholder="Ej: L. V. Beethoven" data-i18n-placeholder="plhComposer">
+          </div>
+        </div>
       </div>
 
       <div class="desk-section">
-        <div class="field-row">
-          <div>
+        <div class="field-row" style="gap: 16px;">
+          <div style="flex:1;">
             <label class="field-label" data-i18n="lblTimeSig">Compás</label>
             <select id="timeSig" class="field-input">
               <option value="4/4">4/4</option><option value="3/4">3/4</option><option value="2/4">2/4</option>
               <option value="6/8">6/8</option><option value="9/8">9/8</option><option value="12/8">12/8</option>
-              <option value="2/2">2/2</option>
             </select>
           </div>
-          <div>
+          <div style="flex:1.5;">
             <label class="field-label" data-i18n="lblKeySig">Tonalidad</label>
             <div class="custom-select" id="customKeySig" tabindex="0">
               <div class="select-selected" id="customKeySigSelected"></div>
@@ -209,67 +194,68 @@
             </div>
             <input type="hidden" id="keySig" value="C">
           </div>
-          <div>
-            <label class="field-label" data-i18n="lblDifficulty">Dificultad</label>
+        </div>
+        <div style="margin-top: 12px;">
+            <label class="field-label" data-i18n="lblDifficulty">Nivel</label>
             <select id="scoreDifficulty" class="field-input">
               <option value="beginner" data-i18n="diffBeginner">🟢 Principiante</option>
               <option value="intermediate" data-i18n="diffIntermediate">🟠 Intermedio</option>
               <option value="advanced" data-i18n="diffAdvanced">🔴 Avanzado</option>
             </select>
-          </div>
         </div>
       </div>
 
       <div class="desk-section">
         <div class="measure-controls-header">
-          <p class="desk-title" style="border:none; margin:0;"><span data-i18n="lblActiveMeasure">Compás</span> <span id="activeMeasureLabel" class="pill">1</span></p>
+          <p class="desk-title" style="margin:0;"><span data-i18n="lblActiveMeasure">Compás</span> <span id="activeMeasureLabel" class="pill">1</span></p>
         </div>
-        <div class="field-row">
-          <button class="btn btn-small" id="btnPrevMeasure" data-i18n="btnPrev">‹ ant</button>
-          <button class="btn btn-small" id="btnNextMeasure" data-i18n="btnNext">sig ›</button>
+        <div class="field-row" style="gap: 8px;">
+          <button class="btn btn-ghost" id="btnPrevMeasure" data-i18n="btnPrev" style="flex:1;">‹ ant</button>
+          <button class="btn btn-ghost" id="btnNextMeasure" data-i18n="btnNext" style="flex:1;">sig ›</button>
         </div>
-        <div class="field-row" style="margin-top:8px;">
-          <button class="btn btn-small btn-add" id="btnAddMeasure" data-i18n="btnAddMeasure">+ añadir</button>
-          <button class="btn btn-small btn-danger" id="btnDeleteMeasure" data-i18n="btnDelMeasure">eliminar</button>
+        <div class="field-row" style="margin-top:8px; gap: 8px;">
+          <button class="btn btn-secondary" id="btnAddMeasure" data-i18n="btnAddMeasure" style="flex:1;">+ compás</button>
+          <button class="btn btn-danger" id="btnDeleteMeasure" data-i18n="btnDelMeasure" style="flex:1; opacity:0.8;">eliminar</button>
         </div>
       </div>
 
       <div class="desk-section">
-        <p class="desk-title" data-i18n="lblInputStaff">Edición de Notas</p>
+        <p class="desk-title" data-i18n="lblInputStaff">Inserción Musical</p>
         <div class="staff-toggle">
-          <button class="toggle-btn is-active" data-staff="treble" id="btnStaffTreble" data-i18n="lblTreble">Clave Sol</button>
-          <button class="toggle-btn" data-staff="bass" id="btnStaffBass" data-i18n="lblBass">Clave Fa</button>
+          <button class="toggle-btn is-active" data-staff="treble" id="btnStaffTreble" data-i18n="lblTreble">Clave de Sol</button>
+          <button class="toggle-btn" data-staff="bass" id="btnStaffBass" data-i18n="lblBass">Clave de Fa</button>
         </div>
         
         <div class="note-list-container" id="noteListContainer"></div>
 
         <div class="note-builder">
-            <div class="field-row note-row">
-              <label class="check-inline"><input type="checkbox" id="isRest"> <span data-i18n="lblRest">Insertar Silencio</span></label>
+            <div class="field-row note-row" style="margin-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px;">
+              <label class="check-inline" style="margin:0;"><input type="checkbox" id="isRest"> <span data-i18n="lblRest">Insertar como Silencio</span></label>
             </div>
-            <div class="field-row" id="pitchFields">
-            <div>
-                <label class="field-label" data-i18n="lblPitch">Nota</label>
-                <select id="pitchLetter" class="field-input">
-                <option value="C">Do (C)</option><option value="D">Re (D)</option><option value="E">Mi (E)</option>
-                <option value="F">Fa (F)</option><option value="G">Sol (G)</option><option value="A">La (A)</option><option value="B">Si (B)</option>
-                </select>
-            </div>
-            <div>
-                <label class="field-label" data-i18n="lblAccidental">Alt.</label>
-                <select id="pitchAccidental" class="field-input">
-                <option value="">—</option><option value="#">♯</option><option value="b">♭</option><option value="n">♮</option>
-                </select>
-            </div>
-            <div>
-                <label class="field-label" data-i18n="lblOctave">Oct.</label>
-                <select id="pitchOctave" class="field-input">
-                <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option>
-                </select>
-            </div>
+            
+            <div class="field-row" id="pitchFields" style="gap: 8px;">
+              <div style="flex:1.2;">
+                  <label class="field-label" data-i18n="lblPitch">Nota</label>
+                  <select id="pitchLetter" class="field-input">
+                    <option value="C" data-i18n="optC">Do (C)</option><option value="D" data-i18n="optD">Re (D)</option><option value="E" data-i18n="optE">Mi (E)</option>
+                    <option value="F" data-i18n="optF">Fa (F)</option><option value="G" data-i18n="optG">Sol (G)</option><option value="A" data-i18n="optA">La (A)</option><option value="B" data-i18n="optB">Si (B)</option>
+                  </select>
+              </div>
+              <div style="flex:1;">
+                  <label class="field-label" data-i18n="lblAccidental">Alt.</label>
+                  <select id="pitchAccidental" class="field-input">
+                    <option value="">—</option><option value="#">♯</option><option value="b">♭</option><option value="n">♮</option>
+                  </select>
+              </div>
+              <div style="flex:1;">
+                  <label class="field-label" data-i18n="lblOctave">Oct.</label>
+                  <select id="pitchOctave" class="field-input">
+                    <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option>
+                  </select>
+              </div>
             </div>
 
-            <label class="field-label" data-i18n="lblDuration">Duración</label>
+            <label class="field-label" data-i18n="lblDuration" style="margin-top: 16px;">Duración</label>
             <div class="duration-grid" id="durationGrid">
               <button class="dur-btn" data-dur="w" title="Redonda"><svg width="24" height="24" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="6" ry="4" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
               <button class="dur-btn" data-dur="h" title="Blanca"><svg width="24" height="24" viewBox="0 0 24 24"><ellipse cx="9" cy="15" rx="5" ry="3.5" fill="none" stroke="currentColor" stroke-width="2" transform="rotate(-15 9 15)"/><line x1="13.5" y1="14" x2="13.5" y2="3" stroke="currentColor" stroke-width="2"/></svg></button>
@@ -277,67 +263,97 @@
               <button class="dur-btn" data-dur="8" title="Corchea"><svg width="24" height="24" viewBox="0 0 24 24"><ellipse cx="8" cy="16" rx="4.5" ry="3" fill="currentColor" transform="rotate(-15 8 16)"/><line x1="12" y1="15" x2="12" y2="4" stroke="currentColor" stroke-width="2"/><path d="M12 4 Q17 4 18 10" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
               <button class="dur-btn" data-dur="16" title="Semicorchea"><svg width="24" height="24" viewBox="0 0 24 24"><ellipse cx="8" cy="17" rx="4.5" ry="3" fill="currentColor" transform="rotate(-15 8 17)"/><line x1="12" y1="16" x2="12" y2="5" stroke="currentColor" stroke-width="2"/><path d="M12 5 Q16 5 17 9 M12 9 Q16 9 17 13" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
             </div>
-            <label class="check-inline"><input type="checkbox" id="isDotted"> <span data-i18n="lblDotted">Puntillo</span></label>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+               <label class="check-inline" style="margin:0;"><input type="checkbox" id="isDotted"> <span data-i18n="lblDotted">Añadir Puntillo</span></label>
+            </div>
 
-            <div class="field-row" style="margin-top: 12px;">
-                <div>
+            <div class="field-row" style="margin-top: 16px; gap: 8px;">
+                <div style="flex: 1;">
                     <label class="field-label" data-i18n="lblFingering">Dedo</label>
                     <select id="fingeringSelect" class="field-input">
                         <option value="">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
                     </select>
                 </div>
-                <div>
-                    <label class="field-label" data-i18n="lblLyric">Letra</label>
-                    <input type="text" id="lyricInput" class="field-input" placeholder="Ej: La">
+                <div style="flex: 1;">
+                    <label class="field-label" data-i18n="lblDynamics">Dinámica</label>
+                    <select id="dynamicSelect" class="field-input">
+                      <option value="">—</option><option value="p">p</option><option value="mp">mp</option><option value="mf">mf</option><option value="f">f</option>
+                    </select>
                 </div>
             </div>
+            <div style="margin-top: 12px;">
+                <label class="field-label" data-i18n="lblLyric">Letra / Texto</label>
+                <input type="text" id="lyricInput" class="field-input" placeholder="Ej: La" data-i18n-placeholder="plhLyric">
+            </div>
 
-            <label class="field-label" data-i18n="lblDynamics">Dinámica</label>
-            <select id="dynamicSelect" class="field-input">
-              <option value="">—</option><option value="pp">pp</option><option value="p">p</option><option value="mp">mp</option><option value="mf">mf</option>
-              <option value="f">f</option><option value="ff">ff</option><option value="sfz">sfz</option><option value="cresc.">cresc.</option><option value="dim.">dim.</option>
-            </select>
-
-            <div class="form-actions" style="display: flex; gap: 10px; margin-top: 20px;">
-              <button class="btn btn-primary" id="btnAddNote" data-i18n="btnAddNote" style="flex: 1;">Añadir nota</button>
-              <button class="btn btn-secondary" id="btnAddChordNote" title="Añadir esta tecla a la nota anterior para formar un acorde">+ Acorde</button>
+            <div class="form-actions" style="display: flex; gap: 8px; margin-top: 24px;">
+              <button class="btn btn-primary" id="btnAddNote" data-i18n="btnAddNote" style="flex: 2;">Añadir nota</button>
+              <button class="btn btn-ghost" id="btnAddChordNote" title="Apilar al acorde" data-i18n="btnAddChordNote" style="flex: 1;">+ Acorde</button>
             </div>
         </div>
       </div>
 
       <div class="desk-section">
-        <p class="desk-title" data-i18n="lblMeasureDetails">Indicaciones</p>
-        <label class="check-inline"><input type="checkbox" id="repeatStart"> <span data-i18n="lblRepStart">Inicio repetición ‖:</span></label>
-        <label class="check-inline"><input type="checkbox" id="repeatEnd"> <span data-i18n="lblRepEnd">Fin repetición :‖</span></label>
-        <label class="field-label" data-i18n="lblDirective">Salto/Fin</label>
+        <p class="desk-title" data-i18n="lblMeasureDetails">Estructura del Compás</p>
+        <div style="display: flex; gap: 16px; margin-bottom: 12px;">
+           <label class="check-inline" style="margin:0;"><input type="checkbox" id="repeatStart"> <span data-i18n="lblRepStart">‖: Iniciar Repetición</span></label>
+        </div>
+        <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+           <label class="check-inline" style="margin:0;"><input type="checkbox" id="repeatEnd"> <span data-i18n="lblRepEnd">:‖ Cerrar Repetición</span></label>
+        </div>
+        <label class="field-label" data-i18n="lblDirective">Salto o Final</label>
         <select id="directiveSelect" class="field-input">
           <option value="">—</option>
           <option value="Fine">Fine</option>
-          <option value="D.C.">D.C.</option>
-          <option value="D.C. al Fine">D.C. al Fine</option>
-          <option value="D.S. al Fine">D.S. al Fine</option>
+          <option value="D.C.">D.C. (Da Capo)</option>
           <option value="To Coda">To Coda</option>
-          <option value="D.C. al Coda">D.C. al Coda</option>
           <option value="𝄋 Segno">𝄋 Segno</option>
-          <option value="𝄌 Coda">𝄌 Coda</option>
         </select>
       </div>
     </aside>
 
-    <section class="paper-wrap" id="paperWrap">
-      <div id="practiceFloatingOverlay" hidden>
-         <div class="practice-pill">
-            <span class="practice-pulse"></span>
-            <span style="background:var(--color-brass); color:#121212; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; letter-spacing:1px; margin-right:8px;">DEMO</span>
-            <span>Escuchando... Toca: </span>
-            <strong id="practiceExpectedNote" style="color:var(--color-brass);">--</strong>
-            <span style="opacity:0.5; margin:0 8px;">| Detectado:</span>
-            <strong id="practiceDetectedNote">--</strong>
-            <button id="btnStopPracticeFloating" class="btn btn-ghost-small" style="margin-left:auto;">✕</button>
-         </div>
+    <div class="editor-main-area">
+      
+      <div class="editor-top-controls">
+        <button class="control-pill" id="btnBackLibrary" data-i18n="backBtn" hidden>← Volver</button>
+        
+        <div class="player-bar-wrapper">
+          <div class="player-bar" id="playerBar">
+            <button class="pl-btn" id="plBtnRewind" title="Volver al inicio"><svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg></button>
+            <button class="pl-btn pl-btn--play" id="plBtnPlay" title="Reproducir / Pausar"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+            <div class="pl-progress" id="plProgressWrap"><div class="pl-progress-fill" id="plProgressFill"></div></div>
+            <span class="pl-time" id="plTimeLabel">0:00 / 0:00</span>
+            <div class="pl-speeds" id="plSpeeds">
+              <button class="pl-speed-btn" data-speed="0.5">0.5×</button>
+              <button class="pl-speed-btn" data-speed="0.75">0.75×</button>
+              <button class="pl-speed-btn is-active" data-speed="1">1×</button>
+              <button class="pl-speed-btn" data-speed="1.5">1.5×</button>
+              <button class="pl-speed-btn" data-speed="2">2×</button>
+            </div>
+            <label class="pl-bpm-label" title="Tempo"><span class="pl-bpm-symbol">♩</span><span class="pl-bpm-eq">=</span><input type="number" id="plBpm" class="pl-bpm-input" min="20" max="300" value="100"></label>
+          </div>
+        </div>
+
+        <button class="control-pill" id="btnToggleLayout" title="Cambiar Vista" style="font-size:18px;">📜</button>
       </div>
-      <div id="vexPagesContainer"></div>
-    </section>
+
+      <section class="paper-wrap layout-continuous" id="paperWrap">
+        <div id="practiceFloatingOverlay" hidden>
+           <div class="practice-pill">
+              <span class="practice-pulse"></span>
+              <span style="background:var(--color-brass); color:#121212; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; letter-spacing:1px; margin-right:8px;">DEMO</span>
+              <span>Escuchando... Toca: </span>
+              <strong id="practiceExpectedNote" style="color:var(--color-brass);">--</strong>
+              <span style="opacity:0.5; margin:0 8px;">| Detectado:</span>
+              <strong id="practiceDetectedNote">--</strong>
+              <button id="btnStopPracticeFloating" class="btn btn-ghost-small" style="margin-left:auto;">✕</button>
+           </div>
+        </div>
+        <div id="vexPagesContainer"></div>
+      </section>
+    </div>
+
   </div>
 </main>
 
@@ -395,7 +411,7 @@
     <h3 id="confirmTitle" style="margin-top: 0; font-family: var(--font-display); font-size: 24px;">Confirmar</h3>
     <p id="confirmMessage" style="color: var(--color-ink-soft); margin-bottom: 24px; font-size: 14px;"></p>
     <div class="field-row" style="gap: 12px;">
-      <button class="btn btn-ghost" id="btnConfirmCancel">Cancelar</button>
+      <button class="btn btn-ghost" id="btnConfirmCancel" data-i18n="cancelBtn">Cancelar</button>
       <button class="btn btn-primary" id="btnConfirmAccept">Aceptar</button>
     </div>
   </div>

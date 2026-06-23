@@ -11,16 +11,18 @@ const translations = {
     searchPlaceholder: "Buscar por título, autor...", searchCodexPlaceholder: "Buscar en El Códice...", filterBtn: "Filtros ⧨",
     lblHands: "Manos / Pentagramas", optAll: "Cualquiera", optBothHands: "Ambas manos", optTrebleOnly: "Solo Clave de Sol", optBassOnly: "Solo Clave de Fa",
     emptyLibraryTitle: "Tu catálogo está vacío", emptyLibrary: "Pulsa «Nueva partitura» en la esquina superior derecha o cambia los filtros de búsqueda para empezar.",
-    lblTitle: "Título", lblComposer: "Compositor/es", lblTimeSig: "Compás", lblKeySig: "Tonalidad", lblDifficulty: "Nivel",
+    lblScoreMeta: "Metadatos de la Obra", lblTitle: "Título de la Obra", plhTitle: "Ej: Claro de Luna", lblComposer: "Compositor/es", plhComposer: "Ej: L. V. Beethoven",
+    lblTimeSig: "Compás", lblKeySig: "Tonalidad", lblDifficulty: "Nivel",
     diffBeginner: "🟢 Principiante", diffIntermediate: "🟠 Intermedio", diffAdvanced: "🔴 Avanzado",
-    lblActiveMeasure: "Compás", btnPrev: "‹", btnNext: "›",
-    btnAddMeasure: "+ compás", btnDelMeasure: "eliminar", lblTreble: "Sol", lblBass: "Fa",
-    lblNote: "Nota", lblRest: "Silencio", lblPitch: "Nota", lblAccidental: "Alt.",
-    lblOctave: "Octava", lblDuration: "Duración", lblDotted: "Puntillo", lblDynamics: "Dinámica",
-    lblFingering: "Dedo", lblLyric: "Letra", lblInputStaff: "Edición de Notas",
-    btnAddNote: "Añadir nota", btnUndoNote: "Deshacer",
-    lblMeasureDetails: "Indicaciones", lblRepStart: "Inicio ‖:", lblRepEnd: "Fin :‖",
-    lblDirective: "Salto/Fin", untitled: "Sin título", unknownAuthor: "Desconocido", measuresTxt: "compases",
+    lblActiveMeasure: "Compás", btnPrev: "‹ ant", btnNext: "sig ›",
+    btnAddMeasure: "+ compás", btnDelMeasure: "eliminar", lblInputStaff: "Inserción Musical", lblTreble: "Clave de Sol", lblBass: "Clave de Fa",
+    lblNote: "Nota", lblRest: "Insertar como Silencio", lblPitch: "Nota", lblAccidental: "Alt.",
+    optC: "Do (C)", optD: "Re (D)", optE: "Mi (E)", optF: "Fa (F)", optG: "Sol (G)", optA: "La (A)", optB: "Si (B)",
+    lblOctave: "Octava", lblDuration: "Duración", lblDotted: "Añadir Puntillo", lblDynamics: "Dinámica",
+    lblFingering: "Dedo", lblLyric: "Letra / Texto", plhLyric: "Ej: La",
+    btnAddNote: "Añadir nota", btnAddChordNote: "+ Acorde", btnUndoNote: "Deshacer",
+    lblMeasureDetails: "Estructura del Compás", lblRepStart: "‖: Iniciar Repetición", lblRepEnd: ":‖ Cerrar Repetición",
+    lblDirective: "Salto o Final", untitled: "Sin título", unknownAuthor: "Desconocido", measuresTxt: "compases",
     editBtn: "✎ Editar", viewBtn: "👁 Ver", copyBtn: "⎘ Copiar", deleteBtn: "🗑️ Borrar", saveCopyBtn: "Guardar una copia", savedToCatalog: "Partitura guardada en Mi Catálogo", cloneBtn: "⎘ Duplicar",
     delConfirm: "¿Eliminar?", delMeasureConfirm: "¿Eliminar compás?",
     minMeasureAlert: "Mínimo un compás.", toggleViewBtn: "Alternar Visor", viewMode: "👁️ Ver Partitura", editMode: "✎ Editar Partitura", 
@@ -37,7 +39,14 @@ const translations = {
     byPublisher: "por:", deletedUser: "usuario eliminado",
     footerText: "Ebony & Ivory es un proyecto creado por y para amantes de la música, diseñado para elevar la forma en que interactuamos con el pentagrama. Las obras musicales que transcribas siguen siendo propiedad de sus respectivos autores originales. Por favor, transcribe con responsabilidad.",
     termsLink: "Términos y Condiciones",
-    reportLink: "Reportar Copyright (DMCA)"
+    reportLink: "Reportar Copyright (DMCA)",
+    termsMsg: "Al usar Ebony & Ivory, confirmas que tienes los derechos para transcribir las obras que publicas o que estas pertenecen al Dominio Público. Nos reservamos el derecho a eliminar cualquier contenido que infrinja derechos de autor de terceros.",
+    reportMsg: "Para notificar una infracción de derechos de autor, por favor envía un correo detallando la obra y el enlace a:<br><br><strong>ebonyivory.app@gmail.com</strong>",
+    acceptBtn: "Aceptar",
+    cancelBtn: "Cancelar",
+    understoodBtn: "Entendido",
+    savedCloud: "Guardado en la nube",
+    syncing: "Sincronizando..."
   },
   en: {
     importBtn: "Import .json", newScoreBtn: "+ New Score", backBtn: "← Back",
@@ -48,15 +57,17 @@ const translations = {
     searchPlaceholder: "Search by title or author...", searchCodexPlaceholder: "Search in The Codex...", filterBtn: "Filters ⧨",
     lblHands: "Staves", optAll: "Any", optBothHands: "Both staves", optTrebleOnly: "Treble only (Right)", optBassOnly: "Bass only (Left)",
     emptyLibraryTitle: "Empty catalog", emptyLibrary: "Click «New Score» in the top right or change your search filters to start.",
-    lblTitle: "Title", lblComposer: "Composer(s)", lblTimeSig: "Time Sig.", lblKeySig: "Key", lblDifficulty: "Level",
+    lblScoreMeta: "Score Metadata", lblTitle: "Title", plhTitle: "Ex: Moonlight Sonata", lblComposer: "Composer(s)", plhComposer: "Ex: L. V. Beethoven",
+    lblTimeSig: "Time Sig.", lblKeySig: "Key", lblDifficulty: "Level",
     diffBeginner: "🟢 Beginner", diffIntermediate: "🟠 Intermediate", diffAdvanced: "🔴 Advanced",
-    lblActiveMeasure: "Measure", btnPrev: "‹", btnNext: "›",
-    btnAddMeasure: "+ measure", btnDelMeasure: "delete", lblTreble: "Treble", lblBass: "Bass",
-    lblNote: "Note", lblRest: "Rest", lblPitch: "Pitch", lblAccidental: "Acc.",
-    lblOctave: "Octave", lblDuration: "Duration", lblDotted: "Dotted", lblDynamics: "Dynamics",
-    lblFingering: "Finger", lblLyric: "Lyric", lblInputStaff: "Note Editor",
-    btnAddNote: "Add note", btnUndoNote: "Undo",
-    lblMeasureDetails: "Directives", lblRepStart: "Start ‖:", lblRepEnd: "End :‖",
+    lblActiveMeasure: "Measure", btnPrev: "‹ prev", btnNext: "next ›",
+    btnAddMeasure: "+ measure", btnDelMeasure: "delete", lblInputStaff: "Musical Input", lblTreble: "Treble", lblBass: "Bass",
+    lblNote: "Note", lblRest: "Insert as Rest", lblPitch: "Pitch", lblAccidental: "Acc.",
+    optC: "C", optD: "D", optE: "E", optF: "F", optG: "G", optA: "A", optB: "B",
+    lblOctave: "Octave", lblDuration: "Duration", lblDotted: "Add Dot", lblDynamics: "Dynamics",
+    lblFingering: "Finger", lblLyric: "Lyric", plhLyric: "Ex: Ah",
+    btnAddNote: "Add note", btnAddChordNote: "+ Chord", btnUndoNote: "Undo",
+    lblMeasureDetails: "Measure Structure", lblRepStart: "‖: Start Repeat", lblRepEnd: ":‖ End Repeat",
     lblDirective: "Jump/Fine", untitled: "Untitled", unknownAuthor: "Unknown", measuresTxt: "measures",
     editBtn: "✎ Edit", viewBtn: "👁 View", copyBtn: "⎘ Copy", deleteBtn: "🗑️ Delete", saveCopyBtn: "Save a copy", savedToCatalog: "Score saved to My Catalog", cloneBtn: "⎘ Clone",
     delConfirm: "Delete?", delMeasureConfirm: "Delete measure?",
@@ -74,7 +85,14 @@ const translations = {
     byPublisher: "by:", deletedUser: "deleted user",
     footerText: "Ebony & Ivory is a project built by and for music lovers, designed to elevate how we interact with the staff. The musical works you transcribe remain the property of their respective original authors. Please transcribe responsibly.",
     termsLink: "Terms and Conditions",
-    reportLink: "Report Copyright (DMCA)"
+    reportLink: "Report Copyright (DMCA)",
+    termsMsg: "By using Ebony & Ivory, you confirm that you have the rights to transcribe the published works or that they belong to the Public Domain. We reserve the right to remove any content that infringes third-party copyrights.",
+    reportMsg: "To report a copyright infringement, please send an email detailing the work and the link to:<br><br><strong>ebonyivory.app@gmail.com</strong>",
+    acceptBtn: "Accept",
+    cancelBtn: "Cancel",
+    understoodBtn: "Understood",
+    savedCloud: "Saved to cloud",
+    syncing: "Syncing..."
   }
 };
 
@@ -88,11 +106,10 @@ export const setLang = (lang) => {
     if (translations[lang][key]) el.innerHTML = translations[lang][key];
   });
   
-  const searchCodex = document.getElementById("searchCodex");
-  if (searchCodex) searchCodex.placeholder = t("searchCodexPlaceholder");
-  
-  const searchScores = document.getElementById("searchScores");
-  if (searchScores) searchScores.placeholder = t("searchPlaceholder");
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+    const key = el.getAttribute("data-i18n-placeholder");
+    if (translations[lang][key]) el.placeholder = translations[lang][key];
+  });
   
   const codexSub = document.getElementById("codexSubtitle");
   if (codexSub) codexSub.textContent = t("codexSubtitle");

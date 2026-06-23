@@ -1,6 +1,7 @@
 /**
- * Main Application Controller
- * Handles routing, DOM event bindings, and UI state synchronization.
+ * @file main.js
+ * @description Main Application Controller.
+ * Handles routing, DOM event bindings, state synchronization, and layout mode toggling.
  */
 
 import { state, resetEditorState } from "./core/state.js";
@@ -24,12 +25,21 @@ import { showConfirm } from './ui/dialog.js';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
 
-// -- Global UI State --
 state.codexState = { query: "", sortBy: "likesDesc", filterTime: "all", filterKey: "all", filterHands: "all" };
 state.publicScores = []; 
 state.isViewingPublic = false;
+state.editorState.layoutMode = "continuous";
 
-// -- Router --
+const applyLayoutMode = () => {
+  const wrap = document.getElementById("paperWrap");
+  const btn = document.getElementById("btnToggleLayout");
+  if (!wrap || !btn) return;
+  const isBook = state.editorState.layoutMode === "book";
+  wrap.className = `paper-wrap ${isBook ? "layout-book" : "layout-continuous"}`;
+  btn.innerHTML = isBook ? "📖" : "📜";
+  btn.title = isBook ? "Cambiar a Vista Continua (Pergamino)" : "Cambiar a Vista de Libro";
+};
+
 const handleNavigation = () => {
   const hash = window.location.hash;
   document.body.classList.remove("is-home", "is-viewer");
@@ -49,7 +59,6 @@ const handleNavigation = () => {
     const localScore = loadAll()[id];
     const publicScore = state.publicScores.find(s => s.id === id);
 
-    // Reliable public vs local state routing
     if (state.isViewingPublic && publicScore) state.currentScore = publicScore;
     else if (localScore) { state.currentScore = localScore; state.isViewingPublic = false; }
     else if (publicScore) { state.currentScore = publicScore; state.isViewingPublic = true; }
@@ -116,7 +125,11 @@ const updateViewerButtonText = () => {
 };
 
 const initEditor = (views) => {
+  const preservedLayoutMode = state.editorState?.layoutMode || "continuous";
   resetEditorState();
+  state.editorState.layoutMode = preservedLayoutMode;
+  applyLayoutMode();
+  
   ["viewEditor", "editorActions"].forEach(id => views[id] && (views[id].hidden = false));
   document.title = `${state.currentScore.title || t("untitled")} — Ebony & Ivory`;
 
@@ -134,14 +147,9 @@ const initEditor = (views) => {
   window.scrollTo(0, 0);
 };
 
-// -- Note Editor (Polyphonic Schema Adaptation) --
 const getFormNote = () => ({
   rest: document.getElementById("isRest").checked,
-  keys: [{
-    letter: document.getElementById("pitchLetter").value,
-    accidental: document.getElementById("pitchAccidental").value,
-    octave: parseInt(document.getElementById("pitchOctave").value, 10)
-  }],
+  keys: [{ letter: document.getElementById("pitchLetter").value, accidental: document.getElementById("pitchAccidental").value, octave: parseInt(document.getElementById("pitchOctave").value, 10) }],
   duration: state.editorState.duration,
   dotted: document.getElementById("isDotted").checked,
   dynamic: document.getElementById("dynamicSelect").value,
@@ -163,7 +171,7 @@ const loadNoteIntoForm = (n, idx) => {
   isRest.dispatchEvent(new Event("change"));
 
   if (!n.rest && n.keys?.length > 0) {
-    const primaryKey = n.keys[0]; // TODO: Support multi-key UI selection in Phase 2
+    const primaryKey = n.keys[0]; 
     document.getElementById("pitchLetter").value = primaryKey.letter;
     document.getElementById("pitchAccidental").value = primaryKey.accidental || "";
     document.getElementById("pitchOctave").value = primaryKey.octave;
@@ -251,7 +259,6 @@ const renderNoteList = () => {
   }));
 };
 
-// -- Library & Codex --
 const generateCardScore = (score, context) => {
   const isAdmin = state.currentUser?.email === "jm.santos.dev@gmail.com";
   const diffColors = { beginner: "var(--color-success)", intermediate: "#E67E22", advanced: "var(--color-danger)" };
@@ -314,8 +321,6 @@ const filterAndSortScores = (scores, libState) => {
   }).sort((a, b) => {
     if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
     if (libState.sortBy === "likesDesc") return ((b.likedBy?.length || b.likes || 0)) - ((a.likedBy?.length || a.likes || 0));
-    if (libState.sortBy === "numAsc") return a.plate - b.plate;
-    if (libState.sortBy === "numDesc") return b.plate - a.plate;
     if (libState.sortBy === "dateDesc") return b.updatedAt - a.updatedAt;
     if (libState.sortBy === "dateAsc") return a.updatedAt - b.updatedAt;
     if (libState.sortBy === "titleAsc") return (a.title || "").localeCompare(b.title || "");
@@ -410,10 +415,24 @@ const renderLibrary = () => {
       
       if (act === "pin") { score.pinned = !score.pinned; persistScore(score); renderLibrary(); }
       else if (act === "clone-private") { persistScore({ ...score, id: uid(), plate: nextPlateNumber(), title: `${score.title} (Copia)`, createdAt: Date.now(), updatedAt: Date.now() }); renderLibrary(); showToast("Partitura duplicada", "success"); }
-      else if (act === "delete") { if (await showConfirm("Eliminar partitura", "¿Seguro que quieres borrar esta obra?", "Borrar", true)) { deleteScoreById(score.id); renderLibrary(); } }
       else if (act === "publish") publishToCodex(score);
       else if (act === "edit") window.location.hash = `#editor/${score.id}`;
       else if (act === "view") window.location.hash = `#viewer/${score.id}`;
+      else if (act === "delete") { 
+        if (await showConfirm(t("delConfirm"), "¿Seguro que quieres borrar esta obra de tu catálogo?", t("deleteBtn"), true)) { 
+          if (state.currentUser) { 
+            try { 
+              await firebase.firestore().collection("users").doc(state.currentUser.uid).collection("scores").doc(score.id).delete(); 
+              showToast("Obra eliminada de la nube", "success");
+            } catch(err) { 
+              console.warn("Bloqueo CORS/Zero-Trust de Firebase detectado:", err);
+              showToast("Aviso: El entorno de desarrollo impidió borrarla de la nube. Usa la web oficial.", "error");
+            } 
+          } 
+          deleteScoreById(score.id); 
+          renderLibrary(); 
+        } 
+      }
     });
     grid.appendChild(card);
   });
@@ -430,19 +449,31 @@ const publishToCodex = async (score) => {
   } catch(e) { showToast("Error al publicar: " + e.message, "error"); }
 };
 
-// -- Init & Bindings --
 const setupEventListeners = () => {
+  const layoutBtn = document.getElementById("btnToggleLayout");
+  if (layoutBtn) {
+    state.editorState.layoutMode = state.editorState.layoutMode || "continuous";
+    layoutBtn.innerHTML = state.editorState.layoutMode === "continuous" ? "📜" : "📖";
+    
+    layoutBtn.addEventListener("click", () => {
+      state.editorState.layoutMode = state.editorState.layoutMode === "continuous" ? "book" : "continuous";
+      state.editorState.bookSpread = 0; 
+      applyLayoutMode();
+      renderScore();
+    });
+  }
+
   setupCustomSelect("customKeySig", "keySig", (val) => { if (state.currentScore) { state.currentScore.keySig = val; renderScore(); } });
   setupCustomSelect("customFilterKeySig", "filterKeySig", (val) => { state.libraryState.filterKey = val; renderLibrary(); });
   setupCustomSelect("customFilterCodexKeySig", "filterCodexKeySig", (val) => { state.codexState.filterKey = val; fetchAndRenderCodex(); });
 
   document.getElementById("btnShowTerms")?.addEventListener("click", (e) => {
     e.preventDefault();
-    showConfirm(t("termsLink"), "Al usar Ebony & Ivory, confirmas que tienes los derechos para transcribir las obras que publicas o que estas pertenecen al Dominio Público. Nos reservamos el derecho a eliminar cualquier contenido que infrinja derechos de autor de terceros.", "Aceptar", false);
+    showConfirm(t("termsLink"), t("termsMsg"), t("acceptBtn"), false);
   });
   document.getElementById("btnReportCopyright")?.addEventListener("click", (e) => {
     e.preventDefault();
-    showConfirm(t("reportLink"), "Para notificar una infracción de derechos de autor, por favor envía un correo detallando la obra y el enlace a:<br><br><strong>ebonyivory.app@gmail.com</strong>", "Entendido", false);
+    showConfirm(t("reportLink"), t("reportMsg"), t("understoodBtn"), false);
   });
 
   document.querySelectorAll(".lang-btn").forEach(btn => btn.addEventListener("click", () => setLang(btn.dataset.lang)));
@@ -468,7 +499,6 @@ const setupEventListeners = () => {
 
   document.getElementById("btnNewScore")?.addEventListener("click", () => { const score = newScore(); persistScore(score); window.location.hash = `#editor/${score.id}`; });
   
-  // Fix Nav Bindings
   document.getElementById("btnBackLibrary")?.addEventListener("click", () => {
     window.location.hash = state.isViewingPublic ? "#codice" : "#catalogo";
   });
@@ -484,7 +514,6 @@ const setupEventListeners = () => {
   document.getElementById("btnTogglePractice")?.addEventListener("click", startPracticeMode);
   document.getElementById("btnStopPracticeFloating")?.addEventListener("click", stopPracticeMode);
 
-  // Filters
   const bindFilter = (id, prop, targetObj, renderFn) => document.getElementById(id)?.addEventListener(id.includes("search") ? "input" : "change", (e) => { targetObj[prop] = e.target.value.toLowerCase(); renderFn(); });
   bindFilter("searchScores", "query", state.libraryState, renderLibrary);
   bindFilter("sortScores", "sortBy", state.libraryState, renderLibrary);
@@ -498,7 +527,6 @@ const setupEventListeners = () => {
   document.getElementById("btnToggleFilters")?.addEventListener("click", () => { const f = document.getElementById("catalogFilters"); if (f) f.hidden = !f.hidden; });
   document.getElementById("btnToggleCodexFilters")?.addEventListener("click", () => { const f = document.getElementById("codexFilters"); if (f) f.hidden = !f.hidden; });
 
-  // Editor Inputs
   if (document.getElementById("scoreTitle")) {
     const debouncedRender = debounce(renderScore, 300);
     ["scoreTitle", "scoreComposer"].forEach(id => document.getElementById(id).addEventListener("input", (e) => { state.currentScore[id === "scoreTitle" ? "title" : "composer"] = e.target.value; debouncedRender(); }));
@@ -509,7 +537,11 @@ const setupEventListeners = () => {
     document.getElementById("btnAddMeasure").addEventListener("click", () => { state.currentScore.measures.push(newMeasure()); state.editorState.activeMeasure = state.currentScore.measures.length - 1; syncMeasureControls(); renderScore(); });
     document.getElementById("btnDeleteMeasure").addEventListener("click", async () => {
       if (state.currentScore.measures.length <= 1) return showToast(t("minMeasureAlert"), 'error');
-      if (await showConfirm("Eliminar compás", "Se borrarán todas las notas.", "Eliminar", true)) { state.currentScore.measures.splice(state.editorState.activeMeasure, 1); syncMeasureControls(); renderScore(); }
+      if (await showConfirm(t("delMeasureConfirm"), "Se borrarán todas las notas de este compás.", t("btnDelMeasure"), true)) { 
+        state.currentScore.measures.splice(state.editorState.activeMeasure, 1); 
+        syncMeasureControls(); 
+        renderScore(); 
+      }
     });
 
     ["repeatStart", "repeatEnd"].forEach(id => document.getElementById(id).addEventListener("change", (e) => { state.currentScore.measures[state.editorState.activeMeasure][id] = e.target.checked; renderScore(); }));
@@ -559,7 +591,6 @@ const setupEventListeners = () => {
       syncMeasureControls(); renderScore();
     });
 
-    // -- NEW LOGIC: CHORD BUTTON --
     document.getElementById("btnAddChordNote")?.addEventListener("click", () => {
       const { activeMeasure, activeStaff, editingNoteIdx } = state.editorState;
       const notes = state.currentScore.measures[activeMeasure]?.[activeStaff];
@@ -573,14 +604,11 @@ const setupEventListeners = () => {
 
       clearRedoStack();
       target.keys.push(k);
-      
-      // Auto-sort pitches (VexFlow requirement)
       target.keys.sort((a, b) => (a.octave * 10 + { 'c': 0, 'd': 1, 'e': 2, 'f': 3, 'g': 4, 'a': 5, 'b': 6 }[a.letter.toLowerCase()]) - (b.octave * 10 + { 'c': 0, 'd': 1, 'e': 2, 'f': 3, 'g': 4, 'a': 5, 'b': 6 }[b.letter.toLowerCase()]));
 
       syncMeasureControls(); renderScore();
     });
 
-    // Keyboard Arrow Navigation
     document.addEventListener("keydown", (e) => {
       if (document.getElementById("viewEditor").hidden || ['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
       const score = state.currentScore; if (!score || !score.measures) return;
@@ -620,7 +648,6 @@ const setupEventListeners = () => {
     });
   }
 
-  // Player UI Bindings
   const btnPlay = document.getElementById("plBtnPlay");
   if (btnPlay) {
     btnPlay.addEventListener("click", () => isAudioPlaying() ? pauseAudio() : playAudio());
