@@ -14,7 +14,8 @@ service cloud.firestore {
              payload.bpm is number && payload.bpm > 0 && payload.bpm <= 300 &&
              payload.composer is string && payload.composer.size() < 100 &&
              payload.id is string &&
-             payload.keySig is string;
+             payload.keySig is string &&
+             payload.measures is list;
     }
 
     // -- Access Rules --
