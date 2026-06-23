@@ -1,11 +1,10 @@
 /**
  * Polyphonic Audio Engine
- * Handles WebAudio timeline scheduling, polyphony, and UI synchronization.
+ * Handles WebAudio timeline scheduling, polyphony, dynamic anacrusis, and UI synchronization.
  */
-
 import * as Tone from 'tone';
 import { state } from '../core/state.js';
-import { measureNeededQuarters } from '../core/storage.js';
+import { measureNeededQuarters, quartersUsed } from '../core/storage.js';
 
 // -- Engine State --
 const AUDIO_CFG = { pianoUrl: "https://tonejs.github.io/audio/salamander/", baseVol: -2 };
@@ -70,9 +69,11 @@ const buildTimeline = () => {
 
   buildPlayOrder(score.measures).forEach((idx) => {
     measureEvents.push({ time: formatBBS(pos), idx });
+    const measure = score.measures[idx];
+
     ["treble", "bass"].forEach(staff => {
       let cursor = pos;
-      (score.measures[idx][staff] || []).forEach((n, nIdx) => {
+      (measure[staff] || []).forEach((n, nIdx) => {
         const durQ = getBaseDuration(n.duration) * (n.dotted ? 1.5 : 1);
         if (!n.rest && durQ > 0 && n.keys?.length > 0) {
           events.push({
@@ -85,7 +86,14 @@ const buildTimeline = () => {
         cursor += durQ;
       });
     });
-    pos += measureNeededQuarters(score.timeSig);
+
+    // Dynamic anacrusis jump calculation
+    const needed = measureNeededQuarters(score.timeSig);
+    const usedTreble = measure.treble ? quartersUsed(measure.treble) : 0;
+    const usedBass = measure.bass ? quartersUsed(measure.bass) : 0;
+    const maxUsed = Math.max(usedTreble, usedBass);
+    
+    pos += (maxUsed > 0 && maxUsed < needed) ? maxUsed : needed;
   });
 
   engine.quarters = pos;
@@ -139,7 +147,7 @@ const highlightSweep = (idx, sec) => {
   line.style.transform = `translateX(0px)`;
   line.setAttribute("x1", startX); line.setAttribute("y1", y - 10);
   line.setAttribute("x2", startX); line.setAttribute("y2", y + h + 10);
-  line.getBoundingClientRect(); // Reflow boundary
+  line.getBoundingClientRect(); 
   line.style.transition = `transform ${sec}s linear`;
   line.style.transform = `translateX(${endX - startX}px)`;
 };

@@ -1,45 +1,48 @@
+/**
+ * Print Stylesheet
+ * Overrides theme variables, hides UI components, and forces absolute black for rendering.
+ */
 @media print {
-  body { background: #fff !important; color: #000 !important; font-family: var(--font-display, Georgia, serif); }
+  /* -- Base & Layout Reset -- */
+  body, body.dark-theme, html, #viewEditor, .editor-layout, .paper-wrap { 
+    background: #FFFFFF !important; color: #000000 !important; font-family: var(--font-display, Georgia, serif);
+    padding: 0 !important; margin: 0 !important; display: block !important; 
+    box-shadow: none !important; border: none !important; 
+  }
   
+  /* -- Hide UI Framework -- */
   .topbar, .engrave-desk, .editor-subnav, .sitefooter, .paper-hint, 
   .player-bar, .modal-overlay, .editor-top-controls, .back-pill, 
-  #viewHome, #viewLibrary, .custom-toast, .sync-indicator, .btn-exit-zen { 
-    display: none !important; 
-  }
-  
-  html, body, #viewEditor, .editor-layout, .paper-wrap { 
-    background: #fff !important; 
-    padding: 0 !important; 
-    margin: 0 !important; 
-    display: block !important; 
-    overflow: visible !important;
-    height: auto !important;
-    box-shadow: none !important;
-    border: none !important;
-  }
+  #viewHome, #viewLibrary, .custom-toast, .sync-indicator, .btn-exit-zen { display: none !important; }
   
   ::-webkit-scrollbar { display: none !important; }
-  .measure-hit { display: none !important; }
-
   @page { size: A4 portrait; margin: 15mm 10mm 20mm 10mm; }
-  
+
+  /* -- Force Black Text on Dark Theme -- */
+  .score-letterhead *, .print-footer-content * { color: #000000 !important; }
+
+  /* -- Page Formatting -- */
   .paper-page { 
-    box-shadow: none !important; 
-    max-width: 100% !important; 
-    width: 100% !important;
-    min-width: auto !important; 
-    padding: 0 !important; 
-    margin: 0 0 50px 0 !important; 
-    page-break-after: always; 
-    break-after: page; 
-    position: relative; 
+    box-shadow: none !important; max-width: 100% !important; width: 100% !important; 
+    padding: 0 !important; margin: 0 0 50px 0 !important; 
+    page-break-after: always; break-after: page; position: relative; 
+  }
+  .paper-page:last-child { page-break-after: auto; break-after: auto; }
+  .paper-page svg { width: 100% !important; height: auto !important; max-height: 275mm !important; }
+
+  /* -- VexFlow SVG Override -- */
+  #vexPagesContainer svg path, 
+  #vexPagesContainer svg text, 
+  #vexPagesContainer svg rect:not(.measure-hit rect) { 
+    fill: #000000 !important; stroke: #000000 !important; 
   }
   
-  .paper-page:last-child { page-break-after: auto; break-after: auto; }
-  
-  .paper-page svg { width: 100% !important; height: auto !important; max-height: 275mm !important; }
-  
+  .measure-hit, #vexPagesContainer svg .measure-hit rect { 
+    display: none !important; fill: none !important; stroke: none !important; 
+  }
+
+  /* -- Headers & Footers -- */
   .print-header-content { display: flex !important; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 30px; font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; }
-  .print-footer-content { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 10px; color: #000; border-top: 1px dashed #000; padding-top: 8px; margin-top: 10px; }
+  .print-footer-content { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 10px; border-top: 1px dashed #000; padding-top: 8px; margin-top: 10px; }
   .print-logo-isotipo { height: 16px; width: auto; object-fit: contain; }
 }

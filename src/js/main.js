@@ -46,16 +46,18 @@ const handleNavigation = () => {
 
   if (hash.startsWith("#editor/") || hash.startsWith("#viewer/")) {
     const id = hash.split("/")[1];
-    state.currentScore = loadAll()[id] || state.publicScores.find(s => s.id === id);
-    
-    if (state.currentScore) {
-      state.isViewingPublic = !loadAll()[id];
-      if (hash.startsWith("#viewer/")) document.body.classList.add("is-viewer");
-      initEditor(views);
-      if (views.topNavLinks) views.topNavLinks.hidden = true; 
-    } else {
-      window.location.hash = "#catalogo";
-    }
+    const localScore = loadAll()[id];
+    const publicScore = state.publicScores.find(s => s.id === id);
+
+    // Reliable public vs local state routing
+    if (state.isViewingPublic && publicScore) state.currentScore = publicScore;
+    else if (localScore) { state.currentScore = localScore; state.isViewingPublic = false; }
+    else if (publicScore) { state.currentScore = publicScore; state.isViewingPublic = true; }
+    else { window.location.hash = "#catalogo"; return; }
+
+    if (hash.startsWith("#viewer/")) document.body.classList.add("is-viewer");
+    initEditor(views);
+    if (views.topNavLinks) views.topNavLinks.hidden = true; 
   } else if (hash === "#catalogo") {
     state.currentScore = null;
     state.isViewingPublic = false; 
@@ -366,10 +368,16 @@ const fetchAndRenderCodex = async () => {
         }
         fetchAndRenderCodex();
       } else if (action === "delete-codex") {
-        if (await showConfirm(t("deleteBtn"), "¿Eliminar definitivamente esta obra pública?", "Eliminar", true)) {
-          await firebase.firestore().collection("public_scores").doc(score.id).delete();
-          state.publicScores = state.publicScores.filter(s => s.id !== score.id);
-          fetchAndRenderCodex();
+        try {
+          if (await showConfirm(t("deleteBtn"), "¿Eliminar definitivamente esta obra pública?", "Eliminar", true)) {
+            await firebase.firestore().collection("public_scores").doc(score.id).delete();
+            state.publicScores = state.publicScores.filter(s => s.id !== score.id);
+            fetchAndRenderCodex();
+            showToast("Partitura eliminada del Códice", "success");
+          }
+        } catch(err) {
+          console.error("Delete Codex Error:", err);
+          showToast("Error al eliminar. Revisa la consola.", "error");
         }
       }
     });
@@ -460,10 +468,15 @@ const setupEventListeners = () => {
 
   document.getElementById("btnNewScore")?.addEventListener("click", () => { const score = newScore(); persistScore(score); window.location.hash = `#editor/${score.id}`; });
   
-  ["btnBackLibrary", "brandHome", "btnGoCatalog", "btnGoCodex", "btnGoCodexHero", "btnBackToMyCatalog"].forEach(id => {
+  // Fix Nav Bindings
+  document.getElementById("btnBackLibrary")?.addEventListener("click", () => {
+    window.location.hash = state.isViewingPublic ? "#codice" : "#catalogo";
+  });
+  
+  ["brandHome", "btnGoCatalog", "btnGoCodex", "btnGoCodexHero", "btnBackToMyCatalog"].forEach(id => {
     document.getElementById(id)?.addEventListener("click", () => {
       const paths = { brandHome: "#inicio", btnGoCatalog: "#catalogo", btnGoCodex: "#codice", btnGoCodexHero: "#codice", btnBackToMyCatalog: "#catalogo" };
-      window.location.hash = id === "btnBackLibrary" ? (state.isViewingPublic ? "#codice" : "#catalogo") : paths[id];
+      window.location.hash = paths[id];
     });
   });
 
