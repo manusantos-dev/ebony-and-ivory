@@ -3,9 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob: https://apis.google.com https://www.gstatic.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://lh3.googleusercontent.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://tonejs.github.io; media-src 'self' https://tonejs.github.io; frame-src 'self' https://*.firebaseapp.com;">
-<title>Ebony & Ivory</title>
-<link rel="icon" type="image/png" href="/assets/ebony-ivory-brand-mark.png">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://firebasestorage.googleapis.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com;"><link rel="icon" type="image/png" href="/assets/ebony-ivory-brand-mark.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/src/css/base.css">
@@ -161,7 +159,7 @@
 
 <main id="viewEditor" class="view" hidden>
   <div class="editor-layout" id="editorLayout">
-    
+
     <aside class="engrave-desk" id="engraveDesk">
       <div class="desk-section">
         <p class="desk-title" data-i18n="lblScoreMeta">Metadatos de la Obra</p>
@@ -225,14 +223,14 @@
           <button class="toggle-btn is-active" data-staff="treble" id="btnStaffTreble" data-i18n="lblTreble">Clave de Sol</button>
           <button class="toggle-btn" data-staff="bass" id="btnStaffBass" data-i18n="lblBass">Clave de Fa</button>
         </div>
-        
+
         <div class="note-list-container" id="noteListContainer"></div>
 
         <div class="note-builder">
             <div class="field-row note-row" style="margin-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px;">
               <label class="check-inline" style="margin:0;"><input type="checkbox" id="isRest"> <span data-i18n="lblRest">Insertar como Silencio</span></label>
             </div>
-            
+
             <div class="field-row" id="pitchFields" style="gap: 8px;">
               <div style="flex:1.2;">
                   <label class="field-label" data-i18n="lblPitch">Nota</label>
@@ -263,7 +261,7 @@
               <button class="dur-btn" data-dur="8" title="Corchea"><svg width="24" height="24" viewBox="0 0 24 24"><ellipse cx="8" cy="16" rx="4.5" ry="3" fill="currentColor" transform="rotate(-15 8 16)"/><line x1="12" y1="15" x2="12" y2="4" stroke="currentColor" stroke-width="2"/><path d="M12 4 Q17 4 18 10" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
               <button class="dur-btn" data-dur="16" title="Semicorchea"><svg width="24" height="24" viewBox="0 0 24 24"><ellipse cx="8" cy="17" rx="4.5" ry="3" fill="currentColor" transform="rotate(-15 8 17)"/><line x1="12" y1="16" x2="12" y2="5" stroke="currentColor" stroke-width="2"/><path d="M12 5 Q16 5 17 9 M12 9 Q16 9 17 13" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
             </div>
-            
+
             <div style="display: flex; justify-content: space-between; align-items: center;">
                <label class="check-inline" style="margin:0;"><input type="checkbox" id="isDotted"> <span data-i18n="lblDotted">Añadir Puntillo</span></label>
             </div>
@@ -314,10 +312,10 @@
     </aside>
 
     <div class="editor-main-area">
-      
+
       <div class="editor-top-controls">
         <button class="control-pill" id="btnBackLibrary" data-i18n="backBtn" hidden>← Volver</button>
-        
+
         <div class="player-bar-wrapper">
           <div class="player-bar" id="playerBar">
             <button class="pl-btn" id="plBtnRewind" title="Volver al inicio"><svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg></button>
