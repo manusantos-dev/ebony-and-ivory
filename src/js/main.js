@@ -7,7 +7,7 @@
 import { state, resetEditorState } from "./core/state.js";
 import { on, emit } from "./core/events.js";
 import { t, setLang } from "./ui/i18n.js";
-import { loadAll, uid, nextPlateNumber, plateLabel, slugify, formatDate, escapeHtml, measureNeededQuarters, quartersUsed, newMeasure, newScore, downloadBlob, persistScore, deleteScoreById } from "./core/storage.js";
+import { loadAll, saveAll, uid, nextPlateNumber, plateLabel, slugify, formatDate, escapeHtml, measureNeededQuarters, quartersUsed, newMeasure, newScore, downloadBlob, persistScore, deleteScoreById } from "./core/storage.js";
 import { DUR_Q } from "./core/config.js";
 import { renderCustomSelects, updateCustomSelectUI, setupCustomSelect } from "./ui/custom-select.js";
 import { renderScore } from "./features/notation-renderer.js";
@@ -29,6 +29,9 @@ state.codexState = { query: "", sortBy: "likesDesc", filterTime: "all", filterKe
 state.publicScores = [];
 state.isViewingPublic = false;
 state.editorState.layoutMode = "continuous";
+
+// I18N: Inline localization helper for dynamic alerts without dictionary dependencies
+const i18nText = (es, en) => state.lang === 'es' ? es : en;
 
 const applyLayoutMode = () => {
   const wrap = document.getElementById("paperWrap");
@@ -259,8 +262,10 @@ const renderNoteList = () => {
   }));
 };
 
+// UI: Card generator with strict ownership UI rendering
 const generateCardScore = (score, context) => {
   const isAdmin = state.currentUser?.email === "jm.santos.dev@gmail.com";
+  const isOwner = state.currentUser?.uid === score.publisherUid; // FIX: Determine true ownership
   const diffColors = { beginner: "var(--color-success)", intermediate: "#E67E22", advanced: "var(--color-danger)" };
   const dDot = `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background-color:${diffColors[score.difficulty || "beginner"]}; margin-right:6px;" title="Dificultad"></span>`;
 
@@ -275,8 +280,8 @@ const generateCardScore = (score, context) => {
       <div class="card-actions-row">
         <button class="btn-card" data-action="view">${t("viewBtn")}</button>
         <button class="btn-card" data-action="edit">${t("editBtn")}</button>
-        <button class="btn-card" data-action="clone-private">${t("cloneBtn")}</button>
-        <button class="btn-card" data-action="publish" title="Publicar en El Códice">${t("publishBtn")}</button>
+        <button class="btn-card" data-action="clone-private">${i18nText("Duplicar", "Clone")}</button>
+        <button class="btn-card" data-action="publish" title="${i18nText("Publicar en El Códice", "Publish to Codex")}">${t("publishBtn")}</button>
         <button class="btn-card btn-danger-card" data-action="delete">🗑</button>
       </div>`;
   } else {
@@ -287,15 +292,15 @@ const generateCardScore = (score, context) => {
       <span class="card-eyebrow" style="text-transform: lowercase;">${t("byPublisher")} ${publisherLabel}</span>
       <div style="position:absolute; top: 12px; right: 12px; display:flex; gap: 8px;">
         <button class="btn-pin" data-action="like-codex" style="color:var(--color-danger);" title="Me gusta">${hasLiked ? '❤️' : '🤍'} ${likesCount}</button>
-        <span style="font-size: 11px; color: var(--color-ink-soft); display:flex; align-items:center;" title="Veces guardada">⎘ ${score.copies || 0}</span>
+        <span style="font-size: 11px; color: var(--color-ink-soft); display:flex; align-items:center;" title="${i18nText("Veces guardada", "Times copied")}">⎘ ${score.copies || 0}</span>
       </div>
       <h3>${dDot}${escapeHtml(score.title || t("untitled"))}</h3>
       <p class="composer">${escapeHtml(score.composer || t("unknownAuthor"))}</p>
       <div class="meta"><span>${score.measures?.length || 0} ${t("measuresTxt")}</span></div>
       <div class="card-actions-row">
         <button class="btn-card" data-action="view-codex">${t("viewBtn")}</button>
-        <button class="btn-card" data-action="clone-codex">${t("cloneCodexBtn")}</button>
-        ${isAdmin ? `<button class="btn-card btn-danger-card" data-action="delete-codex" title="${t("deleteBtn")}">🗑</button>` : ''}
+        <button class="btn-card" data-action="clone-codex">${i18nText("Guardar copia", "Save copy")}</button>
+        ${(isAdmin || isOwner) ? `<button class="btn-card btn-danger-card" data-action="delete-codex" title="${t("deleteBtn")}">🗑</button>` : ''}
       </div>`;
   }
 
@@ -329,6 +334,7 @@ const filterAndSortScores = (scores, libState) => {
   });
 };
 
+// UI: Codex grid renderer with localized dynamic toasts
 const fetchAndRenderCodex = async () => {
   const grid = document.getElementById("codexGrid");
   if (!grid) return;
@@ -351,17 +357,23 @@ const fetchAndRenderCodex = async () => {
     const card = generateCardScore(score, "codex");
     card.addEventListener("click", async (e) => {
       const action = e.target.closest("[data-action]")?.dataset.action;
-      if (!action) { state.isViewingPublic = true; state.currentScore = score; window.location.hash = `#viewer/${score.id}`; return; }
+
+      if (!action || action === "view-codex") {
+        state.isViewingPublic = true;
+        state.currentScore = score;
+        window.location.hash = `#viewer/${score.id}`;
+        return;
+      }
       e.stopPropagation();
 
       if (action === "clone-codex") {
         const copy = { ...score, id: uid(), plate: nextPlateNumber(), createdAt: Date.now(), updatedAt: Date.now() };
         ["publisherName", "publisherUid", "likes", "views", "copies"].forEach(k => delete copy[k]);
         persistScore(copy);
-        showToast(t("savedToCatalog"), "success");
+        showToast(i18nText("Guardado en tu catálogo", "Saved to your catalog"), "success");
         firebase.firestore().collection("public_scores").doc(score.id).update({ copies: firebase.firestore.FieldValue.increment(1) });
       } else if (action === "like-codex") {
-        if (!state.currentUser) return showToast("Inicia sesión para dar Me Gusta", "error");
+        if (!state.currentUser) return showToast(i18nText("Inicia sesión para dar Me Gusta", "Log in to Like scores"), "error");
         const docRef = firebase.firestore().collection("public_scores").doc(score.id);
         const u = state.currentUser.uid;
         if (score.likedBy?.includes(u)) {
@@ -374,15 +386,15 @@ const fetchAndRenderCodex = async () => {
         fetchAndRenderCodex();
       } else if (action === "delete-codex") {
         try {
-          if (await showConfirm(t("deleteBtn"), "¿Eliminar definitivamente esta obra pública?", "Eliminar", true)) {
+          if (await showConfirm(t("deleteBtn"), i18nText("¿Eliminar definitivamente esta obra pública?", "Permanently delete this public score?"), t("deleteBtn"), true)) {
             await firebase.firestore().collection("public_scores").doc(score.id).delete();
             state.publicScores = state.publicScores.filter(s => s.id !== score.id);
             fetchAndRenderCodex();
-            showToast("Partitura eliminada del Códice", "success");
+            showToast(i18nText("Partitura eliminada del Códice", "Score deleted from Codex"), "success");
           }
         } catch(err) {
           console.error("Delete Codex Error:", err);
-          showToast("Error al eliminar. Revisa la consola.", "error");
+          showToast(i18nText("Error al eliminar. Revisa la consola.", "Delete error. Check console."), "error");
         }
       }
     });
@@ -390,6 +402,7 @@ const fetchAndRenderCodex = async () => {
   });
 };
 
+// UI: Private library renderer with localized dynamic toasts
 const renderLibrary = () => {
   const grid = document.getElementById("libraryGrid");
   const empty = document.getElementById("libraryEmpty");
@@ -414,20 +427,23 @@ const renderLibrary = () => {
       e.stopPropagation();
 
       if (act === "pin") { score.pinned = !score.pinned; persistScore(score); renderLibrary(); }
-      else if (act === "clone-private") { persistScore({ ...score, id: uid(), plate: nextPlateNumber(), title: `${score.title} (Copia)`, createdAt: Date.now(), updatedAt: Date.now() }); renderLibrary(); showToast("Partitura duplicada", "success"); }
+      else if (act === "clone-private") { persistScore({ ...score, id: uid(), plate: nextPlateNumber(), title: `${score.title} (Copia)`, createdAt: Date.now(), updatedAt: Date.now() }); renderLibrary(); showToast(i18nText("Partitura duplicada", "Score cloned"), "success"); }
       else if (act === "publish") publishToCodex(score);
       else if (act === "edit") window.location.hash = `#editor/${score.id}`;
       else if (act === "view") window.location.hash = `#viewer/${score.id}`;
       else if (act === "delete") {
-        if (await showConfirm(t("delConfirm"), "¿Seguro que quieres borrar esta obra de tu catálogo?", t("deleteBtn"), true)) {
+        if (await showConfirm(t("delConfirm"), i18nText("¿Seguro que quieres borrar esta obra de tu catálogo?", "Are you sure you want to delete this score from your catalog?"), t("deleteBtn"), true)) {
           if (state.currentUser) {
             try {
               await firebase.firestore().collection("users").doc(state.currentUser.uid).collection("scores").doc(score.id).delete();
-              showToast("Obra eliminada de la nube", "success");
+              showToast(i18nText("Obra eliminada del catálogo y la nube", "Score deleted from catalog and cloud"), "success");
             } catch(err) {
-              console.warn("Bloqueo CORS/Zero-Trust de Firebase detectado:", err);
-              showToast("Aviso: El entorno de desarrollo impidió borrarla de la nube. Usa la web oficial.", "error");
+              console.error("Cloud delete error:", err);
+              showToast(i18nText("Error de permisos en la nube. La partitura no se ha borrado.", "Cloud permission error. Score not deleted."), "error");
+              return;
             }
+          } else {
+            showToast(i18nText("Obra eliminada localmente", "Score deleted locally"), "success");
           }
           deleteScoreById(score.id);
           renderLibrary();
@@ -662,20 +678,21 @@ const setupEventListeners = () => {
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
+  // INIT: Core environment & theme preferences
   await checkMaintenanceStatus();
-
-  const savedTheme = localStorage.getItem('theme') || 'light';
   const themeBtn = document.getElementById('themeToggleBtn');
-  if (savedTheme === 'dark') { document.body.classList.add('dark-theme'); if (themeBtn) themeBtn.textContent = '☀️'; }
+  const isDark = (localStorage.getItem('theme') || 'light') === 'dark';
+  if (isDark) { document.body.classList.add('dark-theme'); if (themeBtn) themeBtn.textContent = '☀️'; }
   if (themeBtn) themeBtn.onclick = () => {
-    document.body.classList.toggle('dark-theme');
-    const isDark = document.body.classList.contains('dark-theme');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    themeBtn.textContent = isDark ? '☀️' : '🌙';
+    const active = document.body.classList.toggle('dark-theme');
+    localStorage.setItem('theme', active ? 'dark' : 'light');
+    themeBtn.textContent = active ? '☀️' : '🌙';
   };
 
-  initFirebase(); setupAuthUI(); setupProfileUI(); initShortcuts(); initDragAndDrop();
+  // INIT: External services & modular features
+  initFirebase(); setupAuthUI(); setupProfileUI(); initShortcuts(); initDragAndDrop(); setupEventListeners();
 
+  // UI: Canvas zoom handling via mouse wheel
   const paperWrap = document.getElementById('paperWrap');
   if (paperWrap) {
     let zoom = 1;
@@ -684,8 +701,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }, { passive: false });
   }
 
-  setupEventListeners();
-
+  // UI: Background animations rendering (Floating notes)
   const wrapSpawn = document.getElementById("floatingNotes");
   if (wrapSpawn && wrapSpawn.childElementCount === 0) {
     const glyphs = ["♪", "♫", "♩", "𝄞"];
@@ -696,14 +712,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  // UI: Sticky header dimensional observer
   const header = document.getElementById("mainHeader");
   if (header && typeof ResizeObserver !== "undefined") new ResizeObserver(syncEditorStickyOffset).observe(header);
   window.addEventListener("resize", syncEditorStickyOffset);
 
+  // SYNC: Local state event listeners
   on("langchange", () => { renderCustomSelects(); if (!document.getElementById("viewLibrary")?.hidden) renderLibrary(); if (!document.getElementById("viewCodex")?.hidden) fetchAndRenderCodex(); if (!document.getElementById("viewEditor")?.hidden) renderScore(); updateViewerButtonText(); });
   on("scoreschanged", () => { if (!document.getElementById("viewLibrary")?.hidden) renderLibrary(); });
   on("measureselected", syncMeasureControls);
 
+  // ROUTER: Navigation handling & auto-lang detection
   setLang((navigator.language || navigator.userLanguage || "en").toLowerCase().startsWith("es") ? "es" : "en");
   window.addEventListener("hashchange", handleNavigation);
   if (!window.location.hash || window.location.hash === "#") window.location.hash = "#inicio"; else handleNavigation();

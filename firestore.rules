@@ -2,6 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // -- Auth Helpers --
+    function isAuthenticated() { return request.auth != null; }
+    function isOwner(uid) { return isAuthenticated() && request.auth.uid == uid; }
+    // FIX: Simplified admin check to avoid nested token lookups that might fail
+    function isAdmin() { return isAuthenticated() && request.auth.token.email == "jm.santos.dev@gmail.com"; }
+
     // -- Schema Validation --
     function isValidScore() {
       let payload = request.resource.data;
@@ -16,14 +22,16 @@ service cloud.firestore {
     // -- Access Rules --
     match /users/{userId}/scores/{scoreId} {
       allow read: if isOwner(userId);
-      allow write: if isOwner(userId) && isValidScore();
+      allow create, update: if isOwner(userId) && isValidScore();
+      allow delete: if isOwner(userId);
     }
 
     match /public_scores/{scoreId} {
       allow read: if true;
       allow create: if isAuthenticated() && request.resource.data.publisherUid == request.auth.uid && isValidScore();
-      allow update: if isOwner(resource.data.publisherUid) && isValidScore();
-      allow delete: if isOwner(resource.data.publisherUid) || isAdmin();
+      allow update: if isAuthenticated() && resource.data.get('publisherUid', '') == request.auth.uid && isValidScore();
+      // FIX: Reordered logic to check admin status first and safely fallback to owner check
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.get('publisherUid', '') == request.auth.uid);
     }
   }
 }

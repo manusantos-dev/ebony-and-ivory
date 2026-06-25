@@ -19,31 +19,48 @@ let lastSnapshotMap = {};
 
 const snapshotOf = (map) => Object.fromEntries(Object.entries(map).map(([k, v]) => [k, v.updatedAt || 0]));
 
+// SYNC: Two-way cloud synchronization logic
 const syncToCloud = () => {
   if (isMaintenanceMode || !state.currentUser || !db) return;
-  
+
+  let all;
+  try {
+    all = loadAll();
+    // FIX: Guard clause to prevent mass cloud deletion if local storage fails to parse
+    if (Object.keys(all).length === 0 && Object.keys(lastSnapshotMap).length > 0) {
+      if (localStorage.getItem(STORAGE_KEY)) {
+         console.warn("Sync aborted: Local data present but unreadable. Preventing cloud wipe.");
+         return;
+      }
+    }
+  } catch (e) {
+    return;
+  }
+
   const coll = db.collection("users").doc(state.currentUser.uid).collection("scores");
-  const all = loadAll();
   const batch = db.batch();
   let writes = 0;
-  
+
   Object.keys(all).forEach((id) => {
     if (!lastSnapshotMap[id] || lastSnapshotMap[id] !== (all[id].updatedAt || 0)) {
       batch.set(coll.doc(id), all[id]);
       writes++;
     }
   });
-  
+
   Object.keys(lastSnapshotMap).forEach((id) => {
     if (!all[id]) { batch.delete(coll.doc(id)); writes++; }
   });
-  
+
   if (writes > 0) {
     showSyncing();
     batch.commit().then(() => {
       lastSnapshotMap = snapshotOf(all);
       showSynced();
-    }).catch(showSynced);
+    }).catch((err) => {
+       console.error("Cloud batch commit failed:", err);
+       showSynced();
+    });
   }
 };
 
@@ -58,6 +75,7 @@ export const initFirebase = () => {
     db = firebase.firestore();
 
     auth.onAuthStateChanged((user) => {
+      // INIT: Set global state immediately
       state.currentUser = user;
       updateAccountUI();
       emit("authchange", user);
@@ -65,25 +83,32 @@ export const initFirebase = () => {
       if (user) {
         lastSnapshotMap = {};
         const coll = db.collection("users").doc(user.uid).collection("scores");
-        
+
+        // SYNC: Listen to cloud data and hydrate local storage
         unsubscribeSnapshot = coll.onSnapshot((snap) => {
           const cloudMap = {};
           snap.forEach((doc) => { cloudMap[doc.id] = doc.data(); });
           const localAll = loadAll();
           let changed = false;
-          
+
           Object.keys(cloudMap).forEach((id) => {
+            // FIX: Hydrate logic to accept cloud data if local is older or missing
             if (!localAll[id] || (cloudMap[id].updatedAt || 0) > (localAll[id].updatedAt || 0)) {
               localAll[id] = cloudMap[id];
               changed = true;
             }
           });
-          
+
           if (changed) {
             saveAll(localAll);
             lastSnapshotMap = snapshotOf(localAll);
+            // FIX: Emit global event to trigger UI re-renders across the app
             emit("scoreschanged");
+            showToast("☁️ Catálogo sincronizado", "success");
           }
+        }, (error) => {
+           console.error("Firebase sync error:", error);
+           showToast("Error conectando con la base de datos.", "error");
         });
 
         if (pollTimer) clearInterval(pollTimer);
@@ -94,6 +119,8 @@ export const initFirebase = () => {
         state.currentScore = null;
         if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        // FIX: Update UI immediately upon logout to show empty state
+        emit("scoreschanged");
         if (!["#ejemplo", "#inicio"].includes(window.location.hash)) window.location.hash = "#inicio";
       }
     });
@@ -128,16 +155,25 @@ export const updateAccountUI = () => {
   }
 };
 
+// I18N: Comprehensive Firebase error translation mapping and fallback
 export const translateFirebaseError = (err) => {
+  const isEs = state.lang === "es";
+  const code = err?.code || "unknown";
+
   const map = {
-    "auth/invalid-email": state.lang === "es" ? "Email no válido." : "Invalid email.",
-    "auth/user-not-found": state.lang === "es" ? "Cuenta no encontrada." : "No account found.",
-    "auth/wrong-password": state.lang === "es" ? "Contraseña incorrecta." : "Wrong password.",
-    "auth/email-already-in-use": state.lang === "es" ? "Email en uso." : "Email in use.",
-    "auth/weak-password": state.lang === "es" ? "La contraseña es muy débil." : "Weak password.",
-    "auth/requires-recent-login": t("reauthNeeded")
+    "auth/invalid-email": isEs ? "Email no válido." : "Invalid email.",
+    "auth/user-not-found": isEs ? "Cuenta no encontrada." : "No account found.",
+    "auth/wrong-password": isEs ? "Contraseña incorrecta." : "Wrong password.",
+    "auth/email-already-in-use": isEs ? "Este email ya está registrado." : "Email already in use.",
+    "auth/weak-password": isEs ? "La contraseña es muy débil." : "Weak password.",
+    "auth/requires-recent-login": isEs ? "Por seguridad, cierra sesión y vuelve a entrar." : "For security, please log out and log in again.",
+    "auth/account-exists-with-different-credential": isEs ? "El email ya usa otro método (ej. Google)." : "Email uses a different login method.",
+    "auth/popup-closed-by-user": isEs ? "Inicio de sesión cancelado." : "Login cancelled.",
+    "auth/network-request-failed": isEs ? "Error de conexión a internet." : "Network connection error.",
+    "auth/too-many-requests": isEs ? "Demasiados intentos. Prueba más tarde." : "Too many requests. Try again later."
   };
-  return map[err?.code] || t("genericError");
+
+  return map[code] || (isEs ? `Error de acceso (${code})` : `Auth error (${code})`);
 };
 
 export const processProfileImage = (file, callback) => {
@@ -199,11 +235,11 @@ export const setupAuthUI = () => {
     const errBox = document.getElementById("authError");
     errBox.hidden = true;
     if (!auth) { errBox.hidden = false; errBox.textContent = "Error crítico."; return; }
-    
+
     const isReg = document.getElementById("authTabRegister").classList.contains("is-active");
     const email = document.getElementById("authEmail").value;
     const pass = document.getElementById("authPassword").value;
-    
+
     const promise = isReg ? auth.createUserWithEmailAndPassword(email, pass) : auth.signInWithEmailAndPassword(email, pass);
     promise.then(() => overlay.hidden = true).catch(err => { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); });
   });
@@ -246,7 +282,7 @@ export const setupProfileUI = () => {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
     btn.disabled = true;
-    
+
     const updates = { displayName: document.getElementById("profDisplayName").value };
     const fileInput = document.getElementById("profPhotoFile");
 
@@ -263,6 +299,7 @@ export const setupProfileUI = () => {
     }
   });
 
+  // ACTIONS: Account deletion logic with proper security re-auth warnings
   const btnDeleteAcc = document.getElementById("btnDeleteAccount");
   if (btnDeleteAcc) {
     btnDeleteAcc.addEventListener("click", async () => {
@@ -270,17 +307,21 @@ export const setupProfileUI = () => {
         try {
           const user = firebase.auth().currentUser;
           if (user) {
+            if (unsubscribeSnapshot) {
+              unsubscribeSnapshot();
+              unsubscribeSnapshot = null;
+            }
             await user.delete();
-            showToast("Tu cuenta y tus datos han sido eliminados.", "success");
-            document.getElementById("profileModal").hidden = true;
+            showToast(state.lang === 'es' ? "Tu cuenta y tus datos han sido eliminados." : "Your account and data have been deleted.", "success");
+
+            const overlay = document.getElementById("profileModalOverlay");
+            if (overlay) overlay.hidden = true;
           }
         } catch (error) {
-          console.error("Error al borrar cuenta:", error);
-          if (error.code === 'auth/requires-recent-login') {
-            showToast(t("reauthNeeded"), "error");
-          } else {
-            showToast(t("genericError"), "error");
-          }
+          console.error("Account Deletion Error:", error);
+          // FIX: Meaningful translation for Firebase security requirement
+          const reauthMsg = state.lang === 'es' ? "Por seguridad, cierra sesión y vuelve a entrar para borrar tu cuenta." : "For security, please log out and log in again to delete your account.";
+          showToast(error.code === 'auth/requires-recent-login' ? reauthMsg : t("genericError"), "error");
         }
       }
     });
