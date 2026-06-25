@@ -65,8 +65,13 @@ export const newScore = () => ({
 
 // -- Actions --
 export const persistScore = (score) => {
-  if (score.isExample) return;
+  if (score.isExample) { return; }
+
+  // SECURITY: Strict sanitization layer prior to payload consolidation
+  score.title = escapeHtml(score.title?.substring(0, 100));
+  score.composer = escapeHtml(score.composer?.substring(0, 100));
   score.updatedAt = Date.now();
+
   const all = loadAll();
   all[score.id] = migratePolyphony(score);
   saveAll(all);

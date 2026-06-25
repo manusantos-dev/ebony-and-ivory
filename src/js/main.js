@@ -26,7 +26,7 @@ import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
 
 state.codexState = { query: "", sortBy: "likesDesc", filterTime: "all", filterKey: "all", filterHands: "all" };
-state.publicScores = []; 
+state.publicScores = [];
 state.isViewingPublic = false;
 state.editorState.layoutMode = "continuous";
 
@@ -66,10 +66,10 @@ const handleNavigation = () => {
 
     if (hash.startsWith("#viewer/")) document.body.classList.add("is-viewer");
     initEditor(views);
-    if (views.topNavLinks) views.topNavLinks.hidden = true; 
+    if (views.topNavLinks) views.topNavLinks.hidden = true;
   } else if (hash === "#catalogo") {
     state.currentScore = null;
-    state.isViewingPublic = false; 
+    state.isViewingPublic = false;
     ["viewLibrary", "libraryActions", "topNavLinks", "btnTopCodex"].forEach(id => views[id] && (views[id].hidden = false));
     if (views.btnTopCatalog) views.btnTopCatalog.hidden = true;
     document.title = `${t("catalogTitle")} — Ebony & Ivory`;
@@ -81,18 +81,18 @@ const handleNavigation = () => {
     ["viewCodex", "topNavLinks", "btnTopCatalog"].forEach(id => views[id] && (views[id].hidden = false));
     if (views.btnTopCodex) views.btnTopCodex.hidden = true;
     document.title = `${t("codexBtn")} — Ebony & Ivory`;
-    fetchAndRenderCodex(); 
+    fetchAndRenderCodex();
     window.scrollTo(0, 0);
   } else {
     state.currentScore = null;
     state.isViewingPublic = false;
     if (views.viewHome) views.viewHome.hidden = false;
-    if (views.topNavLinks) views.topNavLinks.hidden = true; 
+    if (views.topNavLinks) views.topNavLinks.hidden = true;
     document.body.classList.add("is-home");
     document.title = "Ebony & Ivory";
     window.scrollTo(0, 0);
   }
-  
+
   if (views.btnBackLibrary) views.btnBackLibrary.hidden = !["#editor/", "#viewer/"].some(h => hash.startsWith(h));
   updateViewerButtonText();
 };
@@ -129,7 +129,7 @@ const initEditor = (views) => {
   resetEditorState();
   state.editorState.layoutMode = preservedLayoutMode;
   applyLayoutMode();
-  
+
   ["viewEditor", "editorActions"].forEach(id => views[id] && (views[id].hidden = false));
   document.title = `${state.currentScore.title || t("untitled")} — Ebony & Ivory`;
 
@@ -137,7 +137,7 @@ const initEditor = (views) => {
   setVal("scoreTitle", state.currentScore.title || "");
   setVal("scoreComposer", state.currentScore.composer || "");
   setVal("timeSig", state.currentScore.timeSig || "4/4");
-  setVal("scoreDifficulty", state.currentScore.difficulty || "beginner"); 
+  setVal("scoreDifficulty", state.currentScore.difficulty || "beginner");
   setVal("plBpm", state.currentScore.bpm || 100);
   updateCustomSelectUI("customKeySig", state.currentScore.keySig || "C");
 
@@ -171,12 +171,12 @@ const loadNoteIntoForm = (n, idx) => {
   isRest.dispatchEvent(new Event("change"));
 
   if (!n.rest && n.keys?.length > 0) {
-    const primaryKey = n.keys[0]; 
+    const primaryKey = n.keys[0];
     document.getElementById("pitchLetter").value = primaryKey.letter;
     document.getElementById("pitchAccidental").value = primaryKey.accidental || "";
     document.getElementById("pitchOctave").value = primaryKey.octave;
   }
-  
+
   state.editorState.duration = n.duration;
   document.querySelectorAll(".dur-btn").forEach(b => b.classList.toggle("is-active", b.dataset.dur === n.duration));
   document.getElementById("isDotted").checked = !!n.dotted;
@@ -193,7 +193,7 @@ const loadNoteIntoForm = (n, idx) => {
 
 const syncMeasureControls = () => {
   const score = state.currentScore;
-  state.editorState.editingNoteIdx = null; 
+  state.editorState.editingNoteIdx = null;
   state.editorState.activeMeasure = Math.max(0, Math.min(state.editorState.activeMeasure, score.measures.length - 1));
   const m = score.measures[state.editorState.activeMeasure];
 
@@ -209,14 +209,14 @@ const renderNoteList = () => {
   const container = document.getElementById("noteListContainer");
   if (!container || !state.currentScore) return;
   const notes = state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff] || [];
-  
+
   container.innerHTML = "";
   const btnAdd = document.getElementById("btnAddNote");
   if (btnAdd && state.editorState.editingNoteIdx == null) {
     btnAdd.textContent = t("btnAddNote");
     Object.assign(btnAdd.style, { background: "", borderColor: "", color: "" });
   }
-  
+
   let draggedIdx = null;
 
   notes.forEach((n, idx) => {
@@ -228,7 +228,7 @@ const renderNoteList = () => {
 
     const symbol = n.rest ? "Sil." : (n.keys || []).map(k => `${k.letter}${k.accidental || ""}${k.octave}`).join("+");
     tag.innerHTML = `<span class="note-text" style="cursor:pointer;" title="Clic para Editar">${symbol}</span> <span class="note-tag-del" data-idx="${idx}" title="Eliminar">✕</span>`;
-    
+
     tag.addEventListener("dragstart", (e) => { draggedIdx = idx; tag.style.opacity = "0.4"; e.dataTransfer.effectAllowed = "move"; });
     tag.addEventListener("dragend", () => { tag.style.opacity = "1"; draggedIdx = null; });
     tag.addEventListener("dragover", (e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; });
@@ -237,15 +237,15 @@ const renderNoteList = () => {
       if (draggedIdx === null || draggedIdx === idx) return;
       const staffNotes = state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff];
       staffNotes.splice(idx, 0, staffNotes.splice(draggedIdx, 1)[0]);
-      state.editorState.editingNoteIdx = null; 
+      state.editorState.editingNoteIdx = null;
       syncMeasureControls();
       renderScore();
     });
 
     tag.querySelector('.note-text').addEventListener("click", () => {
-      if (state.editorState.editingNoteIdx !== null && state.editorState.editingNoteIdx !== idx) saveCurrentNote(); 
+      if (state.editorState.editingNoteIdx !== null && state.editorState.editingNoteIdx !== idx) saveCurrentNote();
       loadNoteIntoForm(n, idx);
-      renderNoteList(); 
+      renderNoteList();
     });
     container.appendChild(tag);
   });
@@ -394,10 +394,10 @@ const renderLibrary = () => {
   const grid = document.getElementById("libraryGrid");
   const empty = document.getElementById("libraryEmpty");
   if (!grid) return;
-  
+
   const scores = filterAndSortScores(Object.values(loadAll()), state.libraryState);
   grid.innerHTML = "";
-  
+
   if (scores.length === 0) {
     if (empty) empty.hidden = false;
     grid.hidden = true;
@@ -412,26 +412,26 @@ const renderLibrary = () => {
       const act = e.target.closest("[data-action]")?.dataset.action;
       if (!act) { window.location.hash = `#viewer/${score.id}`; return; }
       e.stopPropagation();
-      
+
       if (act === "pin") { score.pinned = !score.pinned; persistScore(score); renderLibrary(); }
       else if (act === "clone-private") { persistScore({ ...score, id: uid(), plate: nextPlateNumber(), title: `${score.title} (Copia)`, createdAt: Date.now(), updatedAt: Date.now() }); renderLibrary(); showToast("Partitura duplicada", "success"); }
       else if (act === "publish") publishToCodex(score);
       else if (act === "edit") window.location.hash = `#editor/${score.id}`;
       else if (act === "view") window.location.hash = `#viewer/${score.id}`;
-      else if (act === "delete") { 
-        if (await showConfirm(t("delConfirm"), "¿Seguro que quieres borrar esta obra de tu catálogo?", t("deleteBtn"), true)) { 
-          if (state.currentUser) { 
-            try { 
-              await firebase.firestore().collection("users").doc(state.currentUser.uid).collection("scores").doc(score.id).delete(); 
+      else if (act === "delete") {
+        if (await showConfirm(t("delConfirm"), "¿Seguro que quieres borrar esta obra de tu catálogo?", t("deleteBtn"), true)) {
+          if (state.currentUser) {
+            try {
+              await firebase.firestore().collection("users").doc(state.currentUser.uid).collection("scores").doc(score.id).delete();
               showToast("Obra eliminada de la nube", "success");
-            } catch(err) { 
+            } catch(err) {
               console.warn("Bloqueo CORS/Zero-Trust de Firebase detectado:", err);
               showToast("Aviso: El entorno de desarrollo impidió borrarla de la nube. Usa la web oficial.", "error");
-            } 
-          } 
-          deleteScoreById(score.id); 
-          renderLibrary(); 
-        } 
+            }
+          }
+          deleteScoreById(score.id);
+          renderLibrary();
+        }
       }
     });
     grid.appendChild(card);
@@ -444,7 +444,7 @@ const publishToCodex = async (score) => {
     await firebase.firestore().collection("public_scores").doc(score.id).set({
       ...score, publisherUid: state.currentUser.uid, publisherName: state.currentUser.displayName || state.currentUser.email || "Anónimo", likes: 0, views: 0
     });
-    state.publicScores = []; 
+    state.publicScores = [];
     showToast("¡Partitura inmortalizada en El Códice!", "success");
   } catch(e) { showToast("Error al publicar: " + e.message, "error"); }
 };
@@ -454,10 +454,10 @@ const setupEventListeners = () => {
   if (layoutBtn) {
     state.editorState.layoutMode = state.editorState.layoutMode || "continuous";
     layoutBtn.innerHTML = state.editorState.layoutMode === "continuous" ? "📜" : "📖";
-    
+
     layoutBtn.addEventListener("click", () => {
       state.editorState.layoutMode = state.editorState.layoutMode === "continuous" ? "book" : "continuous";
-      state.editorState.bookSpread = 0; 
+      state.editorState.bookSpread = 0;
       applyLayoutMode();
       renderScore();
     });
@@ -479,7 +479,7 @@ const setupEventListeners = () => {
   document.querySelectorAll(".lang-btn").forEach(btn => btn.addEventListener("click", () => setLang(btn.dataset.lang)));
   document.getElementById("btnExportJson")?.addEventListener("click", (e) => { e.preventDefault(); if(state.currentScore) downloadBlob(`${slugify(state.currentScore.title)}.json`, JSON.stringify(state.currentScore, null, 2)); });
   document.getElementById("btnExportPdf")?.addEventListener("click", (e) => { e.preventDefault(); if(!state.currentScore) return; const oTitle = document.title; document.title = `${(state.currentScore.title || t("untitled")).trim()} — ${(state.currentScore.composer || t("unknownAuthor")).trim()}`; window.print(); setTimeout(() => document.title = oTitle, 500); });
-  
+
   document.getElementById("btnImport")?.addEventListener("click", () => document.getElementById("fileImport").click());
   document.getElementById("fileImport")?.addEventListener("change", (e) => {
     const file = e.target.files[0]; if (!file) return;
@@ -498,11 +498,11 @@ const setupEventListeners = () => {
   });
 
   document.getElementById("btnNewScore")?.addEventListener("click", () => { const score = newScore(); persistScore(score); window.location.hash = `#editor/${score.id}`; });
-  
+
   document.getElementById("btnBackLibrary")?.addEventListener("click", () => {
     window.location.hash = state.isViewingPublic ? "#codice" : "#catalogo";
   });
-  
+
   ["brandHome", "btnGoCatalog", "btnGoCodex", "btnGoCodexHero", "btnBackToMyCatalog"].forEach(id => {
     document.getElementById(id)?.addEventListener("click", () => {
       const paths = { brandHome: "#inicio", btnGoCatalog: "#catalogo", btnGoCodex: "#codice", btnGoCodexHero: "#codice", btnBackToMyCatalog: "#catalogo" };
@@ -523,7 +523,7 @@ const setupEventListeners = () => {
   bindFilter("sortCodex", "sortBy", state.codexState, fetchAndRenderCodex);
   bindFilter("filterCodexTimeSig", "filterTime", state.codexState, fetchAndRenderCodex);
   bindFilter("filterCodexHands", "filterHands", state.codexState, fetchAndRenderCodex);
-  
+
   document.getElementById("btnToggleFilters")?.addEventListener("click", () => { const f = document.getElementById("catalogFilters"); if (f) f.hidden = !f.hidden; });
   document.getElementById("btnToggleCodexFilters")?.addEventListener("click", () => { const f = document.getElementById("codexFilters"); if (f) f.hidden = !f.hidden; });
 
@@ -531,16 +531,16 @@ const setupEventListeners = () => {
     const debouncedRender = debounce(renderScore, 300);
     ["scoreTitle", "scoreComposer"].forEach(id => document.getElementById(id).addEventListener("input", (e) => { state.currentScore[id === "scoreTitle" ? "title" : "composer"] = e.target.value; debouncedRender(); }));
     ["timeSig", "scoreDifficulty"].forEach(id => document.getElementById(id).addEventListener("change", (e) => { state.currentScore[id === "timeSig" ? "timeSig" : "difficulty"] = e.target.value; renderScore(); }));
-    
+
     document.getElementById("btnPrevMeasure").addEventListener("click", () => { state.editorState.activeMeasure--; syncMeasureControls(); renderScore(); });
     document.getElementById("btnNextMeasure").addEventListener("click", () => { state.editorState.activeMeasure++; syncMeasureControls(); renderScore(); });
     document.getElementById("btnAddMeasure").addEventListener("click", () => { state.currentScore.measures.push(newMeasure()); state.editorState.activeMeasure = state.currentScore.measures.length - 1; syncMeasureControls(); renderScore(); });
     document.getElementById("btnDeleteMeasure").addEventListener("click", async () => {
       if (state.currentScore.measures.length <= 1) return showToast(t("minMeasureAlert"), 'error');
-      if (await showConfirm(t("delMeasureConfirm"), "Se borrarán todas las notas de este compás.", t("btnDelMeasure"), true)) { 
-        state.currentScore.measures.splice(state.editorState.activeMeasure, 1); 
-        syncMeasureControls(); 
-        renderScore(); 
+      if (await showConfirm(t("delMeasureConfirm"), "Se borrarán todas las notas de este compás.", t("btnDelMeasure"), true)) {
+        state.currentScore.measures.splice(state.editorState.activeMeasure, 1);
+        syncMeasureControls();
+        renderScore();
       }
     });
 
@@ -571,7 +571,7 @@ const setupEventListeners = () => {
       const staffNotes = state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff];
       const needed = measureNeededQuarters(state.currentScore.timeSig);
       const durQ = (DUR_Q[state.editorState.duration] || 0) * (document.getElementById("isDotted").checked ? 1.5 : 1);
-      
+
       let currentUsed = quartersUsed(staffNotes);
       if (isEditing) currentUsed -= (DUR_Q[staffNotes[state.editorState.editingNoteIdx].duration] || 0) * (staffNotes[state.editorState.editingNoteIdx].dotted ? 1.5 : 1);
 
@@ -584,9 +584,9 @@ const setupEventListeners = () => {
       }
 
       clearRedoStack();
-      if (isEditing) { saveCurrentNote(); state.editorState.editingNoteIdx = null; } 
+      if (isEditing) { saveCurrentNote(); state.editorState.editingNoteIdx = null; }
       else { staffNotes.push(getFormNote()); }
-      
+
       ["dynamicSelect", "fingeringSelect", "lyricInput"].forEach(id => document.getElementById(id).value = "");
       syncMeasureControls(); renderScore();
     });
@@ -663,7 +663,7 @@ const setupEventListeners = () => {
 
 document.addEventListener("DOMContentLoaded", async () => {
   await checkMaintenanceStatus();
-  
+
   const savedTheme = localStorage.getItem('theme') || 'light';
   const themeBtn = document.getElementById('themeToggleBtn');
   if (savedTheme === 'dark') { document.body.classList.add('dark-theme'); if (themeBtn) themeBtn.textContent = '☀️'; }
@@ -707,4 +707,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   setLang((navigator.language || navigator.userLanguage || "en").toLowerCase().startsWith("es") ? "es" : "en");
   window.addEventListener("hashchange", handleNavigation);
   if (!window.location.hash || window.location.hash === "#") window.location.hash = "#inicio"; else handleNavigation();
+});
+
+// MAINTENANCE: Global exception handlers to prevent critical UI failures
+window.addEventListener("error", (event) => {
+  console.error("Critical Client Exception intercepted:", event.error);
+  if (typeof showToast === "function") {
+    showToast("An unexpected error occurred in the interface.", "danger");
+  }
+  event.preventDefault();
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  console.error("Critical Async Promise Rejection intercepted:", event.reason);
+  if (typeof showToast === "function") {
+    showToast("Synchronization error or async process interrupted.", "danger");
+  }
+  event.preventDefault();
 });
