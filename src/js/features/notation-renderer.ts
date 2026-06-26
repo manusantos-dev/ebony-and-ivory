@@ -1,8 +1,8 @@
-// INIT: High-Res VexFlow Notation Renderer Engine
+// INIT: High-Res VexFlow Engine (v4 API Compliant)
 import * as VF from 'vexflow';
 import { state } from '../core/state';
 import { t } from '../ui/i18n';
-import { persistScore, measureNeededQuarters, quartersUsed, escapeHtml, trim } from '../core/storage';
+import { persistScore, measureNeededQuarters, quartersUsed, trim } from '../core/storage';
 import { emit } from '../core/events';
 import { Score, Note } from '../core/types';
 
@@ -13,9 +13,10 @@ let pageObserver: IntersectionObserver | null = null;
 let printHandlersBound = false;
 let isFlipping = false;
 
+// UTILS: Engine Helpers
 const safeBeam = (notes: VF.StaveNote[]): VF.Beam[] => {
   if (!notes || notes.length === 0) return [];
-  try { return VF.Beam.generateBeams(notes, { beam_rests: false }); } catch { return []; }
+  try { return VF.Beam.generateBeams(notes, { beamRests: false }); } catch { return []; }
 };
 
 const clearPage = (pageDiv: HTMLElement): void => {
@@ -39,6 +40,7 @@ const getActivePagesCount = (): number => {
   return Math.max(1, Math.ceil(Math.ceil((last + 1) / RENDER_CFG.MEASURES_PER_LINE) / RENDER_CFG.LINES_PER_PAGE));
 };
 
+// CORE: Single Page SVG Generation
 const renderPage = (pageIdx: number, pageDiv: HTMLElement, score: Score): void => {
   const { measures = [], timeSig = "4/4", keySig = "C", bpm = 100, title = "", composer = "" } = score;
   const [num, den] = timeSig.split("/").map(Number);
@@ -51,9 +53,6 @@ const renderPage = (pageIdx: number, pageDiv: HTMLElement, score: Score): void =
   const isBook = state.editorState.layoutMode === "book";
   const isLeftPage = pageIdx % 2 === 0;
 
-  const safeTitle = escapeHtml(title || t("untitled"));
-  const safeComposer = composer ? composer.split(",").map(c => `<span>${escapeHtml(c.trim())}</span>`).join(" &middot; ") : "";
-
   const wordmarkHTML = `<img src="assets/ebony-ivory-wordmark.png" class="footer-logo" style="height:28px; vertical-align:middle;">`;
   const pageHTML = `<span class="page-counter" style="font-family:var(--font-display, Georgia, serif); font-size:26px; font-weight:700; color:var(--color-ink);">${pageIdx + 1} / ${totalPages}</span>`;
 
@@ -63,15 +62,21 @@ const renderPage = (pageIdx: number, pageDiv: HTMLElement, score: Score): void =
   } else { footerLeft = pageHTML; footerRight = wordmarkHTML; }
 
   const footerHtml = `<div class="print-footer-content" style="position:absolute;bottom:60px;left:100px;right:100px;display:flex;justify-content:space-between;align-items:center;z-index:10;color:var(--color-ink);"><div>${footerLeft}</div><div>${footerRight}</div></div>`;
-  const headerHtml = pageIdx === 0 ? `<div class="score-letterhead" style="position:absolute;top:100px;left:0;width:100%;text-align:center;z-index:10;color:var(--color-ink);"><h2 style="font-family:var(--font-display, Georgia, serif);font-size:56px;font-weight:700;margin:0 0 16px 0;letter-spacing:1px;font-style:italic;">${safeTitle}</h2><p style="font-family:var(--font-display, Georgia, serif);font-size:26px;margin:0;color:var(--color-ink-soft);font-weight:500;letter-spacing:1px;">${safeComposer}</p></div>` : "";
 
-  pageDiv.innerHTML = `${headerHtml}<div class="svg-wrap" style="position:relative; width:100%; line-height:0;"></div>${footerHtml}`;
+  pageDiv.innerHTML = `<div class="svg-wrap" style="position:relative; width:100%; line-height:0;"></div>${footerHtml}`;
 
-  const svgWrap = pageDiv.querySelector(".svg-wrap") as HTMLElement;
+  const svgWrap = pageDiv.querySelector(".svg-wrap") as HTMLDivElement;
   const renderer = new VF.Renderer(svgWrap, VF.Renderer.Backends.SVG);
   renderer.resize(RENDER_CFG.TOTAL_WIDTH, RENDER_CFG.TOTAL_HEIGHT);
   const ctx = renderer.getContext();
   const hitRects: { x: number, y: number, width: number, height: number, startX: number, endX: number, idx: number }[] = [];
+
+  const allTies: VF.StaveTie[] = [];
+  const allSlurs: VF.Curve[] = [];
+
+  // FIX: Track pending ties using "indexes" instead of "indices" for VexFlow v4 compliance
+  const pendingTies: Record<string, { note: VF.StaveNote, indexes: number[] } | null> = {};
+  const pendingSlurs: Record<string, { note: VF.StaveNote } | null> = {};
 
   for (let line = 0; line < linesOnThisPage; line++) {
     const globalLineIdx = pageIdx * RENDER_CFG.LINES_PER_PAGE + line;
@@ -117,14 +122,12 @@ const renderPage = (pageIdx: number, pageDiv: HTMLElement, score: Score): void =
       const rightConnectorType = endType === VF.BarlineType.DOUBLE ? VF.StaveConnector.type.THIN_DOUBLE : endType === VF.BarlineType.END || endType === VF.BarlineType.REPEAT_END ? VF.StaveConnector.type.BOLD_DOUBLE_RIGHT : VF.StaveConnector.type.SINGLE_RIGHT;
       new VF.StaveConnector(staveTreble, staveBass).setType(rightConnectorType).setContext(ctx).draw();
 
-      const activeTies: VF.StaveTie[] = [];
-
       const buildNotes = (staffNotes: Note[], clef: string, staffName: string, stemDir: 'auto'|1|-1): VF.StaveNote[] => staffNotes.map((n, nIdx) => {
         const durStr = n.duration + (n.dotted ? "d" : "") + (n.rest ? "r" : "");
         const keys = n.rest ? [clef === "bass" ? "d/3" : "b/4"] : (n.keys || []).map(k => `${k.letter.toLowerCase()}${k.accidental || ""}/${k.octave}`);
 
         const noteParams: any = { clef, keys, duration: durStr };
-        if (stemDir !== 'auto') noteParams.stem_direction = stemDir; else noteParams.auto_stem = true;
+        if (stemDir !== 'auto') noteParams.stemDirection = stemDir; else noteParams.autoStem = true;
 
         const sn = new VF.StaveNote(noteParams);
         sn.setAttribute("id", `vf-note-${idx}-${staffName}-${nIdx}`);
@@ -136,14 +139,29 @@ const renderPage = (pageIdx: number, pageDiv: HTMLElement, score: Score): void =
         if (n.dynamic) sn.addModifier(new VF.Annotation(n.dynamic).setFont("Times", 12, "italic bold").setVerticalJustification(clef === "bass" ? 4 : 3), 0);
 
         if (n.articulation) {
-          const artMap: Record<string, string> = { 'staccato': 'a.', 'accent': 'a>', 'tenuto': 'a-', 'marcato': 'a^' };
-          if (artMap[n.articulation]) sn.addModifier(new VF.Articulation(artMap[n.articulation]).setPosition(stemDir === 1 || (stemDir === 'auto' && clef === 'bass') ? 4 : 3), 0);
+          const artMap: Record<string, string> = { 'staccato': 'a.', 'accent': 'a>', 'tenuto': 'a-', 'marcato': 'a^', 'fermata': 'a@a' };
+          if (artMap[n.articulation]) {
+            const pos = n.articulation === 'fermata' ? 3 : (stemDir === 1 || (stemDir === 'auto' && clef === 'bass') ? 4 : 3);
+            sn.addModifier(new VF.Articulation(artMap[n.articulation]).setPosition(pos), 0);
+          }
         }
+
+        if (n.grace) {
+          const match = n.grace.match(/^([A-Ga-g])([#b]?)\s*(\d)$/);
+          if (match) {
+            const [_, letter, acc, oct] = match;
+            const graceKey = `${letter.toLowerCase()}${acc}/${oct}`;
+            const gn = new VF.GraceNote({ keys: [graceKey], duration: '8', slash: true });
+            if (acc) gn.addModifier(new VF.Accidental(acc), 0);
+            sn.addModifier(new VF.GraceNoteGroup([gn]), 0);
+          }
+        }
+
         return sn;
       });
 
       const parseVoices = (staffData: any, clef: string, staffName: string) => {
-        if (!staffData || staffData.length === 0) return { vfVoices: [new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT).addTickables([new VF.StaveNote({ clef, keys: [clef === "bass" ? "d/3" : "b/4"], duration: "1r", align_center: true })])], vfBeams: [] };
+        if (!staffData || staffData.length === 0) return { vfVoices: [new VF.Voice({ numBeats: num, beatValue: den }).setMode(VF.Voice.Mode.SOFT).addTickables([new VF.StaveNote({ clef, keys: [clef === "bass" ? "d/3" : "b/4"], duration: "1r", alignCenter: true })])], vfBeams: [] };
 
         const isPoly = Array.isArray(staffData[0]);
         const voicesData: Note[][] = isPoly ? staffData : [staffData];
@@ -153,10 +171,39 @@ const renderPage = (pageIdx: number, pageDiv: HTMLElement, score: Score): void =
         voicesData.forEach((voiceNotes, vIdx) => {
           const stemDir = isPoly ? (vIdx === 0 ? 1 : -1) : 'auto';
           const vfNotes = buildNotes(voiceNotes, clef, staffName, stemDir);
+          const voiceId = `${staffName}-${vIdx}`;
 
-          voiceNotes.forEach((n, i) => { if ((n as any).tie && i < voiceNotes.length - 1 && !n.rest) activeTies.push(new VF.StaveTie({ first_note: vfNotes[i], last_note: vfNotes[i+1] })); });
+          voiceNotes.forEach((n, i) => {
+            if (n.rest) {
+              pendingTies[voiceId] = null;
+              pendingSlurs[voiceId] = null;
+              return;
+            }
+            const currentVfNote = vfNotes[i];
+
+            // Resolve pending cross-measure or intra-measure ties/slurs
+            if (pendingTies[voiceId]) {
+              allTies.push(new VF.StaveTie({
+                firstNote: pendingTies[voiceId]!.note,
+                lastNote: currentVfNote,
+                firstIndexes: pendingTies[voiceId]!.indexes,
+                lastIndexes: n.keys.map((_, idx) => idx)
+              }));
+              pendingTies[voiceId] = null;
+            }
+
+            if (pendingSlurs[voiceId]) {
+              allSlurs.push(new VF.Curve(pendingSlurs[voiceId]!.note, currentVfNote, {}));
+              pendingSlurs[voiceId] = null;
+            }
+
+            // Set new pendings if properties are active
+            if (n.tie) pendingTies[voiceId] = { note: currentVfNote, indexes: n.keys.map((_, idx) => idx) };
+            if (n.slur) pendingSlurs[voiceId] = { note: currentVfNote };
+          });
+
           vfBeams = vfBeams.concat(safeBeam(vfNotes));
-          vfVoices.push(new VF.Voice({ num_beats: num, beat_value: den }).setMode(VF.Voice.Mode.SOFT).addTickables(vfNotes));
+          vfVoices.push(new VF.Voice({ numBeats: num, beatValue: den }).setMode(VF.Voice.Mode.SOFT).addTickables(vfNotes));
         });
         return { vfVoices, vfBeams };
       };
@@ -178,18 +225,26 @@ const renderPage = (pageIdx: number, pageDiv: HTMLElement, score: Score): void =
         trebleParsed.vfVoices.forEach(v => v.draw(ctx, staveTreble));
         bassParsed.vfVoices.forEach(v => v.draw(ctx, staveBass));
         [...trebleParsed.vfBeams, ...bassParsed.vfBeams].forEach(b => b.setContext(ctx).draw());
-        activeTies.forEach(t => t.setContext(ctx).draw());
       } catch (measureErr) {
         console.error(`Render Error M${idx + 1}:`, measureErr);
-        const errText = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        errText.setAttribute("x", (x + 10).toString()); errText.setAttribute("y", (yTreble + 20).toString()); errText.setAttribute("fill", "var(--color-danger)"); errText.setAttribute("font-size", "11"); errText.textContent = `⚠ Error M${idx + 1}`;
-        ctx.svg.appendChild(errText);
+        const svgEl = svgWrap.querySelector("svg");
+        if (svgEl) {
+          const errText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          errText.setAttribute("x", (x + 10).toString()); errText.setAttribute("y", (yTreble + 20).toString());
+          errText.setAttribute("fill", "var(--color-danger)"); errText.setAttribute("font-size", "11");
+          errText.textContent = `⚠ Error M${idx + 1}`;
+          svgEl.appendChild(errText);
+        }
       }
 
       const hitX = staveTreble.getNoteStartX() - 8, hitRight = staveTreble.getX() + staveTreble.getWidth();
       hitRects.push({ x: hitX, y: staveTreble.getYForLine(0) - 35, width: hitRight - hitX, height: staveBass.getYForLine(4) - staveTreble.getYForLine(0) + 70, startX: hitX + 8, endX: staveTreble.getNoteEndX(), idx });
     }
   }
+
+  // DRAW TIES AND SLURS LAST (After all formatting and positioning is absolutely final)
+  allTies.forEach(t => t.setContext(ctx).draw());
+  allSlurs.forEach(s => s.setContext(ctx).draw());
 
   const svg = svgWrap.querySelector("svg");
   if (svg) {
@@ -198,6 +253,28 @@ const renderPage = (pageIdx: number, pageDiv: HTMLElement, score: Score): void =
     svg.setAttribute("width", "100%");
     svg.setAttribute("height", "auto");
     const ns = "http://www.w3.org/2000/svg";
+
+    if (pageIdx === 0) {
+      const displayFont = "var(--font-display, 'Cormorant Garamond', Georgia, serif)";
+      const centerX = RENDER_CFG.TOTAL_WIDTH / 2;
+
+      const titleEl = document.createElementNS(ns, "text");
+      titleEl.setAttribute("x", String(centerX)); titleEl.setAttribute("y", "150");
+      titleEl.setAttribute("text-anchor", "middle"); titleEl.setAttribute("font-family", displayFont);
+      titleEl.setAttribute("font-size", "56px"); titleEl.setAttribute("font-weight", "700");
+      titleEl.setAttribute("font-style", "italic"); titleEl.setAttribute("class", "svg-title");
+      titleEl.textContent = title || t("untitled");
+      svg.appendChild(titleEl);
+
+      if (composer) {
+        const compEl = document.createElementNS(ns, "text");
+        compEl.setAttribute("x", String(centerX)); compEl.setAttribute("y", "210");
+        compEl.setAttribute("text-anchor", "middle"); compEl.setAttribute("font-family", displayFont);
+        compEl.setAttribute("font-size", "26px"); compEl.setAttribute("class", "svg-composer");
+        compEl.textContent = composer;
+        svg.appendChild(compEl);
+      }
+    }
 
     hitRects.forEach(hr => {
       const g = document.createElementNS(ns, "g");
@@ -215,6 +292,7 @@ const renderPage = (pageIdx: number, pageDiv: HTMLElement, score: Score): void =
   }
 };
 
+// ACTIONS: DOM Triggers & Pagination Observation
 export const renderScore = (): void => {
   const score = state.currentScore;
   if (!score) return;

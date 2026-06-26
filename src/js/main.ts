@@ -160,8 +160,12 @@ const getFormNote = (): Note => ({
   }],
   duration: state.editorState.duration,
   dotted: (document.getElementById("isDotted") as HTMLInputElement).checked,
+  tie: (document.getElementById("isTie") as HTMLInputElement).checked,
+  slur: (document.getElementById("isSlur") as HTMLInputElement).checked,
   dynamic: (document.getElementById("dynamicSelect") as HTMLInputElement).value,
   fingering: (document.getElementById("fingeringSelect") as HTMLInputElement).value,
+  articulation: (document.getElementById("articulationSelect") as HTMLInputElement).value,
+  grace: (document.getElementById("graceInput") as HTMLInputElement).value.trim(),
   lyric: (document.getElementById("lyricInput") as HTMLInputElement).value
 });
 
@@ -189,8 +193,12 @@ const loadNoteIntoForm = (n: Note, idx: number): void => {
   state.editorState.duration = n.duration;
   document.querySelectorAll(".dur-btn").forEach(b => b.classList.toggle("is-active", (b as HTMLElement).dataset.dur === n.duration));
   (document.getElementById("isDotted") as HTMLInputElement).checked = !!n.dotted;
+  (document.getElementById("isTie") as HTMLInputElement).checked = !!n.tie;
+  (document.getElementById("isSlur") as HTMLInputElement).checked = !!n.slur;
   (document.getElementById("dynamicSelect") as HTMLInputElement).value = n.dynamic || "";
   (document.getElementById("fingeringSelect") as HTMLInputElement).value = n.fingering || "";
+  (document.getElementById("articulationSelect") as HTMLInputElement).value = n.articulation || "";
+  (document.getElementById("graceInput") as HTMLInputElement).value = n.grace || "";
   (document.getElementById("lyricInput") as HTMLInputElement).value = n.lyric || "";
 
   const btnAdd = document.getElementById("btnAddNote");

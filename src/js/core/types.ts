@@ -1,6 +1,6 @@
 // TYPE: Pitch & Note models for polyphonic staves
 export interface Pitch { letter: string; accidental: string; octave: number; }
-export interface Note { rest: boolean; keys: Pitch[]; duration: string; dotted: boolean; dynamic?: string; fingering?: string; lyric?: string; }
+export interface Note { rest: boolean; keys: Pitch[]; duration: string; dotted: boolean; dynamic?: string; fingering?: string; lyric?: string; tie?: boolean; slur?: boolean; articulation?: string; grace?: string; }
 
 // TYPE: Measure & Track definitions
 export interface Measure { treble: Note[]; bass: Note[]; repeatStart: boolean; repeatEnd: boolean; directive: string; }

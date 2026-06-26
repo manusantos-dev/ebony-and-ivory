@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob: https://apis.google.com https://www.gstatic.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.githubusercontent.com https://firebasestorage.googleapis.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://tonejs.github.io; media-src 'self' https://tonejs.github.io; frame-src 'self' https://*.firebaseapp.com;">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -177,11 +177,7 @@
 
       <div class="desk-section">
         <style>
-          #customKeySigSelected {
-            white-space: nowrap !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-          }
+          #customKeySigSelected { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
         </style>
 
         <div class="field-row" style="display: flex; gap: 12px;">
@@ -279,8 +275,10 @@
               <button class="dur-btn" data-dur="16" title="Semicorchea"><svg width="24" height="24" viewBox="0 0 24 24"><ellipse cx="8" cy="17" rx="4.5" ry="3" fill="currentColor" transform="rotate(-15 8 17)"/><line x1="12" y1="16" x2="12" y2="5" stroke="currentColor" stroke-width="2"/><path d="M12 5 Q16 5 17 9 M12 9 Q16 9 17 13" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-               <label class="check-inline" style="margin:0;"><input type="checkbox" id="isDotted"> <span data-i18n="lblDotted">Añadir Puntillo</span></label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; flex-wrap: wrap; gap: 8px;">
+               <label class="check-inline" style="margin:0;"><input type="checkbox" id="isDotted"> <span data-i18n="lblDotted">Puntillo</span></label>
+               <label class="check-inline" style="margin:0;"><input type="checkbox" id="isTie"> <span>Lig. Prolongación</span></label>
+               <label class="check-inline" style="margin:0;"><input type="checkbox" id="isSlur"> <span>Lig. Expresión</span></label>
             </div>
 
             <div class="field-row" style="margin-top: 16px; gap: 8px;">
@@ -296,10 +294,26 @@
                       <option value="">—</option><option value="p">p</option><option value="mp">mp</option><option value="mf">mf</option><option value="f">f</option>
                     </select>
                 </div>
+                <div style="flex: 1;">
+                    <label class="field-label">Articulación</label>
+                    <select id="articulationSelect" class="field-input">
+                      <option value="">—</option>
+                      <option value="staccato">Staccato (·)</option>
+                      <option value="accent">Acento (>)</option>
+                      <option value="tenuto">Tenuto (-)</option>
+                      <option value="fermata">Calderón</option>
+                    </select>
+                </div>
             </div>
-            <div style="margin-top: 12px;">
-                <label class="field-label" data-i18n="lblLyric">Letra / Texto</label>
-                <input type="text" id="lyricInput" class="field-input" placeholder="Ej: La" data-i18n-placeholder="plhLyric">
+            <div class="field-row" style="margin-top: 12px; gap: 8px;">
+                <div style="flex: 2;">
+                    <label class="field-label" data-i18n="lblLyric">Letra / Texto</label>
+                    <input type="text" id="lyricInput" class="field-input" placeholder="Ej: La" data-i18n-placeholder="plhLyric">
+                </div>
+                <div style="flex: 1;">
+                    <label class="field-label" title="Nota de adorno">Apoyatura</label>
+                    <input type="text" id="graceInput" class="field-input" placeholder="Ej: C#4">
+                </div>
             </div>
 
             <div class="form-actions" style="display: flex; gap: 8px; margin-top: 24px;">
@@ -451,6 +465,6 @@
   </div>
 </footer>
 
-<script type="module" src="/src/js/main.js"></script>
+<script type="module" src="/src/js/main.ts"></script>
 </body>
 </html>

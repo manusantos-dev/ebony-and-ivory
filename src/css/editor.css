@@ -41,18 +41,18 @@ body.dark-theme .footer-logo { filter: brightness(0) invert(1) !important; opaci
 .dur-btn.is-active { background: var(--color-ink); color: var(--color-paper); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
 
 /* -- FLOATING ISLAND CONTROLS (Detached & Animated) -- */
-.editor-top-controls { 
-  display: flex; justify-content: center; align-items: center; 
-  
-  margin: -80px auto 100px auto; 
-  
-  background: var(--color-paper); padding: 6px; border-radius: 50px; 
+.editor-top-controls {
+  display: flex; justify-content: center; align-items: center;
+
+  margin: -80px auto 100px auto;
+
+  background: var(--color-paper); padding: 6px; border-radius: 50px;
   box-shadow: 0 6px 24px rgba(0,0,0,0.08); border: 1px solid var(--color-line);
-  
-  position: sticky; 
-  top: 0px; 
-  z-index: 10; 
-  
+
+  position: sticky;
+  top: 0px;
+  z-index: 10;
+
   width: max-content; transition: padding 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .control-pill { background: transparent; border: none; padding: 10px 20px; border-radius: 50px; color: var(--color-ink-soft); font-family: var(--font-body); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -66,9 +66,9 @@ body.dark-theme .footer-logo { filter: brightness(0) invert(1) !important; opaci
 }
 body:not(.is-viewer) .player-bar-wrapper { max-width: 0; opacity: 0; pointer-events: none; }
 
-.player-bar { 
+.player-bar {
   display: flex; align-items: center; gap: 16px; padding: 0 16px; min-width: max-content;
-  border-left: 1px solid var(--color-line-strong); border-right: 1px solid var(--color-line-strong); 
+  border-left: 1px solid var(--color-line-strong); border-right: 1px solid var(--color-line-strong);
 }
 .pl-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--color-line-strong); background: var(--color-paper); color: var(--color-ink); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s ease; padding: 0; flex-shrink: 0;}
 .pl-btn:hover { border-color: var(--color-brass); }
@@ -104,7 +104,7 @@ body:not(.is-viewer) .player-bar-wrapper { max-width: 0; opacity: 0; pointer-eve
   transform: scale(var(--zoom-level, 1)); transform-origin: top center; transition: transform 0.1s linear;
 }
 .paper-wrap.layout-book .paper-page {
-  flex: 1; min-width: 300px; max-width: 1200px; aspect-ratio: 1200 / 1697; background: var(--color-paper); 
+  flex: 1; min-width: 300px; max-width: 1200px; aspect-ratio: 1200 / 1697; background: var(--color-paper);
   position: relative; margin: 0; padding: 0; box-sizing: border-box; overflow: hidden; flex-shrink: 0;
 }
 .paper-wrap.layout-book .book-page-left {
@@ -125,11 +125,11 @@ body:not(.is-viewer) .player-bar-wrapper { max-width: 0; opacity: 0; pointer-eve
 }
 
 /* -- REALISTIC 3D PAGE FLIP ANIMATION -- */
-.book-flipper { 
-  position: absolute; top: 0; bottom: 0; width: 50%; background: var(--color-paper); z-index: 500; 
-  border: 1px solid var(--color-line-strong); pointer-events: none; 
+.book-flipper {
+  position: absolute; top: 0; bottom: 0; width: 50%; background: var(--color-paper); z-index: 500;
+  border: 1px solid var(--color-line-strong); pointer-events: none;
   transform-style: preserve-3d;
-  animation: flipAnim 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards; 
+  animation: flipAnim 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 .book-flipper::after {
   content: ""; position: absolute; inset: 0;
@@ -178,8 +178,6 @@ body:not(.is-viewer) .player-bar-wrapper { max-width: 0; opacity: 0; pointer-eve
   .editor-top-controls { max-width: 90vw; flex-wrap: wrap; border-radius: 16px; }
 }
 
-body:not(.is-viewer) .layout-book .score-letterhead {
-  top: 60px !important;
-  transform: scale(0.7);
-  transform-origin: top center;
-}
+/* Inject Title SVG Color Handlers */
+body.dark-theme #paperWrap svg .svg-title { fill: #FFFFFF !important; }
+body.dark-theme #paperWrap svg .svg-composer { fill: #EAEAEA !important; opacity: 0.8; }
