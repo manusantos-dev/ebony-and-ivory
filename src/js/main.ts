@@ -1,26 +1,22 @@
-/**
- * @file main.js
- * @description Main Application Controller.
- * Handles routing, DOM event bindings, state synchronization, and layout mode toggling.
- */
-
+// INIT: Main Application Controller & DOM Binder
 import { state, resetEditorState } from "./core/state";
-import { on, emit } from "./core/events";
-import { t, setLang } from "./ui/i18n.js";
-import { loadAll, saveAll, uid, nextPlateNumber, plateLabel, slugify, formatDate, escapeHtml, measureNeededQuarters, quartersUsed, newMeasure, newScore, downloadBlob, persistScore, deleteScoreById } from "./core/storage";
+import { on } from "./core/events";
+import { t, setLang } from "./ui/i18n";
+import { loadAll, uid, nextPlateNumber, slugify, formatDate, escapeHtml, measureNeededQuarters, quartersUsed, newMeasure, newScore, downloadBlob, persistScore, deleteScoreById } from "./core/storage";
 import { DUR_Q } from "./core/config";
-import { renderCustomSelects, updateCustomSelectUI, setupCustomSelect } from "./ui/custom-select.js";
-import { renderScore } from "./features/notation-renderer.js";
-import { playAudio, pauseAudio, stopPlayback, isAudioPlaying, setSpeedFactor, refreshAudioBPM } from "./features/player.js";
-import { startPracticeMode, stopPracticeMode } from "./features/practice.js";
-import { clearRedoStack } from "./features/keyboard.js";
-import { initFirebase, setupAuthUI, setupProfileUI } from "./auth.js";
-import { showToast } from "./ui/toast.js";
-import { debounce } from './utils/debounce.js';
-import { initShortcuts } from './features/keyboard.js';
-import { initDragAndDrop } from './features/drag-drop.js';
-import { checkMaintenanceStatus } from './features/maintenance.js';
-import { showConfirm } from './ui/dialog.js';
+import { renderCustomSelects, updateCustomSelectUI, setupCustomSelect } from "./ui/custom-select";
+import { renderScore } from "./features/notation-renderer";
+import { playAudio, pauseAudio, stopPlayback, isAudioPlaying, setSpeedFactor, refreshAudioBPM } from "./features/player";
+import { startPracticeMode, stopPracticeMode } from "./features/practice";
+import { clearRedoStack } from "./features/keyboard";
+import { initFirebase, setupAuthUI, setupProfileUI } from "./auth";
+import { showToast } from "./ui/toast";
+import { debounce } from './utils/debounce';
+import { initShortcuts } from './features/keyboard';
+import { initDragAndDrop } from './features/drag-drop';
+import { checkMaintenanceStatus } from './features/maintenance';
+import { showConfirm } from './ui/dialog';
+import { Score, Note } from "./core/types";
 
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
@@ -30,10 +26,9 @@ state.publicScores = [];
 state.isViewingPublic = false;
 state.editorState.layoutMode = "continuous";
 
-// I18N: Inline localization helper for dynamic alerts without dictionary dependencies
-const i18nText = (es, en) => state.lang === 'es' ? es : en;
+const i18nText = (es: string, en: string): string => state.lang === 'es' ? es : en;
 
-const applyLayoutMode = () => {
+const applyLayoutMode = (): void => {
   const wrap = document.getElementById("paperWrap");
   const btn = document.getElementById("btnToggleLayout");
   if (!wrap || !btn) return;
@@ -43,17 +38,19 @@ const applyLayoutMode = () => {
   btn.title = isBook ? "Cambiar a Vista Continua (Pergamino)" : "Cambiar a Vista de Libro";
 };
 
-const handleNavigation = () => {
+const handleNavigation = (): void => {
   const hash = window.location.hash;
   document.body.classList.remove("is-home", "is-viewer");
   stopPlayback();
   stopPracticeMode();
 
-  const views = ["viewHome", "viewLibrary", "viewCodex", "viewEditor", "libraryActions", "editorActions", "btnToggleViewer", "btnBackLibrary", "topNavLinks", "btnTopCodex", "btnTopCatalog"].reduce((acc, id) => {
-    acc[id] = document.getElementById(id);
-    if (acc[id] && !id.startsWith("btn")) acc[id].hidden = true;
-    return acc;
-  }, {});
+  const viewIds = ["viewHome", "viewLibrary", "viewCodex", "viewEditor", "libraryActions", "editorActions", "btnToggleViewer", "btnBackLibrary", "topNavLinks", "btnTopCodex", "btnTopCatalog"];
+  const views: Record<string, HTMLElement | null> = {};
+
+  viewIds.forEach(id => {
+    views[id] = document.getElementById(id);
+    if (views[id] && !id.startsWith("btn")) views[id]!.hidden = true;
+  });
 
   if (views.btnToggleViewer) views.btnToggleViewer.hidden = false;
 
@@ -73,7 +70,7 @@ const handleNavigation = () => {
   } else if (hash === "#catalogo") {
     state.currentScore = null;
     state.isViewingPublic = false;
-    ["viewLibrary", "libraryActions", "topNavLinks", "btnTopCodex"].forEach(id => views[id] && (views[id].hidden = false));
+    ["viewLibrary", "libraryActions", "topNavLinks", "btnTopCodex"].forEach(id => views[id] && (views[id]!.hidden = false));
     if (views.btnTopCatalog) views.btnTopCatalog.hidden = true;
     document.title = `${t("catalogTitle")} — Ebony & Ivory`;
     renderLibrary();
@@ -81,7 +78,7 @@ const handleNavigation = () => {
   } else if (hash === "#codice") {
     state.currentScore = null;
     state.isViewingPublic = true;
-    ["viewCodex", "topNavLinks", "btnTopCatalog"].forEach(id => views[id] && (views[id].hidden = false));
+    ["viewCodex", "topNavLinks", "btnTopCatalog"].forEach(id => views[id] && (views[id]!.hidden = false));
     if (views.btnTopCodex) views.btnTopCodex.hidden = true;
     document.title = `${t("codexBtn")} — Ebony & Ivory`;
     fetchAndRenderCodex();
@@ -100,7 +97,7 @@ const handleNavigation = () => {
   updateViewerButtonText();
 };
 
-const syncEditorStickyOffset = () => {
+const syncEditorStickyOffset = (): void => {
   const header = document.getElementById("mainHeader");
   const stickyTop = header ? Math.round(header.getBoundingClientRect().height) : 0;
   document.documentElement.style.setProperty("--editor-sticky-offset", `${stickyTop}px`);
@@ -108,12 +105,13 @@ const syncEditorStickyOffset = () => {
   if (desk) desk.style.height = `calc(100vh - ${stickyTop}px)`;
 };
 
-const updateViewerButtonText = () => {
+const updateViewerButtonText = (): void => {
   const btn = document.getElementById("btnToggleViewer");
   if (!btn) return;
   if (state.isViewingPublic) {
     btn.innerHTML = `⎘ ${t("saveCopyBtn")}`;
     btn.onclick = () => {
+      if (!state.currentScore) return;
       const copy = { ...state.currentScore, id: uid(), plate: nextPlateNumber(), createdAt: Date.now(), updatedAt: Date.now() };
       delete copy.publisherName; delete copy.publisherUid; delete copy.likes; delete copy.views; delete copy.copies;
       persistScore(copy);
@@ -123,20 +121,21 @@ const updateViewerButtonText = () => {
     };
   } else {
     btn.textContent = document.body.classList.contains("is-viewer") ? t("editMode") : t("viewMode");
-    btn.onclick = () => window.location.hash = (document.body.classList.contains("is-viewer") ? "#editor/" : "#viewer/") + state.currentScore.id;
+    btn.onclick = () => window.location.hash = (document.body.classList.contains("is-viewer") ? "#editor/" : "#viewer/") + state.currentScore?.id;
   }
 };
 
-const initEditor = (views) => {
+const initEditor = (views: Record<string, HTMLElement | null>): void => {
+  if (!state.currentScore) return;
   const preservedLayoutMode = state.editorState?.layoutMode || "continuous";
   resetEditorState();
   state.editorState.layoutMode = preservedLayoutMode;
   applyLayoutMode();
 
-  ["viewEditor", "editorActions"].forEach(id => views[id] && (views[id].hidden = false));
+  ["viewEditor", "editorActions"].forEach(id => views[id] && (views[id]!.hidden = false));
   document.title = `${state.currentScore.title || t("untitled")} — Ebony & Ivory`;
 
-  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+  const setVal = (id: string, val: string | number) => { const el = document.getElementById(id) as HTMLInputElement; if (el) el.value = String(val); };
   setVal("scoreTitle", state.currentScore.title || "");
   setVal("scoreComposer", state.currentScore.composer || "");
   setVal("timeSig", state.currentScore.timeSig || "4/4");
@@ -151,42 +150,47 @@ const initEditor = (views) => {
   window.scrollTo(0, 0);
 };
 
-const getFormNote = () => ({
-  rest: document.getElementById("isRest").checked,
-  keys: [{ letter: document.getElementById("pitchLetter").value, accidental: document.getElementById("pitchAccidental").value, octave: parseInt(document.getElementById("pitchOctave").value, 10) }],
+const getFormNote = (): Note => ({
+  rest: (document.getElementById("isRest") as HTMLInputElement).checked,
+  keys: [{
+    letter: (document.getElementById("pitchLetter") as HTMLInputElement).value,
+    accidental: (document.getElementById("pitchAccidental") as HTMLInputElement).value,
+    octave: parseInt((document.getElementById("pitchOctave") as HTMLInputElement).value, 10)
+  }],
   duration: state.editorState.duration,
-  dotted: document.getElementById("isDotted").checked,
-  dynamic: document.getElementById("dynamicSelect").value,
-  fingering: document.getElementById("fingeringSelect").value,
-  lyric: document.getElementById("lyricInput").value
+  dotted: (document.getElementById("isDotted") as HTMLInputElement).checked,
+  dynamic: (document.getElementById("dynamicSelect") as HTMLInputElement).value,
+  fingering: (document.getElementById("fingeringSelect") as HTMLInputElement).value,
+  lyric: (document.getElementById("lyricInput") as HTMLInputElement).value
 });
 
-const saveCurrentNote = () => {
+const saveCurrentNote = (): void => {
+  if (!state.currentScore) return;
   const { activeMeasure, activeStaff, editingNoteIdx } = state.editorState;
   if (editingNoteIdx === null) return;
   const staffNotes = state.currentScore.measures[activeMeasure]?.[activeStaff];
   if (staffNotes && staffNotes[editingNoteIdx]) staffNotes[editingNoteIdx] = getFormNote();
 };
 
-const loadNoteIntoForm = (n, idx) => {
+const loadNoteIntoForm = (n: Note, idx: number): void => {
   state.editorState.editingNoteIdx = idx;
-  const isRest = document.getElementById("isRest");
+  const isRest = document.getElementById("isRest") as HTMLInputElement;
   isRest.checked = n.rest;
   isRest.dispatchEvent(new Event("change"));
 
-  if (!n.rest && n.keys?.length > 0) {
+  if (!n.rest && n.keys && n.keys.length > 0) {
     const primaryKey = n.keys[0];
-    document.getElementById("pitchLetter").value = primaryKey.letter;
-    document.getElementById("pitchAccidental").value = primaryKey.accidental || "";
-    document.getElementById("pitchOctave").value = primaryKey.octave;
+    (document.getElementById("pitchLetter") as HTMLInputElement).value = primaryKey.letter;
+    (document.getElementById("pitchAccidental") as HTMLInputElement).value = primaryKey.accidental || "";
+    (document.getElementById("pitchOctave") as HTMLInputElement).value = String(primaryKey.octave);
   }
 
   state.editorState.duration = n.duration;
-  document.querySelectorAll(".dur-btn").forEach(b => b.classList.toggle("is-active", b.dataset.dur === n.duration));
-  document.getElementById("isDotted").checked = !!n.dotted;
-  document.getElementById("dynamicSelect").value = n.dynamic || "";
-  document.getElementById("fingeringSelect").value = n.fingering || "";
-  document.getElementById("lyricInput").value = n.lyric || "";
+  document.querySelectorAll(".dur-btn").forEach(b => b.classList.toggle("is-active", (b as HTMLElement).dataset.dur === n.duration));
+  (document.getElementById("isDotted") as HTMLInputElement).checked = !!n.dotted;
+  (document.getElementById("dynamicSelect") as HTMLInputElement).value = n.dynamic || "";
+  (document.getElementById("fingeringSelect") as HTMLInputElement).value = n.fingering || "";
+  (document.getElementById("lyricInput") as HTMLInputElement).value = n.lyric || "";
 
   const btnAdd = document.getElementById("btnAddNote");
   if (btnAdd) {
@@ -195,21 +199,22 @@ const loadNoteIntoForm = (n, idx) => {
   }
 };
 
-const syncMeasureControls = () => {
+const syncMeasureControls = (): void => {
   const score = state.currentScore;
+  if (!score) return;
   state.editorState.editingNoteIdx = null;
   state.editorState.activeMeasure = Math.max(0, Math.min(state.editorState.activeMeasure, score.measures.length - 1));
   const m = score.measures[state.editorState.activeMeasure];
 
-  const setChecked = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+  const setChecked = (id: string, val: boolean) => { const el = document.getElementById(id) as HTMLInputElement; if (el) el.checked = !!val; };
   setChecked("repeatStart", m.repeatStart);
   setChecked("repeatEnd", m.repeatEnd);
-  const ds = document.getElementById("directiveSelect");
+  const ds = document.getElementById("directiveSelect") as HTMLInputElement;
   if (ds) ds.value = m.directive || "";
   renderNoteList();
 };
 
-const renderNoteList = () => {
+const renderNoteList = (): void => {
   const container = document.getElementById("noteListContainer");
   if (!container || !state.currentScore) return;
   const notes = state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff] || [];
@@ -221,7 +226,7 @@ const renderNoteList = () => {
     Object.assign(btnAdd.style, { background: "", borderColor: "", color: "" });
   }
 
-  let draggedIdx = null;
+  let draggedIdx: number | null = null;
 
   notes.forEach((n, idx) => {
     const tag = document.createElement("div");
@@ -233,11 +238,12 @@ const renderNoteList = () => {
     const symbol = n.rest ? "Sil." : (n.keys || []).map(k => `${k.letter}${k.accidental || ""}${k.octave}`).join("+");
     tag.innerHTML = `<span class="note-text" style="cursor:pointer;" title="Clic para Editar">${symbol}</span> <span class="note-tag-del" data-idx="${idx}" title="Eliminar">✕</span>`;
 
-    tag.addEventListener("dragstart", (e) => { draggedIdx = idx; tag.style.opacity = "0.4"; e.dataTransfer.effectAllowed = "move"; });
+    tag.addEventListener("dragstart", (e) => { draggedIdx = idx; tag.style.opacity = "0.4"; if (e.dataTransfer) e.dataTransfer.effectAllowed = "move"; });
     tag.addEventListener("dragend", () => { tag.style.opacity = "1"; draggedIdx = null; });
-    tag.addEventListener("dragover", (e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; });
+    tag.addEventListener("dragover", (e) => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = "move"; });
     tag.addEventListener("drop", (e) => {
       e.preventDefault();
+      if (!state.currentScore) return;
       if (draggedIdx === null || draggedIdx === idx) return;
       const staffNotes = state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff];
       staffNotes.splice(idx, 0, staffNotes.splice(draggedIdx, 1)[0]);
@@ -246,7 +252,7 @@ const renderNoteList = () => {
       renderScore();
     });
 
-    tag.querySelector('.note-text').addEventListener("click", () => {
+    tag.querySelector('.note-text')?.addEventListener("click", () => {
       if (state.editorState.editingNoteIdx !== null && state.editorState.editingNoteIdx !== idx) saveCurrentNote();
       loadNoteIntoForm(n, idx);
       renderNoteList();
@@ -255,7 +261,8 @@ const renderNoteList = () => {
   });
 
   container.querySelectorAll(".note-tag-del").forEach(btn => btn.addEventListener("click", (e) => {
-    const idx = parseInt(e.target.dataset.idx, 10);
+    if (!state.currentScore) return;
+    const idx = parseInt((e.target as HTMLElement).dataset.idx || "0", 10);
     state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff].splice(idx, 1);
     if (state.editorState.editingNoteIdx === idx) state.editorState.editingNoteIdx = null;
     syncMeasureControls();
@@ -263,11 +270,10 @@ const renderNoteList = () => {
   }));
 };
 
-// UI: Card generator with strict ownership UI rendering
-const generateCardScore = (score, context) => {
+const generateCardScore = (score: Score, context: string): HTMLDivElement => {
   const isAdmin = state.currentUser?.email === "jm.santos.dev@gmail.com";
-  const isOwner = state.currentUser?.uid === score.publisherUid; // FIX: Determine true ownership
-  const diffColors = { beginner: "var(--color-success)", intermediate: "#E67E22", advanced: "var(--color-danger)" };
+  const isOwner = state.currentUser?.uid === score.publisherUid;
+  const diffColors: Record<string, string> = { beginner: "var(--color-success)", intermediate: "#E67E22", advanced: "var(--color-danger)" };
   const dDot = `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background-color:${diffColors[score.difficulty || "beginner"]}; margin-right:6px;" title="Dificultad"></span>`;
 
   let innerHTML = '';
@@ -312,7 +318,7 @@ const generateCardScore = (score, context) => {
   return card;
 };
 
-const filterAndSortScores = (scores, libState) => {
+const filterAndSortScores = (scores: Score[], libState: any): Score[] => {
   return scores.filter(s => {
     if (libState.query && !(s.title || "").toLowerCase().includes(libState.query) && !(s.composer || "").toLowerCase().includes(libState.query) && !(s.publisherName || "").toLowerCase().includes(libState.query)) return false;
     if (libState.filterTime !== "all" && s.timeSig !== libState.filterTime) return false;
@@ -335,29 +341,28 @@ const filterAndSortScores = (scores, libState) => {
   });
 };
 
-// UI: Codex grid renderer with localized dynamic toasts
-const fetchAndRenderCodex = async () => {
+const fetchAndRenderCodex = async (): Promise<void> => {
   const grid = document.getElementById("codexGrid");
   if (!grid) return;
   if (state.publicScores.length === 0) {
     grid.innerHTML = `<p style='text-align:center; grid-column: 1/-1;'>${t("codexLoading")}</p>`;
     try {
       const snap = await firebase.firestore().collection("public_scores").limit(100).get();
-      if (snap.empty) return grid.innerHTML = `<p style='text-align:center; grid-column: 1/-1;'>${t("codexEmpty")}</p>`;
-      state.publicScores = snap.docs.map(doc => doc.data());
+      if (snap.empty) { grid.innerHTML = `<p style='text-align:center; grid-column: 1/-1;'>${t("codexEmpty")}</p>`; return; }
+      state.publicScores = snap.docs.map(doc => doc.data() as Score);
     } catch (err) {
-      return grid.innerHTML = `<p style='text-align:center; color:var(--color-danger); grid-column: 1/-1;'>${t("codexError")}</p>`;
+      grid.innerHTML = `<p style='text-align:center; color:var(--color-danger); grid-column: 1/-1;'>${t("codexError")}</p>`; return;
     }
   }
 
   const scores = filterAndSortScores([...state.publicScores], state.codexState);
   grid.innerHTML = "";
-  if (scores.length === 0) return grid.innerHTML = `<p style='text-align:center; grid-column: 1/-1;'>${t("codexFilterEmpty")}</p>`;
+  if (scores.length === 0) { grid.innerHTML = `<p style='text-align:center; grid-column: 1/-1;'>${t("codexFilterEmpty")}</p>`; return; }
 
   scores.forEach(score => {
     const card = generateCardScore(score, "codex");
     card.addEventListener("click", async (e) => {
-      const action = e.target.closest("[data-action]")?.dataset.action;
+      const action = (e.target as HTMLElement).closest("[data-action]")?.getAttribute("data-action");
 
       if (!action || action === "view-codex") {
         state.isViewingPublic = true;
@@ -368,8 +373,8 @@ const fetchAndRenderCodex = async () => {
       e.stopPropagation();
 
       if (action === "clone-codex") {
-        const copy = { ...score, id: uid(), plate: nextPlateNumber(), createdAt: Date.now(), updatedAt: Date.now() };
-        ["publisherName", "publisherUid", "likes", "views", "copies"].forEach(k => delete copy[k]);
+        const copy: Score = { ...score, id: uid(), plate: nextPlateNumber(), createdAt: Date.now(), updatedAt: Date.now() };
+        ["publisherName", "publisherUid", "likes", "views", "copies"].forEach(k => delete (copy as any)[k]);
         persistScore(copy);
         showToast(i18nText("Guardado en tu catálogo", "Saved to your catalog"), "success");
         firebase.firestore().collection("public_scores").doc(score.id).update({ copies: firebase.firestore.FieldValue.increment(1) });
@@ -403,8 +408,7 @@ const fetchAndRenderCodex = async () => {
   });
 };
 
-// UI: Private library renderer with localized dynamic toasts
-const renderLibrary = () => {
+const renderLibrary = (): void => {
   const grid = document.getElementById("libraryGrid");
   const empty = document.getElementById("libraryEmpty");
   if (!grid) return;
@@ -423,7 +427,7 @@ const renderLibrary = () => {
   scores.forEach((score) => {
     const card = generateCardScore(score, "library");
     card.addEventListener("click", async (e) => {
-      const act = e.target.closest("[data-action]")?.dataset.action;
+      const act = (e.target as HTMLElement).closest("[data-action]")?.getAttribute("data-action");
       if (!act) { window.location.hash = `#viewer/${score.id}`; return; }
       e.stopPropagation();
 
@@ -455,7 +459,7 @@ const renderLibrary = () => {
   });
 };
 
-const publishToCodex = async (score) => {
+const publishToCodex = async (score: Score): Promise<void> => {
   if (!state.currentUser) return showToast("Inicia sesión para publicar", "error");
   try {
     await firebase.firestore().collection("public_scores").doc(score.id).set({
@@ -463,10 +467,10 @@ const publishToCodex = async (score) => {
     });
     state.publicScores = [];
     showToast("¡Partitura inmortalizada en El Códice!", "success");
-  } catch(e) { showToast("Error al publicar: " + e.message, "error"); }
+  } catch(e: any) { showToast("Error al publicar: " + e.message, "error"); }
 };
 
-const setupEventListeners = () => {
+const setupEventListeners = (): void => {
   const layoutBtn = document.getElementById("btnToggleLayout");
   if (layoutBtn) {
     state.editorState.layoutMode = state.editorState.layoutMode || "continuous";
@@ -484,54 +488,46 @@ const setupEventListeners = () => {
   setupCustomSelect("customFilterKeySig", "filterKeySig", (val) => { state.libraryState.filterKey = val; renderLibrary(); });
   setupCustomSelect("customFilterCodexKeySig", "filterCodexKeySig", (val) => { state.codexState.filterKey = val; fetchAndRenderCodex(); });
 
-  document.getElementById("btnShowTerms")?.addEventListener("click", (e) => {
-    e.preventDefault();
-    showConfirm(t("termsLink"), t("termsMsg"), t("acceptBtn"), false);
-  });
-  document.getElementById("btnReportCopyright")?.addEventListener("click", (e) => {
-    e.preventDefault();
-    showConfirm(t("reportLink"), t("reportMsg"), t("understoodBtn"), false);
-  });
+  document.getElementById("btnShowTerms")?.addEventListener("click", (e) => { e.preventDefault(); showConfirm(t("termsLink"), t("termsMsg"), t("acceptBtn"), false); });
+  document.getElementById("btnReportCopyright")?.addEventListener("click", (e) => { e.preventDefault(); showConfirm(t("reportLink"), t("reportMsg"), t("understoodBtn"), false); });
 
-  document.querySelectorAll(".lang-btn").forEach(btn => btn.addEventListener("click", () => setLang(btn.dataset.lang)));
+  document.querySelectorAll(".lang-btn").forEach(btn => btn.addEventListener("click", () => setLang((btn as HTMLElement).dataset.lang || 'en')));
   document.getElementById("btnExportJson")?.addEventListener("click", (e) => { e.preventDefault(); if(state.currentScore) downloadBlob(`${slugify(state.currentScore.title)}.json`, JSON.stringify(state.currentScore, null, 2)); });
   document.getElementById("btnExportPdf")?.addEventListener("click", (e) => { e.preventDefault(); if(!state.currentScore) return; const oTitle = document.title; document.title = `${(state.currentScore.title || t("untitled")).trim()} — ${(state.currentScore.composer || t("unknownAuthor")).trim()}`; window.print(); setTimeout(() => document.title = oTitle, 500); });
 
-  document.getElementById("btnImport")?.addEventListener("click", () => document.getElementById("fileImport").click());
+  document.getElementById("btnImport")?.addEventListener("click", () => document.getElementById("fileImport")?.click());
   document.getElementById("fileImport")?.addEventListener("change", (e) => {
-    const file = e.target.files[0]; if (!file) return;
+    const target = e.target as HTMLInputElement;
+    const file = target.files?.[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const data = JSON.parse(reader.result);
+        const data = JSON.parse(reader.result as string);
         if (!data.measures) throw new Error("Format error");
         Object.assign(data, { id: uid(), plate: nextPlateNumber(), updatedAt: Date.now(), createdAt: Date.now() });
         persistScore(data);
         window.location.hash = "#catalogo"; renderLibrary();
-      } catch (err) { showToast(`Error: ${err.message}`, 'error'); }
-      e.target.value = "";
+      } catch (err: any) { showToast(`Error: ${err.message}`, 'error'); }
+      target.value = "";
     };
     reader.readAsText(file);
   });
 
   document.getElementById("btnNewScore")?.addEventListener("click", () => { const score = newScore(); persistScore(score); window.location.hash = `#editor/${score.id}`; });
-
-  document.getElementById("btnBackLibrary")?.addEventListener("click", () => {
-    window.location.hash = state.isViewingPublic ? "#codice" : "#catalogo";
-  });
+  document.getElementById("btnBackLibrary")?.addEventListener("click", () => { window.location.hash = state.isViewingPublic ? "#codice" : "#catalogo"; });
 
   ["brandHome", "btnGoCatalog", "btnGoCodex", "btnGoCodexHero", "btnBackToMyCatalog"].forEach(id => {
     document.getElementById(id)?.addEventListener("click", () => {
-      const paths = { brandHome: "#inicio", btnGoCatalog: "#catalogo", btnGoCodex: "#codice", btnGoCodexHero: "#codice", btnBackToMyCatalog: "#catalogo" };
+      const paths: Record<string, string> = { brandHome: "#inicio", btnGoCatalog: "#catalogo", btnGoCodex: "#codice", btnGoCodexHero: "#codice", btnBackToMyCatalog: "#catalogo" };
       window.location.hash = paths[id];
     });
   });
 
-  document.getElementById("btnToggleViewer")?.addEventListener("click", () => window.location.hash = (document.body.classList.contains("is-viewer") ? "#editor/" : "#viewer/") + state.currentScore.id);
+  document.getElementById("btnToggleViewer")?.addEventListener("click", () => window.location.hash = (document.body.classList.contains("is-viewer") ? "#editor/" : "#viewer/") + state.currentScore?.id);
   document.getElementById("btnTogglePractice")?.addEventListener("click", startPracticeMode);
   document.getElementById("btnStopPracticeFloating")?.addEventListener("click", stopPracticeMode);
 
-  const bindFilter = (id, prop, targetObj, renderFn) => document.getElementById(id)?.addEventListener(id.includes("search") ? "input" : "change", (e) => { targetObj[prop] = e.target.value.toLowerCase(); renderFn(); });
+  const bindFilter = (id: string, prop: string, targetObj: any, renderFn: () => void) => document.getElementById(id)?.addEventListener(id.includes("search") ? "input" : "change", (e) => { targetObj[prop] = (e.target as HTMLInputElement).value.toLowerCase(); renderFn(); });
   bindFilter("searchScores", "query", state.libraryState, renderLibrary);
   bindFilter("sortScores", "sortBy", state.libraryState, renderLibrary);
   bindFilter("filterTimeSig", "filterTime", state.libraryState, renderLibrary);
@@ -546,68 +542,72 @@ const setupEventListeners = () => {
 
   if (document.getElementById("scoreTitle")) {
     const debouncedRender = debounce(renderScore, 300);
-    ["scoreTitle", "scoreComposer"].forEach(id => document.getElementById(id).addEventListener("input", (e) => { state.currentScore[id === "scoreTitle" ? "title" : "composer"] = e.target.value; debouncedRender(); }));
-    ["timeSig", "scoreDifficulty"].forEach(id => document.getElementById(id).addEventListener("change", (e) => { state.currentScore[id === "timeSig" ? "timeSig" : "difficulty"] = e.target.value; renderScore(); }));
+    ["scoreTitle", "scoreComposer"].forEach(id => document.getElementById(id)?.addEventListener("input", (e) => { if(state.currentScore) { (state.currentScore as any)[id === "scoreTitle" ? "title" : "composer"] = (e.target as HTMLInputElement).value; debouncedRender(); }}));
+    ["timeSig", "scoreDifficulty"].forEach(id => document.getElementById(id)?.addEventListener("change", (e) => { if(state.currentScore) { (state.currentScore as any)[id === "timeSig" ? "timeSig" : "difficulty"] = (e.target as HTMLInputElement).value; renderScore(); }}));
 
-    // UI: Sync editor BPM changes strictly within 20-300 bounds and trigger canvas re-render
     document.getElementById("scoreBpm")?.addEventListener("change", (e) => {
-      const newBpm = Math.max(20, Math.min(300, parseInt(e.target.value, 10) || 100));
-      e.target.value = newBpm;
-      state.currentScore.bpm = newBpm;
-      const plBpmInput = document.getElementById("plBpm");
-      if (plBpmInput) plBpmInput.value = newBpm;
-
+      const newBpm = Math.max(20, Math.min(300, parseInt((e.target as HTMLInputElement).value, 10) || 100));
+      (e.target as HTMLInputElement).value = String(newBpm);
+      if(state.currentScore) state.currentScore.bpm = newBpm;
+      const plBpmInput = document.getElementById("plBpm") as HTMLInputElement;
+      if (plBpmInput) plBpmInput.value = String(newBpm);
       renderScore();
     });
 
-    document.getElementById("btnPrevMeasure").addEventListener("click", () => { state.editorState.activeMeasure--; syncMeasureControls(); renderScore(); });
-    document.getElementById("btnNextMeasure").addEventListener("click", () => { state.editorState.activeMeasure++; syncMeasureControls(); renderScore(); });
-    document.getElementById("btnAddMeasure").addEventListener("click", () => { state.currentScore.measures.push(newMeasure()); state.editorState.activeMeasure = state.currentScore.measures.length - 1; syncMeasureControls(); renderScore(); });
-    document.getElementById("btnDeleteMeasure").addEventListener("click", async () => {
+    document.getElementById("btnPrevMeasure")?.addEventListener("click", () => { state.editorState.activeMeasure--; syncMeasureControls(); renderScore(); });
+    document.getElementById("btnNextMeasure")?.addEventListener("click", () => { state.editorState.activeMeasure++; syncMeasureControls(); renderScore(); });
+    document.getElementById("btnAddMeasure")?.addEventListener("click", () => { if(state.currentScore) { state.currentScore.measures.push(newMeasure()); state.editorState.activeMeasure = state.currentScore.measures.length - 1; syncMeasureControls(); renderScore(); }});
+    document.getElementById("btnDeleteMeasure")?.addEventListener("click", async () => {
+      if (!state.currentScore) return;
       if (state.currentScore.measures.length <= 1) return showToast(t("minMeasureAlert"), 'error');
       if (await showConfirm(t("delMeasureConfirm"), "Se borrarán todas las notas de este compás.", t("btnDelMeasure"), true)) {
         state.currentScore.measures.splice(state.editorState.activeMeasure, 1);
-        syncMeasureControls();
-        renderScore();
+        syncMeasureControls(); renderScore();
       }
     });
 
-    ["repeatStart", "repeatEnd"].forEach(id => document.getElementById(id).addEventListener("change", (e) => { state.currentScore.measures[state.editorState.activeMeasure][id] = e.target.checked; renderScore(); }));
-    document.getElementById("directiveSelect").addEventListener("change", (e) => { state.currentScore.measures[state.editorState.activeMeasure].directive = e.target.value; renderScore(); });
+    ["repeatStart", "repeatEnd"].forEach(id => document.getElementById(id)?.addEventListener("change", (e) => { if(state.currentScore) { (state.currentScore.measures[state.editorState.activeMeasure] as any)[id] = (e.target as HTMLInputElement).checked; renderScore(); }}));
+    document.getElementById("directiveSelect")?.addEventListener("change", (e) => { if(state.currentScore) { state.currentScore.measures[state.editorState.activeMeasure].directive = (e.target as HTMLInputElement).value; renderScore(); }});
 
-    ["Treble", "Bass"].forEach(clef => document.getElementById("btnStaff" + clef).addEventListener("click", () => {
-      state.editorState.activeStaff = clef.toLowerCase();
-      document.getElementById("btnStaffTreble").classList.toggle("is-active", clef === "Treble");
-      document.getElementById("btnStaffBass").classList.toggle("is-active", clef === "Bass");
+    ["Treble", "Bass"].forEach(clef => document.getElementById("btnStaff" + clef)?.addEventListener("click", () => {
+      state.editorState.activeStaff = clef.toLowerCase() as 'treble'|'bass';
+      document.getElementById("btnStaffTreble")?.classList.toggle("is-active", clef === "Treble");
+      document.getElementById("btnStaffBass")?.classList.toggle("is-active", clef === "Bass");
       renderNoteList();
     }));
 
-    document.getElementById("isRest").addEventListener("change", (e) => {
+    document.getElementById("isRest")?.addEventListener("change", (e) => {
       const pitchFields = document.getElementById("pitchFields");
-      pitchFields.style.opacity = e.target.checked ? 0.4 : 1;
-      pitchFields.querySelectorAll("select").forEach(s => s.disabled = e.target.checked);
+      if(pitchFields) {
+        pitchFields.style.opacity = (e.target as HTMLInputElement).checked ? "0.4" : "1";
+        pitchFields.querySelectorAll("select").forEach(s => s.disabled = (e.target as HTMLInputElement).checked);
+      }
     });
 
-    document.getElementById("durationGrid").addEventListener("click", (e) => {
-      const btn = e.target.closest(".dur-btn"); if (!btn) return;
-      state.editorState.duration = btn.dataset.dur;
-      document.getElementById("durationGrid").querySelectorAll(".dur-btn").forEach(b => b.classList.toggle("is-active", b === btn));
+    document.getElementById("durationGrid")?.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement).closest(".dur-btn") as HTMLElement; if (!btn) return;
+      state.editorState.duration = btn.dataset.dur || "q";
+      document.getElementById("durationGrid")?.querySelectorAll(".dur-btn").forEach(b => b.classList.toggle("is-active", b === btn));
     });
 
-    document.getElementById("btnAddNote").addEventListener("click", () => {
+    document.getElementById("btnAddNote")?.addEventListener("click", () => {
+      if(!state.currentScore) return;
       const isEditing = state.editorState.editingNoteIdx !== null;
       const staffNotes = state.currentScore.measures[state.editorState.activeMeasure][state.editorState.activeStaff];
       const needed = measureNeededQuarters(state.currentScore.timeSig);
-      const durQ = (DUR_Q[state.editorState.duration] || 0) * (document.getElementById("isDotted").checked ? 1.5 : 1);
+      const isDotted = (document.getElementById("isDotted") as HTMLInputElement).checked;
+      const durQ = (DUR_Q[state.editorState.duration] || 0) * (isDotted ? 1.5 : 1);
 
       let currentUsed = quartersUsed(staffNotes);
-      if (isEditing) currentUsed -= (DUR_Q[staffNotes[state.editorState.editingNoteIdx].duration] || 0) * (staffNotes[state.editorState.editingNoteIdx].dotted ? 1.5 : 1);
+      if (isEditing && state.editorState.editingNoteIdx !== null) currentUsed -= (DUR_Q[staffNotes[state.editorState.editingNoteIdx].duration] || 0) * (staffNotes[state.editorState.editingNoteIdx].dotted ? 1.5 : 1);
 
       if (currentUsed + durQ > needed) {
         const desk = document.getElementById("engraveDesk");
-        desk.style.transform = "translateX(10px)";
-        setTimeout(() => desk.style.transform = "translateX(-10px)", 50);
-        setTimeout(() => desk.style.transform = "translateX(0)", 100);
+        if(desk) {
+          desk.style.transform = "translateX(10px)";
+          setTimeout(() => desk.style.transform = "translateX(-10px)", 50);
+          setTimeout(() => desk.style.transform = "translateX(0)", 100);
+        }
         return;
       }
 
@@ -615,11 +615,12 @@ const setupEventListeners = () => {
       if (isEditing) { saveCurrentNote(); state.editorState.editingNoteIdx = null; }
       else { staffNotes.push(getFormNote()); }
 
-      ["dynamicSelect", "fingeringSelect", "lyricInput"].forEach(id => document.getElementById(id).value = "");
+      ["dynamicSelect", "fingeringSelect", "lyricInput"].forEach(id => { const el = document.getElementById(id) as HTMLInputElement; if(el) el.value = ""; });
       syncMeasureControls(); renderScore();
     });
 
     document.getElementById("btnAddChordNote")?.addEventListener("click", () => {
+      if(!state.currentScore) return;
       const { activeMeasure, activeStaff, editingNoteIdx } = state.editorState;
       const notes = state.currentScore.measures[activeMeasure]?.[activeStaff];
       if (!notes || !notes.length) return showToast("Añade una nota base primero", "error");
@@ -627,18 +628,20 @@ const setupEventListeners = () => {
       const target = editingNoteIdx !== null ? notes[editingNoteIdx] : notes[notes.length - 1];
       if (target.rest) return showToast("No puedes hacer acordes con silencios", "error");
 
-      const k = { letter: document.getElementById("pitchLetter").value, accidental: document.getElementById("pitchAccidental").value, octave: parseInt(document.getElementById("pitchOctave").value, 10) };
+      const k = { letter: (document.getElementById("pitchLetter") as HTMLInputElement).value, accidental: (document.getElementById("pitchAccidental") as HTMLInputElement).value, octave: parseInt((document.getElementById("pitchOctave") as HTMLInputElement).value, 10) };
+      if (!target.keys) target.keys = [];
       if (target.keys.some(x => x.letter === k.letter && x.octave === k.octave && x.accidental === k.accidental)) return showToast("Esa tecla ya está en el acorde", "error");
 
       clearRedoStack();
       target.keys.push(k);
-      target.keys.sort((a, b) => (a.octave * 10 + { 'c': 0, 'd': 1, 'e': 2, 'f': 3, 'g': 4, 'a': 5, 'b': 6 }[a.letter.toLowerCase()]) - (b.octave * 10 + { 'c': 0, 'd': 1, 'e': 2, 'f': 3, 'g': 4, 'a': 5, 'b': 6 }[b.letter.toLowerCase()]));
+      target.keys.sort((a, b) => (a.octave * 10 + ({ 'c': 0, 'd': 1, 'e': 2, 'f': 3, 'g': 4, 'a': 5, 'b': 6 } as Record<string,number>)[a.letter.toLowerCase()]) - (b.octave * 10 + ({ 'c': 0, 'd': 1, 'e': 2, 'f': 3, 'g': 4, 'a': 5, 'b': 6 } as Record<string,number>)[b.letter.toLowerCase()]));
 
       syncMeasureControls(); renderScore();
     });
 
     document.addEventListener("keydown", (e) => {
-      if (document.getElementById("viewEditor").hidden || ['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+      const viewEditor = document.getElementById("viewEditor");
+      if ((viewEditor && viewEditor.hidden) || ['INPUT', 'SELECT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
       const score = state.currentScore; if (!score || !score.measures) return;
       let activeM = state.editorState.activeMeasure, staff = state.editorState.activeStaff;
       let notes = score.measures[activeM]?.[staff] || [];
@@ -679,25 +682,22 @@ const setupEventListeners = () => {
   const btnPlay = document.getElementById("plBtnPlay");
   if (btnPlay) {
     btnPlay.addEventListener("click", () => isAudioPlaying() ? pauseAudio() : playAudio());
-    document.getElementById("plBtnRewind").addEventListener("click", stopPlayback);
+    document.getElementById("plBtnRewind")?.addEventListener("click", stopPlayback);
     document.querySelectorAll(".pl-speed-btn").forEach((b) => b.addEventListener("click", () => {
-      const factor = parseFloat(b.dataset.speed); setSpeedFactor(factor);
-      document.querySelectorAll(".pl-speed-btn").forEach(btn => btn.classList.toggle("is-active", parseFloat(btn.dataset.speed) === factor));
+      const factor = parseFloat((b as HTMLElement).dataset.speed || "1"); setSpeedFactor(factor);
+      document.querySelectorAll(".pl-speed-btn").forEach(btn => btn.classList.toggle("is-active", parseFloat((btn as HTMLElement).dataset.speed || "1") === factor));
     }));
-    // UI: Sync audio BPM with physical score state
     document.getElementById("plBpm")?.addEventListener("change", (e) => {
-      const newBpm = Math.max(20, Math.min(300, parseInt(e.target.value, 10) || 100));
-      e.target.value = newBpm;
-      if (state.currentScore) {
-        state.currentScore.bpm = newBpm;
-      }
+      const newBpm = Math.max(20, Math.min(300, parseInt((e.target as HTMLInputElement).value, 10) || 100));
+      (e.target as HTMLInputElement).value = String(newBpm);
+      if (state.currentScore) { state.currentScore.bpm = newBpm; }
       refreshAudioBPM();
-    });    document.addEventListener("click", (e) => { if (isAudioPlaying() && (e.target.closest("#engraveDesk") || e.target.closest(".measure-hit"))) pauseAudio(); });
+    });
+    document.addEventListener("click", (e) => { if (isAudioPlaying() && ((e.target as HTMLElement).closest("#engraveDesk") || (e.target as HTMLElement).closest(".measure-hit"))) pauseAudio(); });
   }
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // INIT: Core environment & theme preferences
   await checkMaintenanceStatus();
   const themeBtn = document.getElementById('themeToggleBtn');
   const isDark = (localStorage.getItem('theme') || 'light') === 'dark';
@@ -708,19 +708,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     themeBtn.textContent = active ? '☀️' : '🌙';
   };
 
-  // INIT: External services & modular features
   initFirebase(); setupAuthUI(); setupProfileUI(); initShortcuts(); initDragAndDrop(); setupEventListeners();
 
-  // UI: Canvas zoom handling via mouse wheel
   const paperWrap = document.getElementById('paperWrap');
   if (paperWrap) {
     let zoom = 1;
     paperWrap.addEventListener('wheel', (e) => {
-      if (e.ctrlKey || e.metaKey) { e.preventDefault(); zoom = Math.max(0.5, Math.min(zoom + (e.deltaY < 0 ? 0.1 : -0.1), 2)); paperWrap.style.setProperty('--zoom-level', zoom); }
+      if (e.ctrlKey || e.metaKey) { e.preventDefault(); zoom = Math.max(0.5, Math.min(zoom + (e.deltaY < 0 ? 0.1 : -0.1), 2)); paperWrap.style.setProperty('--zoom-level', String(zoom)); }
     }, { passive: false });
   }
 
-  // UI: Background animations rendering (Floating notes)
   const wrapSpawn = document.getElementById("floatingNotes");
   if (wrapSpawn && wrapSpawn.childElementCount === 0) {
     const glyphs = ["♪", "♫", "♩", "𝄞"];
@@ -731,35 +728,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // UI: Sticky header dimensional observer
   const header = document.getElementById("mainHeader");
   if (header && typeof ResizeObserver !== "undefined") new ResizeObserver(syncEditorStickyOffset).observe(header);
   window.addEventListener("resize", syncEditorStickyOffset);
 
-  // SYNC: Local state event listeners
   on("langchange", () => { renderCustomSelects(); if (!document.getElementById("viewLibrary")?.hidden) renderLibrary(); if (!document.getElementById("viewCodex")?.hidden) fetchAndRenderCodex(); if (!document.getElementById("viewEditor")?.hidden) renderScore(); updateViewerButtonText(); });
   on("scoreschanged", () => { if (!document.getElementById("viewLibrary")?.hidden) renderLibrary(); });
   on("measureselected", syncMeasureControls);
 
-  // ROUTER: Navigation handling & auto-lang detection
-  setLang((navigator.language || navigator.userLanguage || "en").toLowerCase().startsWith("es") ? "es" : "en");
+  setLang((navigator.language || (navigator as any).userLanguage || "en").toLowerCase().startsWith("es") ? "es" : "en");
   window.addEventListener("hashchange", handleNavigation);
   if (!window.location.hash || window.location.hash === "#") window.location.hash = "#inicio"; else handleNavigation();
 });
 
-// MAINTENANCE: Global exception handlers to prevent critical UI failures
 window.addEventListener("error", (event) => {
   console.error("Critical Client Exception intercepted:", event.error);
-  if (typeof showToast === "function") {
-    showToast("An unexpected error occurred in the interface.", "danger");
-  }
-  event.preventDefault();
+  if (typeof showToast === "function") showToast("An unexpected error occurred in the interface.", "error");
 });
 
 window.addEventListener("unhandledrejection", (event) => {
   console.error("Critical Async Promise Rejection intercepted:", event.reason);
-  if (typeof showToast === "function") {
-    showToast("Synchronization error or async process interrupted.", "danger");
-  }
-  event.preventDefault();
+  if (typeof showToast === "function") showToast("Synchronization error or async process interrupted.", "error");
 });

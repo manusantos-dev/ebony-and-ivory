@@ -1,37 +1,39 @@
-import { uid, nextPlateNumber, persistScore } from '../core/storage.js';
-import { showToast } from '../ui/toast.js';
-import { emit } from '../core/events.js';
+// INIT: Drag and Drop File Import Utility
+import { uid, nextPlateNumber, persistScore } from '../core/storage';
+import { showToast } from '../ui/toast';
+import { emit } from '../core/events';
 
-export const initDragAndDrop = () => {
+export const initDragAndDrop = (): void => {
   const { body } = document;
 
-  body.addEventListener('dragover', (e) => {
+  body.addEventListener('dragover', (e: DragEvent) => {
     e.preventDefault();
     if (window.location.hash === '#catalogo') body.style.opacity = '0.7';
   });
 
-  body.addEventListener('dragleave', (e) => {
+  body.addEventListener('dragleave', (e: DragEvent) => {
     e.preventDefault();
     body.style.opacity = '1';
   });
 
-  body.addEventListener('drop', (e) => {
+  body.addEventListener('drop', (e: DragEvent) => {
     e.preventDefault();
     body.style.opacity = '1';
-    
+
     if (window.location.hash !== '#catalogo') return;
 
-    const file = e.dataTransfer.files[0];
+    const file = e.dataTransfer?.files[0];
     if (!file || !file.name.endsWith('.json')) {
-      return showToast('Solo se admiten archivos .json', 'error');
+      showToast('Solo se admiten archivos .json', 'error');
+      return;
     }
 
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const data = JSON.parse(reader.result);
+        const data = JSON.parse(reader.result as string);
         if (!data.measures) throw new Error("Invalid format");
-        
+
         const score = {
           ...data,
           id: uid(),
@@ -40,7 +42,7 @@ export const initDragAndDrop = () => {
           createdAt: Date.now()
         };
         delete score.isExample;
-        
+
         persistScore(score);
         showToast('Partitura importada con éxito', 'success');
         emit('scoreschanged');

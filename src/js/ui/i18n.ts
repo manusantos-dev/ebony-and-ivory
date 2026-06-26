@@ -1,7 +1,8 @@
-import { state } from "../core/state.js";
-import { emit } from "../core/events.js";
+// INIT: Localization Dictionary & i18n Engine
+import { state } from "../core/state";
+import { emit } from "../core/events";
 
-const translations = {
+const translations: Record<string, Record<string, string>> = {
   es: {
     importBtn: "Importar .json", newScoreBtn: "+ Nueva partitura", backBtn: "← Volver",
     exportJsonBtn: "Descargar .json", exportPdfBtn: "Exportar PDF",
@@ -25,7 +26,7 @@ const translations = {
     lblDirective: "Salto o Final", untitled: "Sin título", unknownAuthor: "Desconocido", measuresTxt: "compases",
     editBtn: "✎ Editar", viewBtn: "👁 Ver", copyBtn: "⎘ Copiar", deleteBtn: "🗑️ Borrar", saveCopyBtn: "Guardar una copia", savedToCatalog: "Partitura guardada en Mi Catálogo", cloneBtn: "⎘ Duplicar",
     delConfirm: "¿Eliminar?", delMeasureConfirm: "¿Eliminar compás?",
-    minMeasureAlert: "Mínimo un compás.", toggleViewBtn: "Alternar Visor", viewMode: "👁️ Ver Partitura", editMode: "✎ Editar Partitura", 
+    minMeasureAlert: "Mínimo un compás.", toggleViewBtn: "Alternar Visor", viewMode: "👁️ Ver Partitura", editMode: "✎ Editar Partitura",
     practiceBtn: "🎤 Modo Práctica", practiceDemo: "Modo práctica (DEMO) iniciado. ¡Toca la nota indicada!", practiceWin: "¡Enhorabuena! Has completado la partitura.", practiceErr: "No hay notas en la Clave de Sol para practicar.", practiceMicErr: "Error de micrófono: Da permisos en el navegador.",
     codexBtn: "El Códice", publishBtn: "🌍 Publicar",
     codexSubtitle: "La Biblioteca de Alejandría de las partituras. Explora, roba (con cariño) y estudia las obras maestras de la comunidad.",
@@ -96,21 +97,21 @@ const translations = {
   }
 };
 
-export const t = (key) => translations[state.lang]?.[key] || key;
+export const t = (key: string): string => translations[state.lang]?.[key] || key;
 
-export const setLang = (lang) => {
+export const setLang = (lang: string): void => {
   state.lang = lang;
-  document.querySelectorAll(".lang-btn").forEach(b => b.classList.toggle("active", b.dataset.lang === lang));
+  document.querySelectorAll(".lang-btn").forEach(b => (b as HTMLElement).classList.toggle("active", (b as HTMLElement).dataset.lang === lang));
   document.querySelectorAll("[data-i18n]").forEach(el => {
     const key = el.getAttribute("data-i18n");
-    if (translations[lang][key]) el.innerHTML = translations[lang][key];
+    if (key && translations[lang][key]) el.innerHTML = translations[lang][key];
   });
-  
+
   document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
     const key = el.getAttribute("data-i18n-placeholder");
-    if (translations[lang][key]) el.placeholder = translations[lang][key];
+    if (key && translations[lang][key]) (el as HTMLInputElement).placeholder = translations[lang][key];
   });
-  
+
   const codexSub = document.getElementById("codexSubtitle");
   if (codexSub) codexSub.textContent = t("codexSubtitle");
 

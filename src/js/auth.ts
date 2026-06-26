@@ -1,41 +1,40 @@
+// INIT: Authentication & Cloud Sync Module
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
-import { FIREBASE_CONFIG, STORAGE_KEY } from './core/config.js';
+import { FIREBASE_CONFIG, STORAGE_KEY } from './core/config';
 import { state } from "./core/state";
-import { t } from "./ui/i18n.js";
+import { t } from "./ui/i18n";
 import { loadAll, saveAll } from "./core/storage";
 import { emit, on } from "./core/events";
-import { showToast } from "./ui/toast.js";
-import { isMaintenanceMode } from './features/maintenance.js';
-import { showSyncing, showSynced } from './ui/sync-status.js';
-import { showConfirm } from './ui/dialog.js';
+import { showToast } from "./ui/toast";
+import { isMaintenanceMode } from './features/maintenance';
+import { showSyncing, showSynced } from './ui/sync-status';
+import { showConfirm } from './ui/dialog';
+import { Score } from './core/types';
 
-let auth = null;
-let db = null;
-let unsubscribeSnapshot = null;
-let pollTimer = null;
-let lastSnapshotMap = {};
+let auth: firebase.auth.Auth | null = null;
+let db: firebase.firestore.Firestore | null = null;
+let unsubscribeSnapshot: (() => void) | null = null;
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+let lastSnapshotMap: Record<string, number> = {};
 
-const snapshotOf = (map) => Object.fromEntries(Object.entries(map).map(([k, v]) => [k, v.updatedAt || 0]));
+const snapshotOf = (map: Record<string, Score>): Record<string, number> => Object.fromEntries(Object.entries(map).map(([k, v]) => [k, v.updatedAt || 0]));
 
 // SYNC: Two-way cloud synchronization logic
-const syncToCloud = () => {
+const syncToCloud = (): void => {
   if (isMaintenanceMode || !state.currentUser || !db) return;
 
-  let all;
+  let all: Record<string, Score>;
   try {
     all = loadAll();
-    // FIX: Guard clause to prevent mass cloud deletion if local storage fails to parse
     if (Object.keys(all).length === 0 && Object.keys(lastSnapshotMap).length > 0) {
       if (localStorage.getItem(STORAGE_KEY)) {
          console.warn("Sync aborted: Local data present but unreadable. Preventing cloud wipe.");
          return;
       }
     }
-  } catch (e) {
-    return;
-  }
+  } catch (e) { return; }
 
   const coll = db.collection("users").doc(state.currentUser.uid).collection("scores");
   const batch = db.batch();
@@ -64,35 +63,30 @@ const syncToCloud = () => {
   }
 };
 
-export const initFirebase = () => {
+export const initFirebase = (): string | null => {
   try {
-    if (typeof firebase === "undefined" || !FIREBASE_CONFIG.apiKey) {
-      return "Error de conexión o configuración Firebase.";
-    }
+    if (typeof firebase === "undefined" || !FIREBASE_CONFIG.apiKey) return "Error de conexión o configuración Firebase.";
 
     if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     auth = firebase.auth();
     db = firebase.firestore();
 
     auth.onAuthStateChanged((user) => {
-      // INIT: Set global state immediately
-      state.currentUser = user;
+      state.currentUser = user ? { uid: user.uid, email: user.email, displayName: user.displayName, photoURL: user.photoURL } : null;
       updateAccountUI();
-      emit("authchange", user);
+      emit("authchange", state.currentUser);
 
-      if (user) {
+      if (user && db) {
         lastSnapshotMap = {};
         const coll = db.collection("users").doc(user.uid).collection("scores");
 
-        // SYNC: Listen to cloud data and hydrate local storage
         unsubscribeSnapshot = coll.onSnapshot((snap) => {
-          const cloudMap = {};
-          snap.forEach((doc) => { cloudMap[doc.id] = doc.data(); });
+          const cloudMap: Record<string, Score> = {};
+          snap.forEach((doc) => { cloudMap[doc.id] = doc.data() as Score; });
           const localAll = loadAll();
           let changed = false;
 
           Object.keys(cloudMap).forEach((id) => {
-            // FIX: Hydrate logic to accept cloud data if local is older or missing
             if (!localAll[id] || (cloudMap[id].updatedAt || 0) > (localAll[id].updatedAt || 0)) {
               localAll[id] = cloudMap[id];
               changed = true;
@@ -102,7 +96,6 @@ export const initFirebase = () => {
           if (changed) {
             saveAll(localAll);
             lastSnapshotMap = snapshotOf(localAll);
-            // FIX: Emit global event to trigger UI re-renders across the app
             emit("scoreschanged");
             showToast("☁️ Catálogo sincronizado", "success");
           }
@@ -119,35 +112,38 @@ export const initFirebase = () => {
         state.currentScore = null;
         if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-        // FIX: Update UI immediately upon logout to show empty state
         emit("scoreschanged");
         if (!["#ejemplo", "#inicio"].includes(window.location.hash)) window.location.hash = "#inicio";
       }
     });
 
     return null;
-  } catch (e) {
+  } catch (e: any) {
     return `Error crítico Firebase: ${e.message}`;
   }
 };
 
-export const updateAccountUI = () => {
+export const updateAccountUI = (): void => {
   const loginBtn = document.getElementById("btnAccountLogin");
   const loggedBox = document.getElementById("accountLogged");
-  if (!loginBtn) return;
-  const user = state.currentUser;
+  if (!loginBtn || !loggedBox) return;
 
+  const user = state.currentUser;
   if (user) {
     loginBtn.hidden = true;
     loggedBox.hidden = false;
-    document.getElementById("acctEmail").textContent = user.displayName || user.email || "";
+    const emailEl = document.getElementById("acctEmail");
+    if (emailEl) emailEl.textContent = user.displayName || user.email || "";
+
     const avatar = document.getElementById("acctAvatar");
-    if (user.photoURL) {
-      avatar.style.backgroundImage = `url(${user.photoURL})`;
-      avatar.textContent = "";
-    } else {
-      avatar.style.backgroundImage = "none";
-      avatar.textContent = (user.displayName || user.email || "?").charAt(0).toUpperCase();
+    if (avatar) {
+      if (user.photoURL) {
+        avatar.style.backgroundImage = `url(${user.photoURL})`;
+        avatar.textContent = "";
+      } else {
+        avatar.style.backgroundImage = "none";
+        avatar.textContent = (user.displayName || user.email || "?").charAt(0).toUpperCase();
+      }
     }
   } else {
     loginBtn.hidden = false;
@@ -155,8 +151,8 @@ export const updateAccountUI = () => {
   }
 };
 
-// I18N: Comprehensive and fuzzy Firebase error translation matching
-export const translateFirebaseError = (err) => {
+// I18N: Fuzzy Firebase error translation
+export const translateFirebaseError = (err: any): string => {
   const code = err?.code || "unknown";
   const isEs = state.lang === "es";
 
@@ -174,7 +170,7 @@ export const translateFirebaseError = (err) => {
   return isEs ? `Error de acceso (${code})` : `Auth error (${code})`;
 };
 
-export const processProfileImage = (file, callback) => {
+export const processProfileImage = (file: File, callback: (url: string) => void): void => {
   const reader = new FileReader();
   reader.onload = (e) => {
     const img = new Image();
@@ -182,16 +178,17 @@ export const processProfileImage = (file, callback) => {
       const canvas = document.createElement("canvas");
       canvas.width = 150; canvas.height = 150;
       const ctx = canvas.getContext("2d");
+      if (!ctx) return;
       const minSize = Math.min(img.width, img.height);
       ctx.drawImage(img, (img.width - minSize) / 2, (img.height - minSize) / 2, minSize, minSize, 0, 0, 150, 150);
       callback(canvas.toDataURL("image/jpeg", 0.85));
     };
-    img.src = e.target.result;
+    img.src = e.target?.result as string;
   };
   reader.readAsDataURL(file);
 };
 
-export const refreshLangTexts = () => {
+export const refreshLangTexts = (): void => {
   const tabLogin = document.getElementById("authTabLogin");
   if (!tabLogin) return;
   const loginLabel = document.getElementById("acctLoginLabel");
@@ -203,136 +200,148 @@ export const refreshLangTexts = () => {
   if (submitBtn) submitBtn.textContent = tabLogin.classList.contains("is-active") ? t("login") : t("register");
 
   tabLogin.textContent = t("login");
-  document.getElementById("authTabRegister").textContent = t("register");
+  const tabReg = document.getElementById("authTabRegister");
+  if (tabReg) tabReg.textContent = t("register");
 };
 
-export const setupAuthUI = () => {
+export const setupAuthUI = (): void => {
   const overlay = document.getElementById("authModalOverlay");
   if (!overlay) return;
 
-  document.getElementById("btnAccountLogin").addEventListener("click", () => {
+  document.getElementById("btnAccountLogin")?.addEventListener("click", () => {
     overlay.hidden = false;
-    document.getElementById("authError").hidden = true;
-    setTimeout(() => document.getElementById("authEmail").focus(), 50);
+    const errBox = document.getElementById("authError");
+    if (errBox) errBox.hidden = true;
+    setTimeout(() => document.getElementById("authEmail")?.focus(), 50);
   });
 
-  document.getElementById("authModalClose").addEventListener("click", () => overlay.hidden = true);
+  document.getElementById("authModalClose")?.addEventListener("click", () => overlay.hidden = true);
 
   ["authTabLogin", "authTabRegister"].forEach((id) => {
-    document.getElementById(id).addEventListener("click", (e) => {
-      document.getElementById("authTabLogin").classList.remove("is-active");
-      document.getElementById("authTabRegister").classList.remove("is-active");
-      e.target.classList.add("is-active");
+    document.getElementById(id)?.addEventListener("click", (e) => {
+      document.getElementById("authTabLogin")?.classList.remove("is-active");
+      document.getElementById("authTabRegister")?.classList.remove("is-active");
+      (e.target as HTMLElement).classList.add("is-active");
       refreshLangTexts();
-      document.getElementById("authError").hidden = true;
+      const errBox = document.getElementById("authError");
+      if (errBox) errBox.hidden = true;
     });
   });
 
-  document.getElementById("authForm").addEventListener("submit", (e) => {
+  document.getElementById("authForm")?.addEventListener("submit", (e) => {
     e.preventDefault();
     const errBox = document.getElementById("authError");
-    errBox.hidden = true;
-    if (!auth) { errBox.hidden = false; errBox.textContent = "Error crítico."; return; }
+    if (errBox) errBox.hidden = true;
+    if (!auth) { if (errBox) { errBox.hidden = false; errBox.textContent = "Error crítico."; } return; }
 
-    const isReg = document.getElementById("authTabRegister").classList.contains("is-active");
-    const email = document.getElementById("authEmail").value;
-    const pass = document.getElementById("authPassword").value;
+    const isReg = document.getElementById("authTabRegister")?.classList.contains("is-active");
+    const email = (document.getElementById("authEmail") as HTMLInputElement).value;
+    const pass = (document.getElementById("authPassword") as HTMLInputElement).value;
 
     const promise = isReg ? auth.createUserWithEmailAndPassword(email, pass) : auth.signInWithEmailAndPassword(email, pass);
-    promise.then(() => overlay.hidden = true).catch(err => { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); });
+    promise.then(() => overlay.hidden = true).catch(err => { if (errBox) { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); } });
   });
 
-  document.getElementById("authGoogleBtn").addEventListener("click", () => {
+  document.getElementById("authGoogleBtn")?.addEventListener("click", () => {
     const errBox = document.getElementById("authError");
-    errBox.hidden = true;
+    if (errBox) errBox.hidden = true;
     if (!auth) return;
     auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
       .then(() => overlay.hidden = true)
-      .catch(err => { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); });
+      .catch(err => { if (errBox) { errBox.hidden = false; errBox.textContent = translateFirebaseError(err); } });
   });
 };
 
-export const setupProfileUI = () => {
+export const setupProfileUI = (): void => {
   const overlay = document.getElementById("profileModalOverlay");
   if (!overlay) return;
 
-  document.getElementById("accountLogged").addEventListener("click", () => {
+  document.getElementById("accountLogged")?.addEventListener("click", () => {
     const user = state.currentUser;
+    if (!user) return;
     overlay.hidden = false;
-    document.getElementById("profNameTitle").textContent = user.displayName || t("account");
-    document.getElementById("profEmailText").textContent = user.email || "";
-    document.getElementById("profDisplayName").value = user.displayName || "";
+
+    const profNameTitle = document.getElementById("profNameTitle");
+    if (profNameTitle) profNameTitle.textContent = user.displayName || t("account");
+
+    const profEmailText = document.getElementById("profEmailText");
+    if (profEmailText) profEmailText.textContent = user.email || "";
+
+    const profDisplayName = document.getElementById("profDisplayName") as HTMLInputElement;
+    if (profDisplayName) profDisplayName.value = user.displayName || "";
 
     const avatar = document.getElementById("profAvatarLg");
-    if (user.photoURL) {
-      avatar.style.backgroundImage = `url(${user.photoURL})`;
-      avatar.textContent = "";
-    } else {
-      avatar.style.backgroundImage = "none";
-      avatar.textContent = (user.displayName || user.email || "?").charAt(0).toUpperCase();
+    if (avatar) {
+      if (user.photoURL) {
+        avatar.style.backgroundImage = `url(${user.photoURL})`;
+        avatar.textContent = "";
+      } else {
+        avatar.style.backgroundImage = "none";
+        avatar.textContent = (user.displayName || user.email || "?").charAt(0).toUpperCase();
+      }
     }
   });
 
-  document.getElementById("profileModalClose").addEventListener("click", () => overlay.hidden = true);
-  document.getElementById("btnAccountLogout").addEventListener("click", () => { auth?.signOut(); overlay.hidden = true; });
+  document.getElementById("profileModalClose")?.addEventListener("click", () => overlay.hidden = true);
+  document.getElementById("btnAccountLogout")?.addEventListener("click", () => { auth?.signOut(); overlay.hidden = true; });
 
-  document.getElementById("profileForm").addEventListener("submit", (e) => {
+  document.getElementById("profileForm")?.addEventListener("submit", (e) => {
     e.preventDefault();
-    const btn = e.target.querySelector('button[type="submit"]');
-    btn.disabled = true;
+    const btn = (e.target as HTMLElement).querySelector('button[type="submit"]') as HTMLButtonElement;
+    if (btn) btn.disabled = true;
 
-    const updates = { displayName: document.getElementById("profDisplayName").value };
-    const fileInput = document.getElementById("profPhotoFile");
+    const displayNameInput = document.getElementById("profDisplayName") as HTMLInputElement;
+    const updates: { displayName?: string; photoURL?: string } = { displayName: displayNameInput?.value };
+    const fileInput = document.getElementById("profPhotoFile") as HTMLInputElement;
 
     const apply = () => {
-      state.currentUser.updateProfile(updates)
-        .then(() => { updateAccountUI(); overlay.hidden = true; btn.disabled = false; })
-        .catch((err) => { showToast(translateFirebaseError(err), 'error'); btn.disabled = false; });
+      const fbUser = firebase.auth().currentUser;
+      if (!fbUser) return;
+      fbUser.updateProfile(updates)
+        .then(() => {
+          if (state.currentUser) {
+            state.currentUser.displayName = updates.displayName || state.currentUser.displayName;
+            state.currentUser.photoURL = updates.photoURL || state.currentUser.photoURL;
+          }
+          updateAccountUI();
+          overlay.hidden = true;
+          if (btn) btn.disabled = false;
+        })
+        .catch((err) => { showToast(translateFirebaseError(err), 'error'); if (btn) btn.disabled = false; });
     };
 
-    if (fileInput.files.length > 0) {
+    if (fileInput?.files && fileInput.files.length > 0) {
       processProfileImage(fileInput.files[0], (base64Url) => { updates.photoURL = base64Url; apply(); });
     } else {
       apply();
     }
   });
 
-  // ACTIONS: Account deletion logic with pre-flight GDPR anonymization routine
-  const btnDeleteAcc = document.getElementById("btnDeleteAccount");
+  const btnDeleteAcc = document.getElementById("btnDeleteAccount") as HTMLButtonElement;
   if (btnDeleteAcc) {
     btnDeleteAcc.addEventListener("click", async () => {
       if (await showConfirm(t("deleteAccount"), t("deleteWarning"), "Eliminar", true)) {
         try {
           const user = firebase.auth().currentUser;
-          if (user) {
-            const overlay = document.getElementById("profileModalOverlay");
-
-            // UI: Show loading state to prevent double clicks during network operations
+          if (user && db) {
             btnDeleteAcc.disabled = true;
             btnDeleteAcc.textContent = "...";
 
-            // FIX: Anonymize public scores before destroying identity permissions
             try {
               const snap = await db.collection("public_scores").where("publisherUid", "==", user.uid).get();
               const batch = db.batch();
-              snap.forEach(doc => {
-                batch.update(doc.ref, { publisherName: state.lang === 'es' ? "Usuario eliminado" : "Deleted User" });
-              });
+              snap.forEach(doc => batch.update(doc.ref, { publisherName: state.lang === 'es' ? "Usuario eliminado" : "Deleted User" }));
               await batch.commit();
             } catch (anonErr) {
-              console.warn("Could not anonymize some public scores", anonErr);
+               console.warn("Could not anonymize some public scores", anonErr);
             }
 
-            if (unsubscribeSnapshot) {
-              unsubscribeSnapshot();
-              unsubscribeSnapshot = null;
-            }
-
+            if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
             await user.delete();
             showToast(state.lang === 'es' ? "Tu cuenta y tus datos han sido eliminados." : "Your account and data have been deleted.", "success");
             if (overlay) overlay.hidden = true;
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error("Account Deletion Error:", error);
           const reauthMsg = state.lang === 'es' ? "Por seguridad, cierra sesión y vuelve a entrar para borrar tu cuenta." : "For security, please log out and log in again to delete your account.";
           showToast(error?.code?.includes('requires-recent-login') ? reauthMsg : t("genericError"), "error");
