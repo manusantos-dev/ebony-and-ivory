@@ -17,6 +17,7 @@ import { initDragAndDrop } from './features/drag-drop';
 import { checkMaintenanceStatus } from './features/maintenance';
 import { showConfirm } from './ui/dialog';
 import { Score, Note } from "./core/types";
+import { initPWA } from './core/pwa';
 
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
@@ -709,6 +710,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   initFirebase(); setupAuthUI(); setupProfileUI(); initShortcuts(); initDragAndDrop(); setupEventListeners();
+  initPWA();
 
   const paperWrap = document.getElementById('paperWrap');
   if (paperWrap) {

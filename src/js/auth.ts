@@ -63,6 +63,7 @@ const syncToCloud = (): void => {
   }
 };
 
+// INIT: Authentication & Offline-First Cloud Sync
 export const initFirebase = (): string | null => {
   try {
     if (typeof firebase === "undefined" || !FIREBASE_CONFIG.apiKey) return "Error de conexión o configuración Firebase.";
@@ -70,6 +71,11 @@ export const initFirebase = (): string | null => {
     if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     auth = firebase.auth();
     db = firebase.firestore();
+
+    // CACHE: Enable multi-tab offline persistence for Firestore
+    db.enablePersistence({ synchronizeTabs: true }).catch((err: any) => {
+      console.warn(err.code === 'failed-precondition' ? "Multiple tabs open, offline persistence enabled in the first one." : "Offline persistence not supported by this browser.");
+    });
 
     auth.onAuthStateChanged((user) => {
       state.currentUser = user ? { uid: user.uid, email: user.email, displayName: user.displayName, photoURL: user.photoURL } : null;
@@ -80,9 +86,12 @@ export const initFirebase = (): string | null => {
         lastSnapshotMap = {};
         const coll = db.collection("users").doc(user.uid).collection("scores");
 
-        unsubscribeSnapshot = coll.onSnapshot((snap) => {
+        unsubscribeSnapshot = coll.onSnapshot({ includeMetadataChanges: true }, (snap) => {
+          // LOGIC: Distinguish between local offline cache reads and actual server data
+          const isFromCache = snap.metadata.fromCache;
           const cloudMap: Record<string, Score> = {};
           snap.forEach((doc) => { cloudMap[doc.id] = doc.data() as Score; });
+
           const localAll = loadAll();
           let changed = false;
 
@@ -97,7 +106,7 @@ export const initFirebase = (): string | null => {
             saveAll(localAll);
             lastSnapshotMap = snapshotOf(localAll);
             emit("scoreschanged");
-            showToast("☁️ Catálogo sincronizado", "success");
+            if (!isFromCache) showToast("☁️ Catálogo sincronizado", "success");
           }
         }, (error) => {
            console.error("Firebase sync error:", error);

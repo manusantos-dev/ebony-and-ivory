@@ -12,18 +12,26 @@ export const renderCustomSelects = (): void => {
     ].join("");
   };
 
-  const update = (optId: string, inputId: string, isFilter: boolean) => {
-    const opts = document.getElementById(optId);
-    const input = document.getElementById(inputId) as HTMLInputElement;
-    if (opts && input) {
-      opts.innerHTML = optionsHtml(isFilter);
-      updateCustomSelectUI(optId.replace("Options", ""), input.value);
-    }
-  };
+  const keySigOptions = document.getElementById("customKeySigOptions");
+  if (keySigOptions) {
+    keySigOptions.innerHTML = optionsHtml(false);
+    const val = (document.getElementById("keySig") as HTMLInputElement)?.value || "C";
+    updateCustomSelectUI("customKeySig", val);
+  }
 
-  update("customKeySigOptions", "keySig", false);
-  update("customFilterKeyOptions", "filterKeySig", true);
-  update("customFilterCodexKeyOptions", "filterCodexKeySig", true);
+  const filterOptions = document.getElementById("customFilterKeyOptions");
+  if (filterOptions) {
+    filterOptions.innerHTML = optionsHtml(true);
+    const val = (document.getElementById("filterKeySig") as HTMLInputElement)?.value || "all";
+    updateCustomSelectUI("customFilterKeySig", val);
+  }
+
+  const codexFilterOptions = document.getElementById("customFilterCodexKeyOptions");
+  if (codexFilterOptions) {
+    codexFilterOptions.innerHTML = optionsHtml(true);
+    const val = (document.getElementById("filterCodexKeySig") as HTMLInputElement)?.value || "all";
+    updateCustomSelectUI("customFilterCodexKeySig", val);
+  }
 };
 
 export const updateCustomSelectUI = (wrapperId: string, val: string): void => {
@@ -37,9 +45,15 @@ export const updateCustomSelectUI = (wrapperId: string, val: string): void => {
   const selected = wrapper.querySelector(".select-selected");
   if (selected) selected.innerHTML = option.innerHTML;
 
-  const targetInputId = wrapperId === "customKeySig" ? "keySig" : "filterKeySig";
-  const targetInput = document.getElementById(targetInputId) as HTMLInputElement;
-  if (targetInput) targetInput.value = val;
+  let targetInputId = "";
+  if (wrapperId === "customKeySig") targetInputId = "keySig";
+  else if (wrapperId === "customFilterCodexKeySig") targetInputId = "filterCodexKeySig";
+  else if (wrapperId === "customFilterKeySig") targetInputId = "filterKeySig";
+
+  if (targetInputId) {
+    const targetInput = document.getElementById(targetInputId) as HTMLInputElement;
+    if (targetInput) targetInput.value = val;
+  }
 };
 
 export const setupCustomSelect = (wrapperId: string, inputId: string, onSelect?: (val: string) => void): void => {
