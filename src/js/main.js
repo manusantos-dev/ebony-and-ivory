@@ -4,11 +4,11 @@
  * Handles routing, DOM event bindings, state synchronization, and layout mode toggling.
  */
 
-import { state, resetEditorState } from "./core/state.js";
-import { on, emit } from "./core/events.js";
+import { state, resetEditorState } from "./core/state";
+import { on, emit } from "./core/events";
 import { t, setLang } from "./ui/i18n.js";
-import { loadAll, saveAll, uid, nextPlateNumber, plateLabel, slugify, formatDate, escapeHtml, measureNeededQuarters, quartersUsed, newMeasure, newScore, downloadBlob, persistScore, deleteScoreById } from "./core/storage.js";
-import { DUR_Q } from "./core/config.js";
+import { loadAll, saveAll, uid, nextPlateNumber, plateLabel, slugify, formatDate, escapeHtml, measureNeededQuarters, quartersUsed, newMeasure, newScore, downloadBlob, persistScore, deleteScoreById } from "./core/storage";
+import { DUR_Q } from "./core/config";
 import { renderCustomSelects, updateCustomSelectUI, setupCustomSelect } from "./ui/custom-select.js";
 import { renderScore } from "./features/notation-renderer.js";
 import { playAudio, pauseAudio, stopPlayback, isAudioPlaying, setSpeedFactor, refreshAudioBPM } from "./features/player.js";

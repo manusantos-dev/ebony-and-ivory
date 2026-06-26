@@ -1,26 +1,31 @@
+// INIT: Type-Safe Publish/Subscribe Event Bus
+type EventHandler = (payload: any) => void;
+
 class EventBus {
+  private listeners: Map<string, Set<EventHandler>>;
+
   constructor() {
     this.listeners = new Map();
   }
 
-  on(event, handler) {
+  on(event: string, handler: EventHandler): () => void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
     }
-    this.listeners.get(event).add(handler);
-    
+    this.listeners.get(event)!.add(handler);
+
     return () => this.off(event, handler);
   }
 
-  off(event, handler) {
+  off(event: string, handler: EventHandler): void {
     if (this.listeners.has(event)) {
-      this.listeners.get(event).delete(handler);
+      this.listeners.get(event)!.delete(handler);
     }
   }
 
-  emit(event, payload) {
+  emit(event: string, payload?: any): void {
     if (!this.listeners.has(event)) return;
-    for (const handler of this.listeners.get(event)) {
+    for (const handler of this.listeners.get(event)!) {
       try {
         handler(payload);
       } catch (error) {
