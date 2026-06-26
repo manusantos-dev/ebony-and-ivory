@@ -166,6 +166,7 @@ const getFormNote = (): Note => ({
   fingering: (document.getElementById("fingeringSelect") as HTMLInputElement).value,
   articulation: (document.getElementById("articulationSelect") as HTMLInputElement).value,
   grace: (document.getElementById("graceInput") as HTMLInputElement).value.trim(),
+  ornament: (document.getElementById("ornamentSelect") as HTMLInputElement).value,
   lyric: (document.getElementById("lyricInput") as HTMLInputElement).value
 });
 
@@ -199,6 +200,7 @@ const loadNoteIntoForm = (n: Note, idx: number): void => {
   (document.getElementById("fingeringSelect") as HTMLInputElement).value = n.fingering || "";
   (document.getElementById("articulationSelect") as HTMLInputElement).value = n.articulation || "";
   (document.getElementById("graceInput") as HTMLInputElement).value = n.grace || "";
+  (document.getElementById("ornamentSelect") as HTMLInputElement).value = n.ornament || "";
   (document.getElementById("lyricInput") as HTMLInputElement).value = n.lyric || "";
 
   const btnAdd = document.getElementById("btnAddNote");

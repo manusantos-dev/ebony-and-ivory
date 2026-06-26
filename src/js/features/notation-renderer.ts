@@ -74,7 +74,6 @@ const renderPage = (pageIdx: number, pageDiv: HTMLElement, score: Score): void =
   const allTies: VF.StaveTie[] = [];
   const allSlurs: VF.Curve[] = [];
 
-  // FIX: Track pending ties using "indexes" instead of "indices" for VexFlow v4 compliance
   const pendingTies: Record<string, { note: VF.StaveNote, indexes: number[] } | null> = {};
   const pendingSlurs: Record<string, { note: VF.StaveNote } | null> = {};
 
@@ -123,7 +122,8 @@ const renderPage = (pageIdx: number, pageDiv: HTMLElement, score: Score): void =
       new VF.StaveConnector(staveTreble, staveBass).setType(rightConnectorType).setContext(ctx).draw();
 
       const buildNotes = (staffNotes: Note[], clef: string, staffName: string, stemDir: 'auto'|1|-1): VF.StaveNote[] => staffNotes.map((n, nIdx) => {
-        const durStr = n.duration + (n.dotted ? "d" : "") + (n.rest ? "r" : "");
+        const safeDur = (n.duration || "q").replace(/[^a-zA-Z0-9]/g, '');
+        const durStr = safeDur + (n.dotted ? "d" : "") + (n.rest ? "r" : "");
         const keys = n.rest ? [clef === "bass" ? "d/3" : "b/4"] : (n.keys || []).map(k => `${k.letter.toLowerCase()}${k.accidental || ""}/${k.octave}`);
 
         const noteParams: any = { clef, keys, duration: durStr };
@@ -138,6 +138,7 @@ const renderPage = (pageIdx: number, pageDiv: HTMLElement, score: Score): void =
         if (n.fingering) sn.addModifier(new VF.Annotation(n.fingering).setFont("Times", 12, "bold").setVerticalJustification(clef === "bass" ? 3 : 1).setYShift(clef === "bass" ? 5 : -5), 0);
         if (n.dynamic) sn.addModifier(new VF.Annotation(n.dynamic).setFont("Times", 12, "italic bold").setVerticalJustification(clef === "bass" ? 4 : 3), 0);
 
+        // FEATURE: Articulations & Fermatas
         if (n.articulation) {
           const artMap: Record<string, string> = { 'staccato': 'a.', 'accent': 'a>', 'tenuto': 'a-', 'marcato': 'a^', 'fermata': 'a@a' };
           if (artMap[n.articulation]) {
@@ -146,6 +147,7 @@ const renderPage = (pageIdx: number, pageDiv: HTMLElement, score: Score): void =
           }
         }
 
+        // FEATURE: Grace Notes (Apoyaturas)
         if (n.grace) {
           const match = n.grace.match(/^([A-Ga-g])([#b]?)\s*(\d)$/);
           if (match) {
@@ -155,6 +157,11 @@ const renderPage = (pageIdx: number, pageDiv: HTMLElement, score: Score): void =
             if (acc) gn.addModifier(new VF.Accidental(acc), 0);
             sn.addModifier(new VF.GraceNoteGroup([gn]), 0);
           }
+        }
+
+        // FEATURE: Ornaments (Trills, Mordents, Turns)
+        if (n.ornament) {
+          sn.addModifier(new VF.Ornament(n.ornament), 0);
         }
 
         return sn;
@@ -181,7 +188,6 @@ const renderPage = (pageIdx: number, pageDiv: HTMLElement, score: Score): void =
             }
             const currentVfNote = vfNotes[i];
 
-            // Resolve pending cross-measure or intra-measure ties/slurs
             if (pendingTies[voiceId]) {
               allTies.push(new VF.StaveTie({
                 firstNote: pendingTies[voiceId]!.note,
@@ -197,7 +203,6 @@ const renderPage = (pageIdx: number, pageDiv: HTMLElement, score: Score): void =
               pendingSlurs[voiceId] = null;
             }
 
-            // Set new pendings if properties are active
             if (n.tie) pendingTies[voiceId] = { note: currentVfNote, indexes: n.keys.map((_, idx) => idx) };
             if (n.slur) pendingSlurs[voiceId] = { note: currentVfNote };
           });
@@ -242,7 +247,6 @@ const renderPage = (pageIdx: number, pageDiv: HTMLElement, score: Score): void =
     }
   }
 
-  // DRAW TIES AND SLURS LAST (After all formatting and positioning is absolutely final)
   allTies.forEach(t => t.setContext(ctx).draw());
   allSlurs.forEach(s => s.setContext(ctx).draw());
 
@@ -292,7 +296,6 @@ const renderPage = (pageIdx: number, pageDiv: HTMLElement, score: Score): void =
   }
 };
 
-// ACTIONS: DOM Triggers & Pagination Observation
 export const renderScore = (): void => {
   const score = state.currentScore;
   if (!score) return;
