@@ -141,6 +141,7 @@ const initEditor = (views) => {
   setVal("scoreComposer", state.currentScore.composer || "");
   setVal("timeSig", state.currentScore.timeSig || "4/4");
   setVal("scoreDifficulty", state.currentScore.difficulty || "beginner");
+  setVal("scoreBpm", state.currentScore.bpm || 100);
   setVal("plBpm", state.currentScore.bpm || 100);
   updateCustomSelectUI("customKeySig", state.currentScore.keySig || "C");
 
@@ -547,6 +548,17 @@ const setupEventListeners = () => {
     const debouncedRender = debounce(renderScore, 300);
     ["scoreTitle", "scoreComposer"].forEach(id => document.getElementById(id).addEventListener("input", (e) => { state.currentScore[id === "scoreTitle" ? "title" : "composer"] = e.target.value; debouncedRender(); }));
     ["timeSig", "scoreDifficulty"].forEach(id => document.getElementById(id).addEventListener("change", (e) => { state.currentScore[id === "timeSig" ? "timeSig" : "difficulty"] = e.target.value; renderScore(); }));
+
+    // UI: Sync editor BPM changes strictly within 20-300 bounds and trigger canvas re-render
+    document.getElementById("scoreBpm")?.addEventListener("change", (e) => {
+      const newBpm = Math.max(20, Math.min(300, parseInt(e.target.value, 10) || 100));
+      e.target.value = newBpm;
+      state.currentScore.bpm = newBpm;
+      const plBpmInput = document.getElementById("plBpm");
+      if (plBpmInput) plBpmInput.value = newBpm;
+
+      renderScore();
+    });
 
     document.getElementById("btnPrevMeasure").addEventListener("click", () => { state.editorState.activeMeasure--; syncMeasureControls(); renderScore(); });
     document.getElementById("btnNextMeasure").addEventListener("click", () => { state.editorState.activeMeasure++; syncMeasureControls(); renderScore(); });

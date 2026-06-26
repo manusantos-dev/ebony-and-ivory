@@ -176,30 +176,47 @@
       </div>
 
       <div class="desk-section">
-        <div class="field-row" style="gap: 16px;">
-          <div style="flex:1;">
-            <label class="field-label" data-i18n="lblTimeSig">Compás</label>
-            <select id="timeSig" class="field-input">
+        <style>
+          #customKeySigSelected {
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+        </style>
+
+        <div class="field-row" style="display: flex; gap: 12px;">
+
+          <div style="flex: 0.7; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px;">
+            <label class="field-label" data-i18n="lblTimeSig" style="white-space: nowrap;">Compás</label>
+            <select id="timeSig" class="field-input" style="width: 100%; box-sizing: border-box; height: 38px;">
               <option value="4/4">4/4</option><option value="3/4">3/4</option><option value="2/4">2/4</option>
               <option value="6/8">6/8</option><option value="9/8">9/8</option><option value="12/8">12/8</option>
             </select>
           </div>
-          <div style="flex:1.5;">
-            <label class="field-label" data-i18n="lblKeySig">Tonalidad</label>
-            <div class="custom-select" id="customKeySig" tabindex="0">
-              <div class="select-selected" id="customKeySigSelected"></div>
+
+          <div style="flex: 1.6; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px;">
+            <label class="field-label" data-i18n="lblKeySig" style="white-space: nowrap;">Tonalidad</label>
+            <div class="custom-select" id="customKeySig" tabindex="0" style="width: 100%; box-sizing: border-box; height: 38px;">
+              <div class="select-selected" id="customKeySigSelected" style="height: 100%; display: flex; align-items: center;"></div>
               <div class="select-items" id="customKeySigOptions"></div>
             </div>
             <input type="hidden" id="keySig" value="C">
           </div>
+
+          <div style="flex: 0.7; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px;">
+            <label class="field-label" for="scoreBpm" style="white-space: nowrap;">BPM</label>
+            <input type="number" id="scoreBpm" min="20" max="300" step="1" value="100" class="field-input" style="width: 100%; box-sizing: border-box; height: 38px;">
+          </div>
+
         </div>
-        <div style="margin-top: 12px;">
-            <label class="field-label" data-i18n="lblDifficulty">Nivel</label>
-            <select id="scoreDifficulty" class="field-input">
-              <option value="beginner" data-i18n="diffBeginner">🟢 Principiante</option>
-              <option value="intermediate" data-i18n="diffIntermediate">🟠 Intermedio</option>
-              <option value="advanced" data-i18n="diffAdvanced">🔴 Avanzado</option>
-            </select>
+
+        <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 6px;">
+          <label class="field-label" data-i18n="lblDifficulty">Nivel</label>
+          <select id="scoreDifficulty" class="field-input" style="width: 100%; box-sizing: border-box; height: 38px;">
+            <option value="beginner" data-i18n="diffBeginner">🟢 Principiante</option>
+            <option value="intermediate" data-i18n="diffIntermediate">🟠 Intermedio</option>
+            <option value="advanced" data-i18n="diffAdvanced">🔴 Avanzado</option>
+          </select>
         </div>
       </div>
 
