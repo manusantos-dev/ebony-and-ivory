@@ -155,25 +155,23 @@ export const updateAccountUI = () => {
   }
 };
 
-// I18N: Comprehensive Firebase error translation mapping and fallback
+// I18N: Comprehensive and fuzzy Firebase error translation matching
 export const translateFirebaseError = (err) => {
-  const isEs = state.lang === "es";
   const code = err?.code || "unknown";
+  const isEs = state.lang === "es";
 
-  const map = {
-    "auth/invalid-email": isEs ? "Email no válido." : "Invalid email.",
-    "auth/user-not-found": isEs ? "Cuenta no encontrada." : "No account found.",
-    "auth/wrong-password": isEs ? "Contraseña incorrecta." : "Wrong password.",
-    "auth/email-already-in-use": isEs ? "Este email ya está registrado." : "Email already in use.",
-    "auth/weak-password": isEs ? "La contraseña es muy débil." : "Weak password.",
-    "auth/requires-recent-login": isEs ? "Por seguridad, cierra sesión y vuelve a entrar." : "For security, please log out and log in again.",
-    "auth/account-exists-with-different-credential": isEs ? "El email ya usa otro método (ej. Google)." : "Email uses a different login method.",
-    "auth/popup-closed-by-user": isEs ? "Inicio de sesión cancelado." : "Login cancelled.",
-    "auth/network-request-failed": isEs ? "Error de conexión a internet." : "Network connection error.",
-    "auth/too-many-requests": isEs ? "Demasiados intentos. Prueba más tarde." : "Too many requests. Try again later."
-  };
+  if (code.includes("popup-closed")) return isEs ? "Inicio de sesión cancelado." : "Login cancelled.";
+  if (code.includes("email-already-in-use")) return isEs ? "Este email ya está registrado." : "Email already in use.";
+  if (code.includes("invalid-email")) return isEs ? "Email no válido." : "Invalid email.";
+  if (code.includes("user-not-found")) return isEs ? "Cuenta no encontrada." : "No account found.";
+  if (code.includes("wrong-password")) return isEs ? "Contraseña incorrecta." : "Wrong password.";
+  if (code.includes("weak-password")) return isEs ? "La contraseña es muy débil." : "Weak password.";
+  if (code.includes("requires-recent-login")) return isEs ? "Por seguridad, cierra sesión y vuelve a entrar." : "For security, please log out and log in again.";
+  if (code.includes("different-credential")) return isEs ? "El email ya usa otro método (ej. Google)." : "Email uses a different login method.";
+  if (code.includes("network")) return isEs ? "Error de conexión a internet." : "Network connection error.";
+  if (code.includes("too-many-requests")) return isEs ? "Demasiados intentos. Prueba más tarde." : "Too many requests. Try again later.";
 
-  return map[code] || (isEs ? `Error de acceso (${code})` : `Auth error (${code})`);
+  return isEs ? `Error de acceso (${code})` : `Auth error (${code})`;
 };
 
 export const processProfileImage = (file, callback) => {
@@ -299,7 +297,7 @@ export const setupProfileUI = () => {
     }
   });
 
-  // ACTIONS: Account deletion logic with proper security re-auth warnings
+  // ACTIONS: Account deletion logic with pre-flight GDPR anonymization routine
   const btnDeleteAcc = document.getElementById("btnDeleteAccount");
   if (btnDeleteAcc) {
     btnDeleteAcc.addEventListener("click", async () => {
@@ -307,21 +305,40 @@ export const setupProfileUI = () => {
         try {
           const user = firebase.auth().currentUser;
           if (user) {
+            const overlay = document.getElementById("profileModalOverlay");
+
+            // UI: Show loading state to prevent double clicks during network operations
+            btnDeleteAcc.disabled = true;
+            btnDeleteAcc.textContent = "...";
+
+            // FIX: Anonymize public scores before destroying identity permissions
+            try {
+              const snap = await db.collection("public_scores").where("publisherUid", "==", user.uid).get();
+              const batch = db.batch();
+              snap.forEach(doc => {
+                batch.update(doc.ref, { publisherName: state.lang === 'es' ? "Usuario eliminado" : "Deleted User" });
+              });
+              await batch.commit();
+            } catch (anonErr) {
+              console.warn("Could not anonymize some public scores", anonErr);
+            }
+
             if (unsubscribeSnapshot) {
               unsubscribeSnapshot();
               unsubscribeSnapshot = null;
             }
+
             await user.delete();
             showToast(state.lang === 'es' ? "Tu cuenta y tus datos han sido eliminados." : "Your account and data have been deleted.", "success");
-
-            const overlay = document.getElementById("profileModalOverlay");
             if (overlay) overlay.hidden = true;
           }
         } catch (error) {
           console.error("Account Deletion Error:", error);
-          // FIX: Meaningful translation for Firebase security requirement
           const reauthMsg = state.lang === 'es' ? "Por seguridad, cierra sesión y vuelve a entrar para borrar tu cuenta." : "For security, please log out and log in again to delete your account.";
-          showToast(error.code === 'auth/requires-recent-login' ? reauthMsg : t("genericError"), "error");
+          showToast(error?.code?.includes('requires-recent-login') ? reauthMsg : t("genericError"), "error");
+        } finally {
+          btnDeleteAcc.disabled = false;
+          btnDeleteAcc.textContent = "Eliminar cuenta";
         }
       }
     });

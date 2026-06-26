@@ -672,8 +672,15 @@ const setupEventListeners = () => {
       const factor = parseFloat(b.dataset.speed); setSpeedFactor(factor);
       document.querySelectorAll(".pl-speed-btn").forEach(btn => btn.classList.toggle("is-active", parseFloat(btn.dataset.speed) === factor));
     }));
-    document.getElementById("plBpm")?.addEventListener("change", (e) => { e.target.value = Math.max(20, Math.min(300, parseInt(e.target.value, 10) || 100)); refreshAudioBPM(); });
-    document.addEventListener("click", (e) => { if (isAudioPlaying() && (e.target.closest("#engraveDesk") || e.target.closest(".measure-hit"))) pauseAudio(); });
+    // UI: Sync audio BPM with physical score state
+    document.getElementById("plBpm")?.addEventListener("change", (e) => {
+      const newBpm = Math.max(20, Math.min(300, parseInt(e.target.value, 10) || 100));
+      e.target.value = newBpm;
+      if (state.currentScore) {
+        state.currentScore.bpm = newBpm;
+      }
+      refreshAudioBPM();
+    });    document.addEventListener("click", (e) => { if (isAudioPlaying() && (e.target.closest("#engraveDesk") || e.target.closest(".measure-hit"))) pauseAudio(); });
   }
 };
 
