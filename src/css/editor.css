@@ -172,10 +172,55 @@ body:not(.is-viewer) .player-bar-wrapper { max-width: 0; opacity: 0; pointer-eve
   .paper-wrap.layout-book .paper-page { width: 100%; border-radius: 6px; border: 1px solid var(--color-line); }
   .paper-wrap.layout-book .paper-page::after { display: none; }
 }
-@media (max-width: 720px) {
-  .engrave-desk { position: static; height: auto; width: 100%; min-width: 0; padding-right: 0; }
-  .editor-layout { flex-direction: column; }
-  .editor-top-controls { max-width: 90vw; flex-wrap: wrap; border-radius: 16px; }
+
+/* FEATURE: Option A - Native Bottom Sheet for Mobile Portrait */
+@media (max-width: 850px) and (orientation: portrait) {
+  #viewEditor { padding: 0 12px; }
+
+  /* Give the main layout bottom padding so the SVG canvas isn't hidden by the desk */
+  .editor-layout { display: block; padding-bottom: 52vh; gap: 0; }
+  .editor-main-area { padding-top: 12px; }
+
+  /* Transform the sidebar into a fixed Bottom Drawer */
+  .engrave-desk {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    width: 100%; height: 50vh; min-width: 100%;
+    z-index: 1000;
+    background: var(--color-paper);
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -4px 30px rgba(0,0,0,0.15);
+    padding: 16px 20px 40px;
+    margin: 0; border: 1px solid var(--color-line); border-bottom: none;
+    overflow-y: auto;
+  }
+
+  /* Pure CSS Visual Drag Handle for the Bottom Sheet */
+  .engrave-desk::before {
+    content: ""; display: block; width: 40px; height: 5px;
+    background: var(--color-line-strong); border-radius: 10px;
+    margin: 0 auto 20px auto; opacity: 0.5;
+  }
+
+  /* Make the playback controls float right above the drawer */
+  .editor-top-controls {
+    position: fixed; top: auto; bottom: 52vh;
+    left: 50%; transform: translateX(-50%);
+    margin: 0 0 16px 0; z-index: 100;
+    width: 92vw; max-width: 400px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    padding: 4px;
+  }
+
+  .paper-wrap { padding-bottom: 40px !important; }
+}
+
+/* FEATURE: Landscape Mobile/Tablet Compact Mode */
+@media (max-width: 1024px) and (orientation: landscape) {
+  #viewEditor { padding: 0 20px; }
+  /* Keep side-by-side but slightly compress the desk */
+  .engrave-desk { width: 300px; min-width: 300px; padding-right: 12px; }
+  .editor-layout { gap: 16px; }
+  .editor-top-controls { transform: scale(0.9); margin-top: -60px; margin-bottom: 60px; }
 }
 
 /* Inject Title SVG Color Handlers */
