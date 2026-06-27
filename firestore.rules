@@ -2,36 +2,40 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // -- Auth Helpers --
-    function isAuthenticated() { return request.auth != null; }
-    function isOwner(uid) { return isAuthenticated() && request.auth.uid == uid; }
-    // FIX: Simplified admin check to avoid nested token lookups that might fail
-    function isAdmin() { return isAuthenticated() && request.auth.token.email == "jm.santos.dev@gmail.com"; }
+    // UTILS: Core Authentication Checks
+    function isAuth() { return request.auth != null; }
+    function isOwner(uid) { return isAuth() && request.auth.uid == uid; }
 
-    // -- Schema Validation --
-    function isValidScore() {
-      let payload = request.resource.data;
-      return payload.keys().hasAll(['bpm', 'composer', 'id', 'keySig', 'measures', 'createdAt']) &&
-             payload.bpm is number && payload.bpm > 0 && payload.bpm <= 300 &&
-             payload.composer is string && payload.composer.size() >= 0 && payload.composer.size() <= 100 &&
-             payload.id is string && payload.id.size() <= 64 &&
-             payload.keySig is string && payload.keySig.size() <= 10 &&
-             payload.measures is list && payload.measures.size() <= 500;
+    // SOCIAL: User Profiles
+    match /users/{userId} {
+      allow read: if true; // Public profiles are visible to anyone
+      allow write: if isOwner(userId); // Only the user can edit their bio/links
     }
 
-    // -- Access Rules --
-    match /users/{userId}/scores/{scoreId} {
-      allow read: if isOwner(userId);
-      allow create, update: if isOwner(userId) && isValidScore();
-      allow delete: if isOwner(userId);
-    }
-
-    match /public_scores/{scoreId} {
+    // CORE: Scores & Manuscripts
+    match /scores/{scoreId} {
       allow read: if true;
-      allow create: if isAuthenticated() && request.resource.data.publisherUid == request.auth.uid && isValidScore();
-      allow update: if isAuthenticated() && resource.data.get('publisherUid', '') == request.auth.uid && isValidScore();
-      // FIX: Reordered logic to check admin status first and safely fallback to owner check
-      allow delete: if isAdmin() || (isAuthenticated() && resource.data.get('publisherUid', '') == request.auth.uid);
+      allow create: if isAuth();
+      // Only the author can modify or delete their score
+      allow update, delete: if isAuth() && resource.data.publisherUid == request.auth.uid;
+    }
+
+    // SOCIAL GRAPH: Follows & Relationships
+    match /relationships/{relId} {
+      allow read: if isAuth();
+      // User can only initiate a follow if they are the 'follower'
+      allow create: if isAuth() && request.resource.data.followerId == request.auth.uid;
+      allow update: if isAuth() && (resource.data.followerId == request.auth.uid || resource.data.followingId == request.auth.uid);
+      allow delete: if isAuth() && (resource.data.followerId == request.auth.uid || resource.data.followingId == request.auth.uid);
+    }
+
+    // SOCIAL: Notifications
+    match /notifications/{notifId} {
+      // Users can only read their own notifications
+      allow read: if isOwner(resource.data.targetUid);
+      // Anyone logged in can trigger a notification (e.g., liking a post)
+      allow create: if isAuth();
+      allow update, delete: if isOwner(resource.data.targetUid);
     }
   }
 }
