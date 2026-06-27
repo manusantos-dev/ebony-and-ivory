@@ -22,6 +22,8 @@ import { initPWA } from './core/pwa';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
 
+import './ui/tutorial';
+
 state.codexState = { query: "", sortBy: "likesDesc", filterTime: "all", filterKey: "all", filterHands: "all" };
 state.publicScores = [];
 state.isViewingPublic = false;

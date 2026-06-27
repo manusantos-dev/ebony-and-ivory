@@ -1,0 +1,60 @@
+# CORE: Unified CI/CD Pipeline for Audit, Build, and GitHub Pages Deployment
+name: 🚀 Production Pipeline
+
+on:
+  push: { branches: ["main"] }
+  pull_request: { branches: ["main"] }
+
+# CONFIG: Required permissions for GitHub Pages deployment
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# CONFIG: Prevent concurrent deployments, cancel outdated runs
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  # JOB 1: Strict logic audit, formatting check, and artifact generation
+  audit-and-build:
+    name: 🕵️ Audit & 🏗️ Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm' }
+
+      - name: 📦 Install Exact Dependencies
+        run: npm ci
+
+      - name: 🎨 Prettier Format Verification
+        run: npx prettier --check "src/**/*.{ts,js,css,html}"
+
+      - name: 🚨 ESLint Logic Audit
+        run: npx eslint src/js/
+
+      - name: 🔨 Vite Production Bundling
+        run: npm run build
+
+      - name: 📤 Upload Distribution Artifact
+        uses: actions/upload-pages-artifact@v3
+        with: { path: ./dist }
+
+  # JOB 2: Deployment (Executes ONLY if Audit passes AND is a push to main)
+  deploy:
+    name: 🌍 Deploy to Pages
+    needs: audit-and-build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 🚀 Execute Deployment
+        id: deployment
+        uses: actions/deploy-pages@v4
